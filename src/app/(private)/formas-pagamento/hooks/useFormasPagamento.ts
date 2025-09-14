@@ -2,54 +2,104 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { formaPagamentoAPI } from "@/services/api";
+import { formaPagamentoAPI, handleApiError } from "@/services/api";
+import { toast } from "sonner";
 import type { FormaPagamento } from "@/types";
 
-export function useFormasPagamento(filters?: Record<string, any>, enabled = true) {
+export const useFormasPagamento = (filters?: Record<string, any>) => {
     return useQuery({
-        queryKey: ["formas-pagamento", filters],
-        enabled,
-        queryFn: async () => (await formaPagamentoAPI.getAll(filters)).data,
+        queryKey: ['formas-pagamento', filters],
+        queryFn: async () => {
+            const response = await formaPagamentoAPI.getAll(filters);
+            return response.data.formadepagamento || [];
+        },
+        staleTime: 5 * 60 * 1000,
     });
-}
+};
 
-export function useFormaPagamento(id?: number, enabled = !!id) {
+export const useFormaPagamento = (id: number) => {
     return useQuery({
-        queryKey: ["formas-pagamento", id],
-        enabled,
-        queryFn: async () => (await formaPagamentoAPI.getById(id as number)).data,
+        queryKey: ['forma-pagamento', id],
+        queryFn: async () => {
+            const response = await formaPagamentoAPI.getById(id);
+            return response.data;
+        },
+        enabled: !!id,
     });
-}
+};
 
-export function useCreateFormaPagamento() {
-    const qc = useQueryClient();
+export const useCreateFormaPagamento = () => {
+    const queryClient = useQueryClient();
+
     return useMutation({
-        mutationFn: async (data: Partial<FormaPagamento>) =>
-            (await formaPagamentoAPI.create(data)).data,
+        mutationFn: async (data: Omit<FormaPagamento, 'id' | 'createdAt' | 'updatedAt'>) => {
+            const response = await formaPagamentoAPI.create(data);
+            return response.data;
+        },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ["formas-pagamento"] });
+            queryClient.invalidateQueries({ queryKey: ['formas-pagamento'] });
+            toast.success(
+                'Sucesso', {
+                description: 'Forma de pagamento criada com sucesso!',
+            });
+        },
+        onError: (error) => {
+            const message = handleApiError(error);
+            toast.error(
+                'Erro', {
+                description: message
+            });
         },
     });
-}
+};
 
-export function useUpdateFormaPagamento() {
-    const qc = useQueryClient();
+export const useUpdateFormaPagamento = () => {
+    const queryClient = useQueryClient();
+
     return useMutation({
-        mutationFn: async ({ id, data }: { id: number; data: Partial<FormaPagamento> }) =>
-            (await formaPagamentoAPI.update(id, data)).data,
-        onSuccess: (_, { id }) => {
-            qc.invalidateQueries({ queryKey: ["formas-pagamento"] });
-            qc.invalidateQueries({ queryKey: ["formas-pagamento", id] });
+        mutationFn: async ({ id, data }: { id: number; data: Partial<FormaPagamento> }) => {
+            const response = await formaPagamentoAPI.update(id, data);
+            return response.data;
         },
-    });
-}
-
-export function useDeleteFormaPagamento() {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: async (id: number) => (await formaPagamentoAPI.delete(id)).data,
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ["formas-pagamento"] });
+            queryClient.invalidateQueries({ queryKey: ['formas-pagamento'] });
+            queryClient.invalidateQueries({ queryKey: ['forma-pagamento'] });
+            toast.success(
+                'Sucesso', {
+                description: 'Forma de pagamento atualizada com sucesso!',
+            });
+        },
+        onError: (error) => {
+            const message = handleApiError(error);
+            toast.error(
+                'Erro', {
+                description: message
+            });
         },
     });
-}
+};
+
+export const useDeleteFormaPagamento = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: number) => {
+            await formaPagamentoAPI.delete(id);
+            return id;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['formas-pagamento'] });
+            toast.success(
+                'Sucesso', {
+                description: 'Forma de pagamento excluída com sucesso!',
+            });
+        },
+        onError: (error) => {
+            const message = handleApiError(error);
+            toast.error(
+                'Erro', {
+                description: message
+            });
+        },
+    });
+};

@@ -1,140 +1,213 @@
+// FILE: src/app/(private)/cad-questoes/components/CadQuestoesFormDialog.tsx
 "use client";
 
 import React, { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
 import {
-    Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCreateCadQuestoes, useUpdateCadQuestoes } from "../hooks/useCadQuestoes";
-import { useCategorias } from "../../categorias/hooks/useCategorias";
-import { CadQuestao } from "@/types";
 
-interface Props {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    initialData?: CadQuestao | null;
+import type { CadQuestoes } from "@/types";
+import { useCreateCadQuestoes, useUpdateCadQuestoes } from "../hooks/useCadQuestoes";
+import { useCadAvOperacional } from "../../cad-av-operacional/hooks/useCadAvOperacional";
+
+/** 🔧 Importante: sem .default() para evitar boolean | undefined no input type */
+const formSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  situacao: z.boolean(),
+  cadavoperacionalId: z.number().optional(),
+});
+type FormData = z.infer<typeof formSchema>;
+
+interface CadQuestoesFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  questao?: CadQuestoes | null;
 }
 
-const CadQuestoesFormDialog: React.FC<Props> = ({ open, onOpenChange, initialData }) => {
-    const isEdit = !!initialData?.id;
+export default function CadQuestoesFormDialog({
+  open,
+  onOpenChange,
+  questao,
+}: CadQuestoesFormDialogProps) {
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      situacao: true,            // ✅ default fica aqui
+      cadavoperacionalId: undefined,
+    },
+  });
 
-    const [form, setForm] = React.useState({
-        enunciado: "",
-        categoriaId: 0 as number | string,
-        descricao: "",
-        ativo: true,
-    });
+  const createMutation = useCreateCadQuestoes();
+  const updateMutation = useUpdateCadQuestoes();
+  const { data: avaliacoesOperacionais } = useCadAvOperacional();
 
-    const { data: categoriasResp } = useCategorias({ enabled: open });
-    const categorias = (categoriasResp as any)?.cats ?? (categoriasResp as any)?.items ?? [];
+  const isEditing = !!questao;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
-    const { mutate: createItem, isPending: creating } = useCreateCadQuestoes();
-    const { mutate: updateItem, isPending: updating } = useUpdateCadQuestoes();
+  useEffect(() => {
+    if (!open) return;
+    if (questao) {
+      form.reset({
+        name: questao.name,
+        situacao: questao.situacao,
+        cadavoperacionalId: questao.cadavoperacionalId,
+      });
+    } else {
+      form.reset({
+        name: "",
+        situacao: true,
+        cadavoperacionalId: undefined,
+      });
+    }
+  }, [open, questao, form]);
 
-    useEffect(() => {
-        if (open) {
-            if (initialData) {
-                setForm({
-                    enunciado: initialData.enunciado ?? "",
-                    categoriaId: initialData.categoriaId ?? 0,
-                    descricao: (initialData as any).descricao ?? "",
-                    ativo: (initialData as any).ativo ?? true,
-                });
-            } else {
-                setForm({ enunciado: "", categoriaId: 0, descricao: "", ativo: true });
-            }
-        }
-    }, [open, initialData]);
+  const onSubmit = async (data: FormData) => {
+    try {
+      if (isEditing && questao) {
+        await updateMutation.mutateAsync({ id: questao.id, data });
+      } else {
+        await createMutation.mutateAsync(data);
+      }
+      form.reset();
+      onOpenChange(false);
+    } catch {
+      // erros tratados nos hooks
+    }
+  };
 
-    const handleSubmit = () => {
-        if (!form.enunciado?.trim() || !form.categoriaId) return;
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) form.reset();
+        onOpenChange(o);
+      }}
+    >
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>{isEditing ? "Editar Questão" : "Nova Questão"}</DialogTitle>
+        </DialogHeader>
 
-        const payload = {
-            enunciado: form.enunciado,
-            categoriaId: Number(form.categoriaId),
-            descricao: form.descricao,
-            ativo: form.ativo,
-        };
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome da Questão</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Digite o nome da questão"
+                      {...field}
+                      autoFocus
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        if (isEdit && initialData) {
-            updateItem({ id: initialData.id, data: payload }, { onSuccess: () => onOpenChange(false) });
-        } else {
-            createItem(payload, { onSuccess: () => onOpenChange(false) });
-        }
-    };
+            <FormField
+              control={form.control}
+              name="cadavoperacionalId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Avaliação Operacional</FormLabel>
+                  <Select
+                    onValueChange={(value) =>
+                      field.onChange(value === "none" ? undefined : Number(value))
+                    }
+                    value={field.value?.toString() || "none"}
+                    disabled={isLoading}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma avaliação operacional" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhuma</SelectItem>
+                      {avaliacoesOperacionais?.data?.map((av: any) => (
+                        <SelectItem key={av.id} value={av.id.toString()}>
+                          {av.descricao}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-xl">
-                <DialogHeader>
-                    <DialogTitle>{isEdit ? "Editar Questão" : "Nova Questão"}</DialogTitle>
-                </DialogHeader>
-
-                <div className="grid gap-4">
-                    <div className="grid gap-2">
-                        <Label>Enunciado</Label>
-                        <Input
-                            value={form.enunciado}
-                            onChange={(e) => setForm((s) => ({ ...s, enunciado: e.target.value }))}
-                            placeholder="Digite o enunciado da questão"
-                        />
+            <FormField
+              control={form.control}
+              name="situacao"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Status Ativo</FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      Questão ativa no sistema
                     </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-                    <div className="grid gap-2">
-                        <Label>Categoria</Label>
-                        <Select
-                            value={form.categoriaId ? String(form.categoriaId) : ""}
-                            onValueChange={(v) => setForm((s) => ({ ...s, categoriaId: Number(v) }))}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Selecione a categoria" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {categorias.map((c: any) => (
-                                    <SelectItem key={c.id} value={String(c.id)}>
-                                        {c.name ?? c.descricao ?? `Categoria #${c.id}`}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="grid gap-2">
-                        <Label>Descrição (opcional)</Label>
-                        <Textarea
-                            rows={4}
-                            value={form.descricao}
-                            onChange={(e) => setForm((s) => ({ ...s, descricao: e.target.value }))}
-                            placeholder="Detalhes, critérios, observações..."
-                        />
-                    </div>
-
-                    <div className="flex items-center justify-between rounded-md border p-3">
-                        <div>
-                            <Label className="text-sm">Ativa</Label>
-                            <p className="text-xs text-muted-foreground">Disponibilizar esta questão</p>
-                        </div>
-                        <Switch
-                            checked={form.ativo}
-                            onCheckedChange={(v) => setForm((s) => ({ ...s, ativo: v }))}
-                        />
-                    </div>
-                </div>
-
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSubmit} disabled={creating || updating}>
-                        {isEdit ? "Salvar alterações" : "Criar"}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-};
-
-export default CadQuestoesFormDialog;
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  form.reset();
+                  onOpenChange(false);
+                }}
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Salvando..." : isEditing ? "Atualizar" : "Criar"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}

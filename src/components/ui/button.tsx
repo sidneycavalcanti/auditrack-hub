@@ -9,23 +9,22 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-        outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
-        secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
-        ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+        default: "bg-gradient-primary text-primary-foreground shadow-primary hover:shadow-hover transform hover:scale-[1.02] active:scale-[0.98]",
+        destructive: "bg-destructive text-destructive-foreground shadow-lg hover:bg-destructive-light transform hover:scale-[1.02] active:scale-[0.98]",
+        outline: "border-2 border-primary bg-background text-primary hover:bg-primary hover:text-primary-foreground shadow-card",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-card",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        success: "bg-gradient-success text-success-foreground shadow-success hover:shadow-hover transform hover:scale-[1.02] active:scale-[0.98]",
+        warning: "bg-warning text-warning-foreground hover:bg-warning-light shadow-lg transform hover:scale-[1.02] active:scale-[0.98]",
+        premium: "bg-gradient-primary text-primary-foreground shadow-primary border border-primary-glow/30 hover:shadow-hover hover:border-primary-glow/50 transform hover:scale-[1.02] active:scale-[0.98]",
       },
       size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
+        default: "h-11 px-6 py-3",
+        sm: "h-9 rounded-md px-4 text-xs",
+        lg: "h-12 rounded-lg px-8 text-base font-semibold",
+        icon: "h-10 w-10",
+        xl: "h-14 px-10 text-lg font-semibold rounded-xl",
       },
     },
     defaultVariants: {

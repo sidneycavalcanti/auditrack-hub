@@ -2,53 +2,112 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { usuarioAPI } from "@/services/api";
-import type { User } from "@/types";
+import { usuarioAPI, handleApiError } from "@/services/api";
+import type { User, FilterOptions } from "@/types";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
-export function useUsuarios(filters?: Record<string, any>, enabled = true) {
+const QUERY_KEY = 'usuarios';
+
+export const useUsuarios = (filters?: FilterOptions) => {
+    const { isAuthenticated } = useAuth();
+    
     return useQuery({
-        queryKey: ["usuarios", filters],
-        enabled,
-        queryFn: async () => (await usuarioAPI.getAll(filters)).data,
+        queryKey: [QUERY_KEY, filters],
+        queryFn: async () => {
+            const response = await usuarioAPI.getAll(filters);
+            return response.data;
+        },
+        enabled: isAuthenticated, // Só executa se estiver autenticado
+        staleTime: 5 * 60 * 1000, // 5 minutos
     });
-}
+};
 
-export function useUsuario(id?: number, enabled = !!id) {
+export const useUsuario = (id: number) => {
+    const { isAuthenticated } = useAuth();
+    
     return useQuery({
-        queryKey: ["usuarios", id],
-        enabled,
-        queryFn: async () => (await usuarioAPI.getById(id as number)).data,
+        queryKey: [QUERY_KEY, id],
+        queryFn: async () => {
+            const response = await usuarioAPI.getById(id);
+            return response.data;
+        },
+        enabled: !!id && isAuthenticated, // Só executa se tiver ID e estiver autenticado
     });
-}
+};
 
-export function useCreateUsuario() {
-    const qc = useQueryClient();
+export const useCreateUsuario = () => {
+    const queryClient = useQueryClient();
+
     return useMutation({
-        mutationFn: async (data: Partial<User>) => (await usuarioAPI.create(data)).data,
+        mutationFn: async (data: Partial<User>) => {
+            const response = await usuarioAPI.create(data);
+            return response.data;
+        },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ["usuarios"] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+            toast.success(
+                'Usuário criado', {
+                description: 'O usuário foi criado com sucesso.',
+            });
+        },
+        onError: (error) => {
+            const errorMessage = handleApiError(error);
+            toast.error(
+                'Erro ao criar usuário', {
+                description: errorMessage
+            });
         },
     });
-}
+};
 
-export function useUpdateUsuario() {
-    const qc = useQueryClient();
+export const useUpdateUsuario = () => {
+    const queryClient = useQueryClient();
+
     return useMutation({
-        mutationFn: async ({ id, data }: { id: number; data: Partial<User> }) =>
-            (await usuarioAPI.update(id, data)).data,
+        mutationFn: async ({ id, data }: { id: number; data: Partial<User> }) => {
+            const response = await usuarioAPI.update(id, data);
+            return response.data;
+        },
         onSuccess: (_, { id }) => {
-            qc.invalidateQueries({ queryKey: ["usuarios"] });
-            qc.invalidateQueries({ queryKey: ["usuarios", id] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEY, id] });
+            toast.success(
+                'Usuário atualizado', {
+                description: 'O usuário foi atualizado com sucesso.',
+            });
+        },
+        onError: (error) => {
+            const errorMessage = handleApiError(error);
+            toast.error(
+                'Erro ao atualizar usuário', {
+                description: errorMessage
+            });
         },
     });
-}
+};
 
-export function useDeleteUsuario() {
-    const qc = useQueryClient();
+export const useDeleteUsuario = () => {
+    const queryClient = useQueryClient();
+
     return useMutation({
-        mutationFn: async (id: number) => (await usuarioAPI.delete(id)).data,
+        mutationFn: async (id: number) => {
+            const response = await usuarioAPI.delete(id);
+            return response.data;
+        },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ["usuarios"] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+            toast.success(
+                'Usuário removido', {
+                description: 'O usuário foi removido com sucesso.',
+            });
+        },
+        onError: (error) => {
+            const errorMessage = handleApiError(error);
+            toast.error(
+                'Erro ao remover usuário', {
+                description: errorMessage
+            });
         },
     });
-}
+};

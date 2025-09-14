@@ -33,6 +33,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
 
+  --color-success: var(--success);
   --color-destructive: var(--destructive);
   /* opcional: foreground dedicado para destructive */
   /* --color-destructive-foreground: var(--destructive-foreground); */
@@ -65,173 +66,170 @@
 /* =========================================
     Design System (HSL) — LIGHT
    ========================================= */
-:root {
-  /* radius */
-  --radius: 0.75rem;
 
-  /* Core Colors - Paleta Corporativa */
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(215 25% 15%);
+  :root {
+    /* Core Colors - Paleta Corporativa (OKLCH via conversão runtime) */
+    --background: oklch(from hsl(0 0% 100%) l c h);
+    --foreground: oklch(from hsl(215 25% 15%) l c h);
 
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(215 25% 15%);
+    --card: oklch(from hsl(0 0% 100%) l c h);
+    --card-foreground: oklch(from hsl(215 25% 15%) l c h);
 
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(215 25% 15%);
+    --popover: oklch(from hsl(0 0% 100%) l c h);
+    --popover-foreground: oklch(from hsl(215 25% 15%) l c h);
 
-  /* Primary - Azul Corporativo */
-  --primary: hsl(215 85% 25%);
-  --primary-light: hsl(215 85% 35%);
-  --primary-dark: hsl(215 85% 15%);
-  --primary-foreground: hsl(0 0% 100%);
-  --primary-glow: hsl(215 85% 65%);
+    /* Primary - Azul Corporativo */
+    --primary: oklch(from hsl(215 85% 25%) l c h);
+    --primary-light: oklch(from hsl(215 85% 35%) l c h);
+    --primary-dark: oklch(from hsl(215 85% 15%) l c h);
+    --primary-foreground: oklch(from hsl(0 0% 100%) l c h);
+    --primary-glow: oklch(from hsl(215 85% 65%) l c h);
 
-  /* Secondary - Cinza Neutro */
-  --secondary: hsl(215 20% 96%);
-  --secondary-foreground: hsl(215 25% 25%);
+    /* Secondary - Cinza Neutro */
+    --secondary: oklch(from hsl(215 20% 96%) l c h);
+    --secondary-foreground: oklch(from hsl(215 25% 25%) l c h);
 
-  /* Muted - Backgrounds Sutis */
-  --muted: hsl(215 15% 97%);
-  --muted-foreground: hsl(215 15% 45%);
+    /* Muted - Backgrounds Sutis */
+    --muted: oklch(from hsl(215 15% 97%) l c h);
+    --muted-foreground: oklch(from hsl(215 15% 45%) l c h);
 
-  /* Accent - Azul Claro para Highlights */
-  --accent: hsl(215 50% 95%);
-  --accent-foreground: hsl(215 85% 25%);
+    /* Accent - Azul Claro para Highlights */
+    --accent: oklch(from hsl(215 50% 95%) l c h);
+    --accent-foreground: oklch(from hsl(215 85% 25%) l c h);
 
-  /* Success - Verde Corporativo */
-  --success: hsl(142 76% 36%);
-  --success-light: hsl(142 76% 46%);
-  --success-foreground: hsl(0 0% 100%);
+    /* Success - Verde Corporativo */
+    --success: oklch(from hsl(142 76% 36%) l c h);
+    --success-light: oklch(from hsl(142 76% 46%) l c h);
+    --success-foreground: oklch(from hsl(0 0% 100%) l c h);
 
-  /* Warning - Laranja Profissional */
-  --warning: hsl(38 92% 50%);
-  --warning-light: hsl(38 92% 60%);
-  --warning-foreground: hsl(215 25% 15%);
+    /* Warning - Laranja Profissional */
+    --warning: oklch(from hsl(38 92% 50%) l c h);
+    --warning-light: oklch(from hsl(38 92% 60%) l c h);
+    --warning-foreground: oklch(from hsl(215 25% 15%) l c h);
 
-  /* Destructive - Vermelho Corporativo */
-  --destructive: hsl(0 84% 60%);
-  --destructive-light: hsl(0 84% 70%);
-  --destructive-foreground: hsl(0 0% 100%);
+    /* Destructive - Vermelho Corporativo */
+    --destructive: oklch(from hsl(0 84% 60%) l c h);
+    --destructive-light: oklch(from hsl(0 84% 70%) l c h);
+    --destructive-foreground: oklch(from hsl(0 0% 100%) l c h);
 
-  /* Borders e Inputs */
-  --border: hsl(215 20% 88%);
-  --input: hsl(215 20% 94%);
-  --ring: hsl(215 85% 25%);
+    /* Borders e Inputs */
+    --border: oklch(from hsl(215 20% 88%) l c h);
+    --input: oklch(from hsl(215 20% 94%) l c h);
+    --ring: oklch(from hsl(215 85% 25%) l c h);
 
-  /* Sidebar */
-  --sidebar-background: hsl(0 0% 98%);
-  --sidebar-foreground: hsl(240 5.3% 26.1%);
-  --sidebar-primary: hsl(240 5.9% 10%);
-  --sidebar-primary-foreground: hsl(0 0% 98%);
-  --sidebar-accent: hsl(240 4.8% 95.9%);
-  --sidebar-accent-foreground: hsl(240 5.9% 10%);
-  --sidebar-border: hsl(220 13% 91%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+    /* Gradientes — agora usando as variáveis (já em OKLCH) */
+    --gradient-primary: linear-gradient(135deg, var(--primary), var(--primary-light));
+    --gradient-success: linear-gradient(135deg, var(--success), var(--success-light));
+    --gradient-card: linear-gradient(145deg, oklch(from hsl(0 0% 100%) l c h), oklch(from hsl(215 15% 98%) l c h));
+    --gradient-dashboard: linear-gradient(
+      180deg,
+      oklch(from hsl(215 85% 25% / 0.05) l c h / 0.05),
+      oklch(from hsl(215 85% 25% / 0.02) l c h / 0.02)
+    );
 
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg,
-      hsl(var(--primary)),
-      hsl(var(--primary-light)));
-  --gradient-success: linear-gradient(135deg,
-      hsl(var(--success)),
-      hsl(var(--success-light)));
-  --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(215 15% 98%));
-  --gradient-dashboard: linear-gradient(180deg,
-      hsl(215 85% 25% / 0.05),
-      hsl(215 85% 25% / 0.02));
+    /* Sombras — relativas à cor base, mantendo α */
+    --shadow-card: 0 2px 8px -2px oklch(from hsl(215 25% 15% / 0.08) l c h / 0.08);
+    --shadow-primary: 0 4px 12px -2px oklch(from hsl(215 85% 25% / 0.25) l c h / 0.25);
+    --shadow-success: 0 4px 12px -2px oklch(from hsl(142 76% 36% / 0.25) l c h / 0.25);
+    --shadow-hover: 0 8px 25px -4px oklch(from hsl(215 25% 15% / 0.15) l c h / 0.15);
 
-  /* Shadows */
-  --shadow-card: 0 2px 8px -2px hsl(215 25% 15% / 0.08);
-  --shadow-primary: 0 4px 12px -2px hsl(215 85% 25% / 0.25);
-  --shadow-success: 0 4px 12px -2px hsl(142 76% 36% / 0.25);
-  --shadow-hover: 0 8px 25px -4px hsl(215 25% 15% / 0.15);
+    /* Demais tokens */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --radius: 0.75rem;
 
-  /* Animations */
-  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
+    /* Sidebar */
+    --sidebar-background: oklch(from hsl(0 0% 98%) l c h);
+    --sidebar-foreground: oklch(from hsl(240 5.3% 26.1%) l c h);
+    --sidebar-primary: oklch(from hsl(240 5.9% 10%) l c h);
+    --sidebar-primary-foreground: oklch(from hsl(0 0% 98%) l c h);
+    --sidebar-accent: oklch(from hsl(240 4.8% 95.9%) l c h);
+    --sidebar-accent-foreground: oklch(from hsl(240 5.9% 10%) l c h);
+    --sidebar-border: oklch(from hsl(220 13% 91%) l c h);
+    --sidebar-ring: oklch(from hsl(217.2 91.2% 59.8%) l c h);
+  }
 
-/* =========================================
-    Design System (HSL) — DARK
-   ========================================= */
-.dark {
-  /* Core Colors - Dark Mode */
-  --background: hsl(215 25% 8%);
-  --foreground: hsl(0 0% 95%);
+  .dark {
+    /* Core Colors - Dark Mode (convertidos para OKLCH) */
+    --background: oklch(18.889% 0.01455 253.227);
+    --foreground: oklch(96.115% 0.00011 271.152);
 
-  --card: hsl(215 25% 10%);
-  --card-foreground: hsl(0 0% 95%);
+    --card: oklch(20.77% 0.01775 259.748);
+    --card-foreground: oklch(96.115% 0.00011 271.152);
 
-  --popover: hsl(215 25% 10%);
-  --popover-foreground: hsl(0 0% 95%);
+    --popover: oklch(20.77% 0.01775 259.748);
+    --popover-foreground: oklch(96.115% 0.00011 271.152);
 
-  /* Primary - Azul mais claro no Dark */
-  --primary: hsl(215 85% 65%);
-  --primary-light: hsl(215 85% 75%);
-  --primary-dark: hsl(215 85% 55%);
-  --primary-foreground: hsl(215 25% 8%);
-  --primary-glow: hsl(215 85% 85%);
+    /* Primary - Azul Mais Claro no Dark */
+    --primary: oklch(68.112% 0.1476 257.279);
+    --primary-light: oklch(76.835% 0.10314 256.897);
+    --primary-dark: oklch(60.047% 0.1887 258.097);
+    --primary-foreground: oklch(18.889% 0.01455 253.227);
+    --primary-glow: oklch(85.957% 0.06067 256.966);
 
-  /* Secondary - Cinza Dark */
-  --secondary: hsl(215 20% 15%);
-  --secondary-foreground: hsl(0 0% 90%);
+    /* Secondary - Cinza Dark */
+    --secondary: oklch(26.255% 0.01907 258.391);
+    --secondary-foreground: oklch(92.494% 0.00011 271.152);
 
-  /* Muted - Backgrounds Dark */
-  --muted: hsl(215 15% 12%);
-  --muted-foreground: hsl(215 15% 65%);
+    /* Muted - Backgrounds Dark */
+    --muted: oklch(23.309% 0.0114 254.107);
+    --muted-foreground: oklch(71.405% 0.02585 254.063);
 
-  /* Accent - Azul Dark */
-  --accent: hsl(215 50% 18%);
-  --accent-foreground: hsl(215 85% 75%);
+    /* Accent - Azul Dark */
+    --accent: oklch(28.354% 0.05595 257.313);
+    --accent-foreground: oklch(76.835% 0.10314 256.897);
 
-  /* Success - Verde Dark */
-  --success: hsl(142 76% 46%);
-  --success-light: hsl(142 76% 56%);
-  --success-foreground: hsl(215 25% 8%);
+    /* Success - Verde Dark */
+    --success: oklch(74.572% 0.20377 149.093);
+    --success-light: oklch(81.069% 0.20173 150.593);
+    --success-foreground: oklch(18.889% 0.01455 253.227);
 
-  /* Warning - Laranja Dark */
-  --warning: hsl(38 92% 60%);
-  --warning-light: hsl(38 92% 70%);
-  --warning-foreground: hsl(215 25% 8%);
+    /* Warning - Laranja Dark */
+    --warning: oklch(80.928% 0.15037 76.549);
+    --warning-light: oklch(85.203% 0.12221 79.36);
+    --warning-foreground: oklch(18.889% 0.01455 253.227);
 
-  /* Destructive - Vermelho Dark */
-  --destructive: hsl(0 84% 70%);
-  --destructive-light: hsl(0 84% 80%);
-  --destructive-foreground: hsl(215 25% 8%);
+    /* Destructive - Vermelho Dark */
+    --destructive: oklch(70.517% 0.15927 21.964);
+    --destructive-light: oklch(79.428% 0.10273 19.551);
+    --destructive-foreground: oklch(18.889% 0.01455 253.227);
 
-  /* Borders e Inputs Dark */
-  --border: hsl(215 20% 20%);
-  --input: hsl(215 20% 18%);
-  --ring: hsl(215 85% 65%);
+    /* Borders e Inputs Dark */
+    --border: oklch(31.08% 0.02437 258.385);
+    --input: oklch(29.121% 0.0225 259.389);
+    --ring: oklch(68.112% 0.1476 257.279);
 
-  /* Sidebar Dark */
-  --sidebar-background: hsl(215 25% 6%);
-  --sidebar-foreground: hsl(0 0% 90%);
-  --sidebar-primary: hsl(215 85% 65%);
-  --sidebar-primary-foreground: hsl(215 25% 8%);
-  --sidebar-accent: hsl(215 20% 12%);
-  --sidebar-accent-foreground: hsl(0 0% 90%);
-  --sidebar-border: hsl(215 20% 15%);
-  --sidebar-ring: hsl(215 85% 65%);
+    /* Gradientes Dark Mode */
+    --gradient-primary: linear-gradient(135deg, var(--primary), var(--primary-light));
+    --gradient-success: linear-gradient(135deg, var(--success), var(--success-light));
+    --gradient-card: linear-gradient(
+      145deg,
+      oklch(20.77% 0.01775 259.748),
+      oklch(23.309% 0.0114 254.107)
+    );
+    --gradient-dashboard: linear-gradient(
+      180deg,
+      oklch(68.112% 0.1476 257.279 / 0.08),
+      oklch(68.112% 0.1476 257.279 / 0.02)
+    );
 
-  /* Gradients Dark */
-  --gradient-primary: linear-gradient(135deg,
-      hsl(var(--primary)),
-      hsl(var(--primary-light)));
-  --gradient-success: linear-gradient(135deg,
-      hsl(var(--success)),
-      hsl(var(--success-light)));
-  --gradient-card: linear-gradient(145deg, hsl(215 25% 10%), hsl(215 15% 12%));
-  --gradient-dashboard: linear-gradient(180deg,
-      hsl(215 85% 65% / 0.08),
-      hsl(215 85% 65% / 0.02));
+    /* Sombras Dark Mode */
+    --shadow-card: 0 2px 8px -2px oklch(0% 0 0 / 0.25);
+    --shadow-primary: 0 4px 12px -2px oklch(68.112% 0.1476 257.279 / 0.35);
+    --shadow-success: 0 4px 12px -2px oklch(74.572% 0.20377 149.093 / 0.35);
+    --shadow-hover: 0 8px 25px -4px oklch(0% 0 0 / 0.4);
 
-  /* Shadows Dark Mode */
-  --shadow-card: 0 2px 8px -2px hsl(0 0% 0% / 0.25);
-  --shadow-primary: 0 4px 12px -2px hsl(215 85% 65% / 0.35);
-  --shadow-success: 0 4px 12px -2px hsl(142 76% 46% / 0.35);
-  --shadow-hover: 0 8px 25px -4px hsl(0 0% 0% / 0.4);
-}
+    /* Sidebar Dark */
+    --sidebar-background: oklch(16.599% 0.01063 248.513);
+    --sidebar-foreground: oklch(92.494% 0.00011 271.152);
+    --sidebar-primary: oklch(68.112% 0.1476 257.279);
+    --sidebar-primary-foreground: oklch(18.889% 0.01455 253.227);
+    --sidebar-accent: oklch(23.217% 0.01627 252.498);
+    --sidebar-accent-foreground: oklch(92.494% 0.00011 271.152);
+    --sidebar-border: oklch(26.255% 0.01907 258.391);
+    --sidebar-ring: oklch(68.112% 0.1476 257.279);
+  }
+
 
 /* =========================================
     Camadas base e utilitários

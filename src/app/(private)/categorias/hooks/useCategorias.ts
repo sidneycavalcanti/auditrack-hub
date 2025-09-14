@@ -2,54 +2,100 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { categoriaAPI } from "@/services/api";
+import { categoriaAPI, handleApiError } from "@/services/api";
+import { toast } from "sonner";
 import type { Categoria } from "@/types";
 
-export function useCategorias(filters?: Record<string, any>, enabled = true) {
+export const useCategorias = (filters?: Record<string, any>) => {
     return useQuery({
-        queryKey: ["categorias", filters],
-        enabled,
-        queryFn: async () => (await categoriaAPI.getAll(filters)).data,
+        queryKey: ['categorias', filters],
+        queryFn: async () => {
+            const response = await categoriaAPI.getAll(filters);
+            return response.data;
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutos
     });
-}
+};
 
-export function useCategoria(id?: number, enabled = !!id) {
+export const useCategoria = (id: number) => {
     return useQuery({
-        queryKey: ["categorias", id],
-        enabled,
-        queryFn: async () => (await categoriaAPI.getById(id as number)).data,
+        queryKey: ['categoria', id],
+        queryFn: async () => {
+            const response = await categoriaAPI.getById(id);
+            return response.data;
+        },
+        enabled: !!id,
     });
-}
+};
 
-export function useCreateCategoria() {
-    const qc = useQueryClient();
+export const useCreateCategoria = () => {
+    const queryClient = useQueryClient();
+
     return useMutation({
-        mutationFn: async (data: Partial<Categoria>) =>
-            (await categoriaAPI.create(data)).data,
+        mutationFn: async (data: Omit<Categoria, 'id' | 'createdAt' | 'updatedAt'>) => {
+            const response = await categoriaAPI.create(data);
+            return response.data;
+        },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ["categorias"] });
+            queryClient.invalidateQueries({ queryKey: ['categorias'] });
+            toast.success(
+                'Categoria criada', {
+                description: 'Categoria criada com sucesso.',
+            });
+        },
+        onError: (error) => {
+            toast.error(
+                'Erro ao criar categoria', {
+                description: handleApiError(error)
+            });
         },
     });
-}
+};
 
-export function useUpdateCategoria() {
-    const qc = useQueryClient();
+export const useUpdateCategoria = () => {
+    const queryClient = useQueryClient();
+
     return useMutation({
-        mutationFn: async ({ id, data }: { id: number; data: Partial<Categoria> }) =>
-            (await categoriaAPI.update(id, data)).data,
-        onSuccess: (_, { id }) => {
-            qc.invalidateQueries({ queryKey: ["categorias"] });
-            qc.invalidateQueries({ queryKey: ["categorias", id] });
+        mutationFn: async ({ id, data }: { id: number; data: Partial<Categoria> }) => {
+            const response = await categoriaAPI.update(id, data);
+            return response.data;
         },
-    });
-}
-
-export function useDeleteCategoria() {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: async (id: number) => (await categoriaAPI.delete(id)).data,
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ["categorias"] });
+            queryClient.invalidateQueries({ queryKey: ['categorias'] });
+            queryClient.invalidateQueries({ queryKey: ['categoria'] });
+            toast(
+                'Categoria atualizada', {
+                description: 'Categoria atualizada com sucesso.',
+            });
+        },
+        onError: (error) => {
+            toast(
+                'Erro ao atualizar categoria', {
+                description: handleApiError(error)
+            });
         },
     });
-}
+};
+
+export const useDeleteCategoria = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: number) => {
+            await categoriaAPI.delete(id);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['categorias'] });
+            toast.success(
+                'Categoria excluída', {
+                description: 'Categoria excluída com sucesso.',
+            });
+        },
+        onError: (error) => {
+            toast.error(
+                'Erro ao excluir categoria', {
+                description: handleApiError(error)
+            });
+        },
+    });
+};
