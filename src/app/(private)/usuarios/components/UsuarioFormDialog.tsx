@@ -1,3 +1,4 @@
+// src/app/(private)/usuarios/components/UsuarioFormDialog.tsx
 "use client";
 
 import React, { useEffect } from "react";
@@ -188,6 +189,7 @@ const UsuarioFormDialog: React.FC<UsuarioFormDialogProps> = ({
                             <p className="text-xs text-muted-foreground">Permite acesso ao sistema</p>
                         </div>
                         <Switch
+                            className="cursor-pointer"
                             checked={!!form.situacao}
                             onCheckedChange={(checked) => setForm((s) => ({ ...s, situacao: checked }))}
                         />
@@ -195,8 +197,8 @@ const UsuarioFormDialog: React.FC<UsuarioFormDialogProps> = ({
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSubmit} disabled={creating || updating || !isFormValid}>
+                    <Button className="cursor-pointer" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button className="cursor-pointer" onClick={handleSubmit} disabled={creating || updating || !isFormValid}>
                         {isEdit ? "Salvar alterações" : "Criar usuário"}
                     </Button>
                 </DialogFooter>

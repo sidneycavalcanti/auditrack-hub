@@ -114,6 +114,7 @@ const LojaFormDialog: React.FC<LojaFormDialogProps> = ({ open, onOpenChange, ini
                             <p className="text-xs text-muted-foreground">Marque para ativar a loja</p>
                         </div>
                         <Switch
+                            className="cursor-pointer"
                             checked={form.ativa}
                             onCheckedChange={(v) => setForm((s) => ({ ...s, ativa: v }))}
                         />
@@ -121,8 +122,8 @@ const LojaFormDialog: React.FC<LojaFormDialogProps> = ({ open, onOpenChange, ini
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSubmit} disabled={creating || updating}>
+                    <Button className="cursor-pointer" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button className="cursor-pointer" onClick={handleSubmit} disabled={creating || updating}>
                         {isEdit ? "Salvar alterações" : "Criar loja"}
                     </Button>
                 </DialogFooter>

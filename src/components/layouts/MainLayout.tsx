@@ -63,7 +63,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
     return (
         <div className="min-h-screen bg-gradient-dashboard">
-        {/* Sidebar mobile (overlay) */}
+            {/* Sidebar mobile (overlay) */}
             <div
                 className={cn("fixed inset-0 z-50 lg:hidden", sidebarOpen ? "block" : "hidden")}
                 aria-hidden={!sidebarOpen}
@@ -93,7 +93,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 />
             </div>
 
-        {/* Main content */}
+            {/* Main content */}
             <div className="lg:ml-64">
                 {/* Header */}
                 <header className="sticky top-0 z-20 bg-card/95 backdrop-blur border-b border-border shadow-sm">
@@ -125,7 +125,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                                 variant="ghost"
                                 size="icon"
                                 onClick={signOut}
-                                className="text-muted-foreground hover:text-destructive"
+                                className="text-muted-foreground hover:text-destructive cursor-pointer"
                                 aria-label="Sair"
                             >
                                 <LogOut className="h-5 w-5" />
@@ -184,7 +184,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-4 py-6 space-y-2">
+            <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
                 {navigation.map((item) => {
                     const Icon = item.icon;
                     const active = isActive(item.href);
@@ -226,7 +226,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={signOut}
-                    className="w-full justify-start gap-2"
+                    className="w-full justify-start gap-2 cursor-pointer"
                 >
                     <LogOut className="h-4 w-4" />
                     Sair

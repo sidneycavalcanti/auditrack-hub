@@ -11,6 +11,24 @@ import {
     Shield,
     User as UserIcon,
 } from "lucide-react";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -35,21 +53,43 @@ import LoadingSpinner from "@/components/common/LoadingSpinner";
 import EmptyState from "@/components/common/EmptyState";
 import UsuarioFormDialog from "../usuarios/components/UsuarioFormDialog";
 import { useUsuarios, useDeleteUsuario } from "../usuarios/hooks/useUsuarios";
-import type { User } from "@/types";
+import type { User, PaginatedResponse } from "@/types";
 
 export default function UsuariosPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedUsuario, setSelectedUsuario] = useState<User | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [page, setPage] = useState(1);
+    const [limit] = useState(10);
+
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [usuarioToDelete, setUsuarioToDelete] = useState<User | null>(
+        null
+    );
+
 
     const { data: usuariosResp, isLoading } = useUsuarios({
-        name: searchTerm,
-        limit: 50,
+        name: searchTerm || undefined,
+        page: page,
+        limit: limit
     });
-    const { mutate: deleteUsuario } = useDeleteUsuario();
+    const deleteMutation = useDeleteUsuario();
+
+    const usuarios = usuariosResp?.data ?? [];
+    const paginatedData = {
+        total: usuariosResp?.total ?? 0,
+        totalPages: usuariosResp?.totalPages ?? 1,
+        currentPage: usuariosResp?.page ?? 1,
+        limit: usuariosResp?.limit ?? 10
+    }
 
     // a API retorna { users: User[] }
-    const usuariosArray: User[] = (usuariosResp as any)?.users ?? [];
+    // const usuariosArray: User[] = (usuariosResp as any)?.users ?? [];
+
+    const handleSearch = (term: string) => {
+        setSearchTerm(term);
+        setPage(1);
+    };
 
     const handleEdit = (usuario: User) => {
         setSelectedUsuario(usuario);
@@ -61,9 +101,16 @@ export default function UsuariosPage() {
         setDialogOpen(true);
     };
 
-    const handleDelete = (id: number) => {
-        if (window.confirm("Tem certeza que deseja excluir este usuário?")) {
-            deleteUsuario(id);
+    const handleDeleteClick = (usuario: User) => {
+        setUsuarioToDelete(usuario);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (usuarioToDelete) {
+            await deleteMutation.mutateAsync(usuarioToDelete.id);
+            setDeleteDialogOpen(false);
+            setUsuarioToDelete(null);
         }
     };
 
@@ -94,68 +141,59 @@ export default function UsuariosPage() {
 
     return (
         <div className="space-y-3">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <h1 className="flex items-center gap-3 text-3xl font-bold text-foreground">
-                    <Users className="h-8 w-8" />
-                    Usuários
-                </h1>
-                <p className="text-muted-foreground">Gerencie os usuários do sistema</p>
+            {/* Header */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 className="flex items-center gap-3 text-3xl font-bold text-foreground">
+                        <Users className="h-8 w-8" />
+                        Usuários
+                    </h1>
+                    <p className="text-muted-foreground">Gerencie os usuários do sistema</p>
+                </div>
+
+                <Button variant="premium" size="lg" onClick={handleCreate} className="cursor-pointer">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Novo Usuário
+                </Button>
             </div>
 
-            <Button variant="premium" size="lg" onClick={handleCreate}>
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Usuário
-            </Button>
-        </div>
-
-        {/* Busca */}
-        <Card className="bg-gradient-card shadow-card">
-            <CardContent className="px-6 py-0">
-                <div className="flex items-center gap-4">
-                    <div className="flex-1 relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Buscar usuários..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10"
-                        />
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-
-        {/* Lista / Empty */}
-        {usuariosArray.length === 0 ? (
-            <EmptyState
-                icon="users"
-                title="Nenhum usuário encontrado"
-                description={
-                    searchTerm
-                    ? "Nenhum usuário encontrado com os critérios informados."
-                    : "Comece criando o primeiro usuário do sistema."
-                }
-                action={{
-                    label: "Novo Usuário",
-                    onClick: handleCreate,
-                }}
-            />
-        ) : (
+            {/* Busca */}
             <Card className="bg-gradient-card shadow-card">
-                <CardHeader>
-                    <CardTitle>Usuários Cadastrados</CardTitle>
-                    <CardDescription>
-                        {usuariosArray.length} usuário
-                        {usuariosArray.length !== 1 ? "s" : ""} encontrado
-                        {usuariosArray.length !== 1 ? "s" : ""}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
+                <CardContent className="px-6 py-0">
+                    <div className="flex items-center gap-4">
+                        <div className="flex-1 relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Buscar usuários..."
+                                value={searchTerm}
+                                onChange={(e) => handleSearch(e.target.value)}
+                                className="pl-10"
+                            />
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Lista / Empty */}
+            {usuarios.length === 0 ? (
+                <EmptyState
+                    icon="users"
+                    title="Nenhum usuário encontrado"
+                    description={
+                        searchTerm
+                            ? "Nenhum usuário encontrado com os critérios informados."
+                            : "Comece criando o primeiro usuário do sistema."
+                    }
+                    action={{
+                        label: "Novo Usuário",
+                        onClick: handleCreate,
+                    }}
+                />
+            ) : (
+                <div className="rounded-md border">
                     <Table>
                         <TableHeader>
-                            <TableRow>
+                            <TableRow className="bg-muted/50 text-muted-foreground">
                                 <TableHead>Usuário</TableHead>
                                 <TableHead>Nome de usuário</TableHead>
                                 <TableHead>Categoria</TableHead>
@@ -164,81 +202,182 @@ export default function UsuariosPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {usuariosArray.map((usuario) => {
-                            const Icon = getCategoryIcon(usuario.categoria?.name);
-                            return (
-                                <TableRow key={usuario.id}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar>
-                                                <AvatarFallback>{getInitials(usuario.name)}</AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <div className="font-medium">{usuario.name}</div>
-                                                <div className="text-sm text-muted-foreground">
-                                                    ID: {usuario.id}
+                            {usuarios.map((usuario: User) => {
+                                const Icon = getCategoryIcon(usuario.categoria?.name);
+                                return (
+                                    <TableRow key={usuario.id}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar>
+                                                    <AvatarFallback>{getInitials(usuario.name)}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <div className="font-medium">{usuario.name}</div>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        ID: {usuario.id}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </TableCell>
+                                        </TableCell>
 
-                                    <TableCell className="font-mono">
-                                        {usuario.username}
-                                    </TableCell>
+                                        <TableCell className="font-mono">
+                                            {usuario.username}
+                                        </TableCell>
 
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Icon className="h-4 w-4" />
-                                            <span>{usuario.categoria?.name ?? "Sem categoria"}</span>
-                                        </div>
-                                    </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <Icon className="h-4 w-4" />
+                                                <span>{usuario.categoria?.name ?? "Sem categoria"}</span>
+                                            </div>
+                                        </TableCell>
 
-                                    <TableCell>
-                                        <Badge variant={usuario.situacao ? "default" : "secondary"}>
-                                            {usuario.situacao ? "Ativo" : "Inativo"}
-                                        </Badge>
-                                    </TableCell>
-
-                                    <TableCell className="text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleEdit(usuario)}
-                                                aria-label={`Editar ${usuario.name}`}
-                                                title="Editar"
+                                        <TableCell>
+                                            <Badge variant={usuario.situacao ? "default" : "secondary"}
+                                                className={
+                                                    usuario.situacao
+                                                        ? "bg-success/10 text-success hover:bg-success/20"
+                                                        : ""
+                                                }
                                             >
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleDelete(usuario.id)}
-                                                aria-label={`Excluir ${usuario.name}`}
-                                                title="Excluir"
-                                                className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            );
+                                                {usuario.situacao ? "Ativo" : "Inativo"}
+                                            </Badge>
+                                        </TableCell>
+
+                                        <TableCell className="text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="cursor-pointer"
+                                                    onClick={() => handleEdit(usuario)}
+                                                    aria-label={`Editar ${usuario.name}`}
+                                                    title="Editar"
+                                                >
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleDeleteClick(usuario)}
+                                                    aria-label={`Excluir ${usuario.name}`}
+                                                    title="Excluir"
+                                                    className="border-destructive text-destructive hover:bg-destructive-light hover:text-destructive-glow cursor-pointer"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                );
                             })}
                         </TableBody>
                     </Table>
-                </CardContent>
-            </Card>
-        )}
+                </div>
+            )}
 
-        <UsuarioFormDialog
-            open={dialogOpen}
-            onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) setSelectedUsuario(null);
-            }}
-            initialData={selectedUsuario}
-        />
+            {/* Paginação */}
+            {paginatedData.totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-0">
+                    {/* Contagem */}
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                            {paginatedData.total > 0
+                                ? `Mostrando ${(paginatedData.currentPage - 1) * paginatedData.limit + 1
+                                } a ${Math.min(
+                                    paginatedData.currentPage * paginatedData.limit,
+                                    paginatedData.total
+                                )} de ${paginatedData.total} usuários`
+                                : "Nenhuma questão encontrada"}
+                        </p>
+                    </div>
+                    <Pagination>
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious
+                                    onClick={() =>
+                                        setPage(Math.max(1, paginatedData.currentPage - 1))
+                                    }
+                                    className={
+                                        paginatedData.currentPage === 1
+                                            ? "pointer-events-none opacity-50"
+                                            : "cursor-pointer"
+                                    }
+                                />
+                            </PaginationItem>
+
+                            {Array.from({ length: Math.min(5, paginatedData.totalPages) }, (_, i) => {
+                                let pageNum: number;
+                                if (paginatedData.totalPages <= 5) pageNum = i + 1;
+                                else if (paginatedData.currentPage <= 3) pageNum = i + 1;
+                                else if (paginatedData.currentPage >= paginatedData.totalPages - 2)
+                                    pageNum = paginatedData.totalPages - 4 + i;
+                                else pageNum = paginatedData.currentPage - 2 + i;
+
+                                return (
+                                    <PaginationItem key={pageNum}>
+                                        <PaginationLink
+                                            onClick={() => setPage(pageNum)}
+                                            isActive={paginatedData.currentPage === pageNum}
+                                            className="cursor-pointer"
+                                        >
+                                            {pageNum}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                );
+                            })}
+
+                            <PaginationItem>
+                                <PaginationNext
+                                    onClick={() =>
+                                        setPage(Math.min(paginatedData.totalPages, paginatedData.currentPage + 1))
+                                    }
+                                    className={
+                                        paginatedData.currentPage === paginatedData.totalPages
+                                            ? "pointer-events-none opacity-50"
+                                            : "cursor-pointer"
+                                    }
+                                />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                </div>
+            )}
+
+            <UsuarioFormDialog
+                open={dialogOpen}
+                onOpenChange={(open) => {
+                    setDialogOpen(open);
+                    if (!open) setSelectedUsuario(null);
+                }}
+                initialData={selectedUsuario}
+            />
+
+            {/* Confirmação de exclusão */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Tem certeza de que deseja excluir o usuário "
+                            {usuarioToDelete?.name}"? Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="cursor-pointer">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction className="shadow-none" asChild>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleDeleteConfirm}
+                                className="bg-background border-destructive text-destructive hover:bg-destructive-light hover:text-destructive-glow cursor-pointer"
+                                title="Excluir"
+                            >
+                                Excluir
+                            </Button>
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

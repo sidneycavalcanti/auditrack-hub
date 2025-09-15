@@ -22,6 +22,16 @@ import {
     PaginationPrevious,
 } from "@/components/ui/pagination";
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -42,12 +52,18 @@ export default function LojasPage() {
     const [pageSize, setPageSize] = useState(9);
     const [dialogOpen, setDialogOpen] = useState(false);
 
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [lojaToDelete, setLojaToDelete] = useState<Loja | null>(
+        null
+    );
+
     const { data: response, isLoading, error, isFetching } = useLojas({
         search: searchTerm,
         page: currentPage,
         limit: pageSize,
     });
-    const { mutate: deleteLoja } = useDeleteLoja();
+
+    const deleteMutation = useDeleteLoja();
 
     const paginatedData = response as PaginatedResponse<Loja> | undefined;
     const lojas = paginatedData?.data ?? [];
@@ -59,9 +75,16 @@ export default function LojasPage() {
         setDialogOpen(true);
     };
 
-    const handleDelete = (id: number) => {
-        if (window.confirm("Tem certeza que deseja excluir esta loja?")) {
-            deleteLoja(id);
+    const handleDeleteClick = (usuario: Loja) => {
+        setLojaToDelete(usuario);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (lojaToDelete) {
+            await deleteMutation.mutateAsync(lojaToDelete.id);
+            setDeleteDialogOpen(false);
+            setLojaToDelete(null);
         }
     };
 
@@ -87,7 +110,7 @@ export default function LojasPage() {
 
     return (
         <div className="space-y-3">
-        {/* Header */}
+            {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="flex items-center gap-3 text-3xl font-bold text-foreground">
@@ -102,11 +125,12 @@ export default function LojasPage() {
                 <Button
                     variant="premium"
                     size="lg"
+                    className="cursor-pointer"
                     onClick={() => {
                         setSelectedLoja(null);
                         setDialogOpen(true);
                     }}
-                    >
+                >
                     <Plus className="mr-2 h-4 w-4" />
                     Nova Loja
                 </Button>
@@ -167,28 +191,34 @@ export default function LojasPage() {
                     }}
                 />
             ) : (
-                <div className="space-y-6">
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div className="space-y-3">
+                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                         {lojas.map((loja) => (
                             <Card
                                 key={loja.id}
                                 className="bg-gradient-card shadow-card transition-smooth hover:shadow-hover"
                             >
-                                <CardHeader className="pb-3">
+                                <CardHeader>
                                     <div className="flex items-start justify-between">
                                         <div>
                                             <CardTitle className="text-lg">{loja.descricao}</CardTitle>
                                             <CardDescription>Código: {loja.codigo}</CardDescription>
                                         </div>
 
-                                        <Badge variant={loja.ativa ? "default" : "secondary"}>
+                                        <Badge variant={loja.ativa ? "default" : "secondary"}
+                                            className={
+                                                loja.ativa
+                                                    ? "bg-success/10 text-success hover:bg-success/20"
+                                                    : ""
+                                            }
+                                        >
                                             {loja.ativa ? "Ativa" : "Inativa"}
                                         </Badge>
                                     </div>
                                 </CardHeader>
 
                                 <CardContent className="pt-0">
-                                    <div className="space-y-3">
+                                    <div className="space-y-1">
                                         {loja.luc && (
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                 <MapPin className="h-4 w-4" />
@@ -207,7 +237,7 @@ export default function LojasPage() {
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => handleEdit(loja)}
-                                                className="flex-1"
+                                                className="flex-1 cursor-pointer"
                                             >
                                                 <Edit className="mr-2 h-4 w-4" />
                                                 Editar
@@ -216,8 +246,8 @@ export default function LojasPage() {
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => handleDelete(loja.id)}
-                                                className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                                onClick={() => handleDeleteClick(loja)}
+                                                className="border-destructive text-destructive hover:bg-destructive-light hover:text-destructive-glow cursor-pointer"
                                                 aria-label={`Excluir loja ${loja.descricao}`}
                                                 title="Excluir"
                                             >
@@ -294,7 +324,7 @@ export default function LojasPage() {
             )}
 
             {/* Stats */}
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Card className="bg-gradient-card shadow-card">
                     <CardContent className="p-4">
                         <div className="flex items-center gap-3">
@@ -351,7 +381,7 @@ export default function LojasPage() {
                                 <p className="text-2xl font-bold text-foreground">
                                     {
                                         new Set(lojas.map((l) => l.luc).filter(Boolean) as string[])
-                                        .size
+                                            .size
                                     }
                                 </p>
                                 <p className="text-sm text-muted-foreground">Localizações</p>
@@ -369,6 +399,33 @@ export default function LojasPage() {
                 }}
                 initialData={selectedLoja}
             />
+
+            {/* Confirmação de exclusão */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Tem certeza de que deseja excluir a loja "
+                            {lojaToDelete?.descricao}"? Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="cursor-pointer">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction className="shadow-none" asChild>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleDeleteConfirm}
+                                className="bg-background border-destructive text-destructive hover:bg-destructive-light hover:text-destructive-glow cursor-pointer"
+                                title="Excluir"
+                            >
+                                Excluir
+                            </Button>
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
