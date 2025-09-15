@@ -15,9 +15,7 @@ export const useLojas = (filters?: FilterOptions) => {
     return useQuery({
         queryKey: [QUERY_KEY, filters],
         queryFn: async () => {
-            console.log('Fazendo requisição para lojas com filtros:', filters);
             const response = await lojaAPI.getAll(filters);
-            console.log('Resposta da API de lojas:', response.data);
             
             // A API retorna os dados na propriedade "loja"
             let lojas: Loja[] = [];

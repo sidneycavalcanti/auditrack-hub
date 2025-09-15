@@ -107,8 +107,9 @@ export interface Venda {
 
 export interface MotivoPerda {
     id: number;
-    descricao: string;
-    ativo?: boolean;
+    name: string;
+    situacao?: boolean;
+    obs?: string;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -129,8 +130,8 @@ export interface Perda {
 
 export interface MotivoDepausa {
     id: number;
-    descricao: string;
-    ativo?: boolean;
+    name: string;
+    situacao?: boolean;
     createdAt?: string;
     updatedAt?: string;
 }

@@ -13,6 +13,7 @@ import {
     ClipboardCheck,
     CreditCard,
     FileText,
+    AlertCircle,
     Settings,
     LogOut,
     Menu,
@@ -35,13 +36,15 @@ type NavItem = {
 const navigation: NavItem[] = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
     { name: "Lojas", href: "/lojas", icon: Store },
-    { name: "Agendamentos", href: "/agendamentos", icon: Calendar },
+    // { name: "Agendamentos", href: "/agendamentos", icon: Calendar },
     { name: "Usuários", href: "/usuarios", icon: Users },
     { name: "Categorias", href: "/categorias", icon: Tag },
     { name: "Auditorias", href: "/auditorias", icon: ClipboardCheck },
     { name: "Formas de Pagamento", href: "/formas-pagamento", icon: CreditCard },
     { name: "Avaliação Operacional", href: "/cad-av-operacional", icon: Settings },
     { name: "Cadastro de Questões", href: "/cad-questoes", icon: FileText },
+    { name: "Motivo de perdas", href: "/motivo-perdas", icon: AlertCircle },
+    { name: "Motivo de pausas", href: "/motivo-pausas", icon: Settings },
     { name: "Relatórios", href: "/relatorios", icon: FileText },
 ];
 
