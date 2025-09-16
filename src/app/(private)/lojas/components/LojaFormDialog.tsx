@@ -1,3 +1,4 @@
+// src/app/(private)/lojas/components/LojaFormDialog.tsx
 "use client";
 
 import React, { useEffect } from "react";

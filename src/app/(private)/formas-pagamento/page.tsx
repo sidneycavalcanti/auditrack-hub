@@ -116,7 +116,7 @@ export default function FormasPagamentoPage() {
                         Gerencie as formas de pagamento do sistema
                     </p>
                 </div>
-                <Button variant="premium" size="lg" onClick={handleCreate}>
+                <Button className="cursor-pointer" variant="premium" size="lg" onClick={handleCreate}>
                     <Plus className="mr-2 h-4 w-4" />
                     Nova Forma de Pagamento
                 </Button>
@@ -138,8 +138,8 @@ export default function FormasPagamentoPage() {
                     </div>
                 </CardContent>
             </Card>
-                
-            {formasPagamento.length === 0 ? (
+
+            {formasPagamento.length === 0 && !isLoading ? (
                 <EmptyState
                     title="Nenhuma forma de pagamento encontrada"
                     description={
@@ -150,64 +150,61 @@ export default function FormasPagamentoPage() {
                     action={{ label: "Nova Forma de Pagamento", onClick: handleCreate }}
                 />
             ) : (
-                <Card className="bg-gradient-card shadow-card">
-                    <CardHeader>
-                        <CardTitle>Forma de pagamentos Cadastradas</CardTitle>
-                        <CardDescription>
-                            {formasPagamento.length} forma de pagamento
-                            {formasPagamento.length !== 1 ? "s" : ""} encontrada
-                            {formasPagamento.length !== 1 ? "s" : ""}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Nome</TableHead>
-                                    <TableHead>Situação</TableHead>
-                                    <TableHead>Data de Criação</TableHead>
-                                    <TableHead className="text-right">Ações</TableHead>
+                <div className="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Nome</TableHead>
+                                <TableHead>Situação</TableHead>
+                                <TableHead>Data de Criação</TableHead>
+                                <TableHead className="text-right">Ações</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {formasPagamento.map((fp) => (
+                                <TableRow key={fp.id}>
+                                    <TableCell className="font-medium">{fp.name}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={fp.situacao ? "default" : "secondary"}
+                                            className={
+                                                fp.situacao
+                                                    ? "bg-success/10 text-success hover:bg-success/20"
+                                                    : ""
+                                            }
+                                        >
+                                            {fp.situacao ? "Ativa" : "Inativa"}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>{formatDate(fp.createdAt)}</TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex justify-end gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="cursor-pointer"
+                                                onClick={() => handleEdit(fp)}
+                                                aria-label={`Editar ${fp.name}`}
+                                                title="Editar"
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleDeleteClick(fp)}
+                                                aria-label={`Excluir ${fp.name}`}
+                                                title="Excluir"
+                                                className="border-destructive text-destructive hover:bg-destructive-light hover:text-destructive-glow cursor-pointer"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {formasPagamento.map((fp) => (
-                                    <TableRow key={fp.id}>
-                                        <TableCell className="font-medium">{fp.name}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={fp.situacao ? "default" : "secondary"}>
-                                                {fp.situacao ? "Ativa" : "Inativa"}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>{formatDate(fp.createdAt)}</TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleEdit(fp)}
-                                                    aria-label={`Editar ${fp.name}`}
-                                                    title="Editar"
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleDeleteClick(fp)}
-                                                    aria-label={`Excluir ${fp.name}`}
-                                                    title="Excluir"
-                                                    className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
             )}
 
             {/* Dialog de criação/edição */}
@@ -228,12 +225,17 @@ export default function FormasPagamentoPage() {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleDeleteConfirm}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                            Excluir
+                        <AlertDialogCancel className="cursor-pointer">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction className="shadow-none" asChild>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleDeleteConfirm}
+                                className="bg-background border-destructive text-destructive hover:bg-destructive-light hover:text-destructive-glow cursor-pointer"
+                                title="Excluir"
+                            >
+                                Excluir
+                            </Button>
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

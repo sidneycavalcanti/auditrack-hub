@@ -1,3 +1,4 @@
+// src/app/(private)/auditorias/components/AuditoriaFormDialog.tsx
 "use client";
 
 import React, { useEffect } from "react";
@@ -7,13 +8,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { useAuditorias, useCreateAuditoria, useUpdateAuditoria } from "../hooks/useAuditorias";
+import { useCreateAuditoria, useUpdateAuditoria } from "../hooks/useAuditorias";
 import { useLojas } from "../../lojas/hooks/useLojas";
 import { useUsuarios } from "../../usuarios/hooks/useUsuarios";
-import { Auditoria, Loja, User } from "@/types";
+import type { Auditoria, Loja, User } from "@/types";
 
 interface AuditoriaFormDialogProps {
     open: boolean;
@@ -27,36 +26,47 @@ const AuditoriaFormDialog: React.FC<AuditoriaFormDialogProps> = ({
     initialData,
 }) => {
     const isEdit = !!initialData?.id;
+
     const [form, setForm] = React.useState<Partial<Auditoria>>({
         lojaId: undefined,
         usuarioId: undefined,
-        data: '',
-        horaInicial: '',
-        horaFinal: '',
+        data: "",
+        horaInicial: "",
+        horaFinal: "",
     });
 
+    // Carregamentos
     const { data: lojasResp } = useLojas({ limit: 100 });
     const { data: usuariosResp } = useUsuarios({ limit: 100 });
 
-    const lojas = (lojasResp as any)?.data as Loja[] || [];
-    const usuarios = (usuariosResp as any)?.users as User[] || [];
+    const lojas: Loja[] =
+        ((lojasResp as any)?.data as Loja[]) ??
+        ((lojasResp as any)?.lojas as Loja[]) ??
+        [];
+
+    const lojaLabel = (l: any) => l?.descricao ?? l?.name ?? `Loja #${l?.id}`;
+
+    // 🔧 FIX: ler a lista de usuários a partir de `data` (com fallback para `users`)
+    const usuarios: User[] =
+        ((usuariosResp as any)?.data as User[]) ??
+        ((usuariosResp as any)?.users as User[]) ??
+        [];
 
     const { mutate: createAuditoria, isPending: creating } = useCreateAuditoria();
     const { mutate: updateAuditoria, isPending: updating } = useUpdateAuditoria();
 
     useEffect(() => {
-        if (open) {
-            if (initialData) {
-                setForm({
-                    lojaId: initialData.lojaId,
-                    usuarioId: initialData.usuarioId,
-                    data: initialData.data?.slice(0, 10),
-                    horaInicial: initialData.horaInicial || '',
-                    horaFinal: initialData.horaFinal || '',
-                });
-            } else {
-                setForm({ lojaId: undefined, usuarioId: undefined, data: '', horaInicial: '', horaFinal: '' });
-            }
+        if (!open) return;
+        if (initialData) {
+            setForm({
+                lojaId: initialData.lojaId,
+                usuarioId: initialData.usuarioId,
+                data: initialData.data?.slice(0, 10),
+                horaInicial: initialData.horaInicial || "",
+                horaFinal: initialData.horaFinal || "",
+            });
+        } else {
+            setForm({ lojaId: undefined, usuarioId: undefined, data: "", horaInicial: "", horaFinal: "" });
         }
     }, [open, initialData]);
 
@@ -72,10 +82,7 @@ const AuditoriaFormDialog: React.FC<AuditoriaFormDialogProps> = ({
         };
 
         if (isEdit && initialData) {
-            updateAuditoria(
-                { id: initialData.id, data: payload },
-                { onSuccess: () => onOpenChange(false) }
-            );
+            updateAuditoria({ id: initialData.id, data: payload }, { onSuccess: () => onOpenChange(false) });
         } else {
             createAuditoria(payload, { onSuccess: () => onOpenChange(false) });
         }
@@ -85,14 +92,14 @@ const AuditoriaFormDialog: React.FC<AuditoriaFormDialogProps> = ({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{isEdit ? 'Editar Auditoria' : 'Nova Auditoria'}</DialogTitle>
+                    <DialogTitle>{isEdit ? "Editar Auditoria" : "Nova Auditoria"}</DialogTitle>
                 </DialogHeader>
 
                 <div className="space-y-4">
                     <div className="grid gap-2">
                         <Label>Loja</Label>
                         <Select
-                            value={form.lojaId ? String(form.lojaId) : ''}
+                            value={form.lojaId ? String(form.lojaId) : ""}
                             onValueChange={(v) => setForm((s) => ({ ...s, lojaId: Number(v) }))}
                         >
                             <SelectTrigger>
@@ -100,7 +107,9 @@ const AuditoriaFormDialog: React.FC<AuditoriaFormDialogProps> = ({
                             </SelectTrigger>
                             <SelectContent>
                                 {lojas.map((l) => (
-                                    <SelectItem key={l.id} value={String(l.id)}>{l.descricao}</SelectItem>
+                                    <SelectItem key={l.id} value={String(l.id)}>
+                                        {lojaLabel(l)}
+                                    </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -109,7 +118,7 @@ const AuditoriaFormDialog: React.FC<AuditoriaFormDialogProps> = ({
                     <div className="grid gap-2">
                         <Label>Auditor</Label>
                         <Select
-                            value={form.usuarioId ? String(form.usuarioId) : ''}
+                            value={form.usuarioId ? String(form.usuarioId) : ""}
                             onValueChange={(v) => setForm((s) => ({ ...s, usuarioId: Number(v) }))}
                         >
                             <SelectTrigger>
@@ -117,7 +126,9 @@ const AuditoriaFormDialog: React.FC<AuditoriaFormDialogProps> = ({
                             </SelectTrigger>
                             <SelectContent>
                                 {usuarios.map((u) => (
-                                    <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>
+                                    <SelectItem key={u.id} value={String(u.id)}>
+                                        {u.name}
+                                    </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -125,24 +136,40 @@ const AuditoriaFormDialog: React.FC<AuditoriaFormDialogProps> = ({
 
                     <div className="grid gap-2">
                         <Label>Data</Label>
-                        <Input type="date" value={form.data || ''} onChange={(e) => setForm((s) => ({ ...s, data: e.target.value }))} />
+                        <Input
+                            type="date"
+                            value={form.data || ""}
+                            onChange={(e) => setForm((s) => ({ ...s, data: e.target.value }))}
+                        />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div className="grid gap-2">
                             <Label>Hora Inicial</Label>
-                            <Input type="time" value={form.horaInicial || ''} onChange={(e) => setForm((s) => ({ ...s, horaInicial: e.target.value }))} />
+                            <Input
+                                type="time"
+                                value={form.horaInicial || ""}
+                                onChange={(e) => setForm((s) => ({ ...s, horaInicial: e.target.value }))}
+                            />
                         </div>
                         <div className="grid gap-2">
                             <Label>Hora Final</Label>
-                            <Input type="time" value={form.horaFinal || ''} onChange={(e) => setForm((s) => ({ ...s, horaFinal: e.target.value }))} />
+                            <Input
+                                type="time"
+                                value={form.horaFinal || ""}
+                                onChange={(e) => setForm((s) => ({ ...s, horaFinal: e.target.value }))}
+                            />
                         </div>
                     </div>
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSubmit} disabled={creating || updating}>{isEdit ? 'Salvar alterações' : 'Criar auditoria'}</Button>
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className="cursor-pointer">
+                        Cancelar
+                    </Button>
+                    <Button onClick={handleSubmit} disabled={creating || updating} className="cursor-pointer">
+                        {isEdit ? "Salvar alterações" : "Criar auditoria"}
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

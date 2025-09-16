@@ -1,8 +1,8 @@
 // src/app/(private)/auditorias/page.tsx
 "use client";
 
-import React from "react";
-import { ClipboardList, Plus, Search, Edit, Trash2 } from "lucide-react";
+import React, { useState } from "react";
+import { ClipboardList, Plus, Search, Edit, Trash2, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +14,22 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import EmptyState from "@/components/common/EmptyState";
 import AuditoriaFormDialog from "../auditorias/components/AuditoriaFormDialog";
 
 import { format } from "date-fns";
-import type { Auditoria } from "@/types";
+import type { Auditoria, PaginatedResponse } from "@/types";
 
 // Se seus hooks estão sob /app/(private)/auditorias/hooks (como no seu exemplo de erro do toast)
 import {
@@ -27,32 +38,64 @@ import {
 } from "@/app/(private)/auditorias/hooks/useAuditorias";
 
 export default function AuditoriasPage() {
-    const [search, setSearch] = React.useState("");
-    const [page, setPage] = React.useState(1);
-    const [limit, setLimit] = React.useState(10);
-    const [open, setOpen] = React.useState(false);
-    const [selected, setSelected] = React.useState<Auditoria | null>(null);
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(10);
+    const [open, setOpen] = useState(false);
+    const [selectedAuditoria, setSelectedAuditoria] = useState<Auditoria | null>(null);
+
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [auditoriaToDelete, setAuditoriaToDelete] = useState<Auditoria | null>(
+        null
+    );
 
     const { data: resp, isLoading, isFetching } = useAuditorias({
         q: search,
         page,
         limit,
     });
-    const { mutate: deleteAuditoria } = useDeleteAuditoria();
 
-    const items = resp?.data || [];
-    const total = resp?.total || 0;
-    const totalPages = resp?.totalPages || 1;
+    const deleteMutation = useDeleteAuditoria();
 
-    const handleEdit = (a: Auditoria) => {
-        setSelected(a);
+    const paginatedData = resp as PaginatedResponse<Auditoria> | undefined;
+    const auditorias = paginatedData?.data ?? [];
+    const total = paginatedData?.total ?? 0;
+    const totalPages = paginatedData?.totalPages ?? 0;
+
+    const handleEdit = (auditoria: Auditoria) => {
+        setSelectedAuditoria(auditoria);
         setOpen(true);
     };
 
-    const handleDelete = (id: number) => {
-        if (typeof window !== "undefined" && window.confirm("Deseja excluir esta auditoria?")) {
-            deleteAuditoria(id);
+    const handleCreate = () => {
+        setSelectedAuditoria(null);
+        setOpen(true);
+    };
+
+    const handleDeleteClick = (auditoria: Auditoria) => {
+        setAuditoriaToDelete(auditoria);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (auditoriaToDelete) {
+            await deleteMutation.mutateAsync(auditoriaToDelete.id);
+            setDeleteDialogOpen(false);
+            setAuditoriaToDelete(null);
         }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <LoadingSpinner size="lg" text="Carregando auditorias..." />
+            </div>
+        );
+    }
+
+    const clearFilters = () => {
+        setSearch("");
+        setPage(1);
     };
 
     return (
@@ -69,10 +112,8 @@ export default function AuditoriasPage() {
                     </p>
                 </div>
                 <Button
-                    onClick={() => {
-                        setSelected(null);
-                        setOpen(true);
-                    }}
+                    onClick={handleCreate}
+                    className="cursor-pointer"
                 >
                     <Plus className="h-4 w-4 mr-2" />
                     Nova Auditoria
@@ -82,7 +123,7 @@ export default function AuditoriasPage() {
             {/* Filtros */}
             <Card className="bg-gradient-card shadow-card">
                 <CardContent className="px-6 py-0">
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-4 sm:flex-row">
                         <div className="flex-1 relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -95,14 +136,36 @@ export default function AuditoriasPage() {
                                 className="pl-10"
                             />
                         </div>
+
+                        {search && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={clearFilters}
+                                className="flex items-center gap-2 cursor-pointer"
+                            >
+                                <X className="h-4 w-4" />
+                                Limpar filtro
+                            </Button>
+                        )}
                     </div>
                 </CardContent>
             </Card>
 
-            {isLoading && !isFetching ? (
-                <div className="flex items-center justify-center py-16">
-                    <LoadingSpinner size="lg" text="Carregando auditorias..." />
-                </div>
+            {auditorias.length === 0 && !isLoading ? (
+                <EmptyState
+                    icon="clipboardlist"
+                    title="Nenhum auditoria encontrado"
+                    description={
+                        search
+                            ? "Nenhuma auditoria encontrado com os critérios informados."
+                            : "Comece criando o primeiro usuário do sistema."
+                    }
+                    action={{
+                        label: "Nova Auditoria",
+                        onClick: handleCreate,
+                    }}
+                />
             ) : (
                 <div className="space-y-2">
                     {/* Tabela */}
@@ -120,39 +183,39 @@ export default function AuditoriasPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {items.map((a) => (
-                                    <tr key={a.id} className="border-t">
+                                {auditorias.map((auditoria) => (
+                                    <tr key={auditoria.id} className="border-t">
                                         <td className="px-4 py-2">
-                                            {a.loja?.name ? `${a.lojaId} - ${a.loja.name}` : a.lojaId}
+                                            {auditoria.loja?.name ? `${auditoria.lojaId} - ${auditoria.loja.name}` : auditoria.lojaId}
                                         </td>
                                         <td className="px-4 py-2">
-                                            {a.data ? format(new Date(a.data), "dd/MM/yyyy") : "-"}
+                                            {auditoria.data ? format(new Date(auditoria.data), "dd/MM/yyyy") : "-"}
                                         </td>
-                                        <td className="px-4 py-2">{a.horaInicial || "-"}</td>
-                                        <td className="px-4 py-2">{a.horaFinal || "-"}</td>
-                                        <td className="px-4 py-2">{a.usuario?.name || a.usuarioId}</td>
-                                        <td className="px-4 py-2">{a.criador?.name || a.criadorId || "-"}</td>
+                                        <td className="px-4 py-2">{auditoria.horaInicial || "-"}</td>
+                                        <td className="px-4 py-2">{auditoria.horaFinal || "-"}</td>
+                                        <td className="px-4 py-2">{auditoria.usuario?.name || auditoria.usuarioId}</td>
+                                        <td className="px-4 py-2">{auditoria.criador?.name || auditoria.criadorId || "-"}</td>
                                         <td className="px-4 py-2 text-right">
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                className="mr-2"
-                                                onClick={() => handleEdit(a)}
+                                                className="mr-2 cursor-pointer"
+                                                onClick={() => handleEdit(auditoria)}
                                             >
                                                 <Edit className="h-4 w-4 mr-1" /> Editar
                                             </Button>
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                                onClick={() => handleDelete(a.id)}
+                                                className="border-destructive text-destructive hover:bg-destructive-light hover:text-destructive-glow cursor-pointer"
+                                                onClick={() => handleDeleteClick(auditoria)}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </td>
                                     </tr>
                                 ))}
-                                {items.length === 0 && (
+                                {auditorias.length === 0 && (
                                     <tr>
                                         <td
                                             colSpan={7}
@@ -171,7 +234,7 @@ export default function AuditoriasPage() {
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
                             <div className="text-sm text-muted-foreground">
                                 Mostrando {(page - 1) * limit + 1} a{" "}
-                                {Math.min(page * limit, total)} de {total} resultados
+                                {Math.min(page * limit, total)} de {total} auditorias
                             </div>
                             <Pagination>
                                 <PaginationContent>
@@ -225,10 +288,37 @@ export default function AuditoriasPage() {
                 open={open}
                 onOpenChange={(o) => {
                     setOpen(o);
-                    if (!o) setSelected(null);
+                    if (!o) setSelectedAuditoria(null);
                 }}
-                initialData={selected}
+                initialData={selectedAuditoria}
             />
+
+            {/* Confirmação de exclusão */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Tem certeza de que deseja excluir a auditoria da loja "
+                            {auditoriaToDelete?.loja?.name}"? Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="cursor-pointer">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction className="shadow-none" asChild>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleDeleteConfirm}
+                                className="bg-background border-destructive text-destructive hover:bg-destructive-light hover:text-destructive-glow cursor-pointer"
+                                title="Excluir"
+                            >
+                                Excluir
+                            </Button>
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -1,4 +1,4 @@
-// src/hooks/useLojas.ts
+// src/app/(private)/lojas/hooks/useLojas.ts
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,65 +9,94 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const QUERY_KEY = 'lojas';
 
-export const useLojas = (filters?: FilterOptions) => {
+export const useLojas = (filters: FilterOptions = {}) => {
     const { isAuthenticated } = useAuth();
-    
+
+    // normaliza e mapeia nomes de params para o que o backend entende
+    const params: Record<string, any> = {
+        page: filters.page ?? 1,
+        limit: filters.limit ?? 10,
+    };
+
+    const term = (filters.search ?? (filters as any).name ?? (filters as any).q)?.toString().trim();
+    if (term) {
+        // 1) principal: a maioria dos seus endpoints filtra por "name"
+        params.name = term;
+        // 2) compat extra (caso este endpoint use q)
+        params.q = term;
+        // se seu backend aceitar "search", deixar também não machuca:
+        params.search = term;
+    }
+
     return useQuery({
-        queryKey: [QUERY_KEY, filters],
+        queryKey: [QUERY_KEY, params],            // usa os params normalizados na key
         queryFn: async () => {
-            const response = await lojaAPI.getAll(filters);
-            
-            // A API retorna os dados na propriedade "loja"
-            let lojas: Loja[] = [];
+            const response = await lojaAPI.getAll(params);
 
-            if (response.data && Array.isArray((response.data as any).loja)) {
-                // Mapear os campos da API para o formato esperado pelo frontend
-                lojas = (response.data as any).loja.map((item: any) => ({
-                    id: item.id,
-                    codigo: String(item.codigo ?? ''),
-                    descricao: item.name,        // API usa "name", frontend espera "descricao"
-                    luc: item.luc,
-                    piso: item.piso,
-                    ativa: item.situacao,        // API usa "situacao", frontend espera "ativa"
-                    createdAt: item.createdAt,
-                    updatedAt: item.updatedAt,
-                }));
-            } else if (Array.isArray(response.data)) {
-                // Caso extremo: API retorne array direto
-                lojas = (response.data as any[]).map((item: any) => ({
-                    id: item.id,
-                    codigo: String(item.codigo ?? ''),
-                    descricao: item.name ?? item.descricao,
-                    luc: item.luc,
-                    piso: item.piso,
-                    ativa: item.situacao ?? item.ativa,
-                    createdAt: item.createdAt,
-                    updatedAt: item.updatedAt,
-                }));
-            }
+            // ---- mapeamento do payload ----
+            let loja: Loja[] = [];
 
-            // Calcular paginação com suportes a chaves diferentes
-            const total = (response.data as any).total ?? (response.data as any).totalItems ?? lojas.length;
-            const totalPages = (response.data as any).totalPages ?? (total && (filters?.limit ? Math.ceil(total / (filters.limit || 10)) : 1)) ?? 1;
-            const page = (response.data as any).page ?? (response.data as any).currentPage ?? filters?.page ?? 1;
-            const limit = (response.data as any).limit ?? filters?.limit ?? lojas.length;
+            const data: any = response.data;
 
-            return { data: lojas, total, totalPages, page, limit };
+            // Ex.: { loja: [...] } (pluralizar aqui se preciso)
+            const arr =
+                Array.isArray(data?.loja)
+                    ? data.loja
+                    : Array.isArray(data?.lojas)
+                        ? data.lojas
+                        : Array.isArray(data)
+                            ? data
+                            : [];
+
+            loja = arr.map((item: any) => ({
+                id: item.id,
+                codigo: String(item.codigo ?? ""),
+                // backend manda "name"; seu front usa "descricao"
+                descricao: item.name ?? item.descricao ?? "",
+                luc: item.luc,
+                piso: item.piso,
+                ativa: item.situacao ?? item.ativa,
+                createdAt: item.createdAt,
+                updatedAt: item.updatedAt,
+            }));
+
+            const total =
+                data?.total ??
+                data?.totalItems ??
+                data?.count ??
+                loja.length;
+
+            const page =
+                data?.page ??
+                data?.currentPage ??
+                params.page ??
+                1;
+
+            const limit =
+                data?.limit ??
+                params.limit ??
+                loja.length;
+
+            const totalPages =
+                data?.totalPages ??
+                (limit ? Math.max(1, Math.ceil(total / limit)) : 1);
+
+            return { data: loja, total, totalPages, page, limit };
         },
-        enabled: isAuthenticated, // Só executa se estiver autenticado
-        staleTime: 5 * 60 * 1000, // 5 minutos
-        placeholderData: (previousData) => previousData, // Mantém dados anteriores durante carregamento de nova página
+        enabled: isAuthenticated,
+        staleTime: 5 * 60 * 1000,
+        placeholderData: (d) => d,               // mantém os dados antigos
     });
 };
 
 export const useLoja = (id: number) => {
     const { isAuthenticated } = useAuth();
-    
+
     return useQuery({
         queryKey: [QUERY_KEY, id],
         queryFn: async () => {
             const response = await lojaAPI.getById(id);
-            
+
             // Mapear os campos da API para o formato esperado
             if (response.data) {
                 return {
@@ -81,7 +110,7 @@ export const useLoja = (id: number) => {
                     updatedAt: response.data.updatedAt
                 };
             }
-            
+
             return response.data;
         },
         enabled: !!id && isAuthenticated, // Só executa se tiver ID e estiver autenticado

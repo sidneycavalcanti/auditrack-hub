@@ -22,8 +22,6 @@ const CategoriaFormDialog: React.FC<Props> = ({ open, onOpenChange, initialData 
 
     const [form, setForm] = React.useState({
         name: "",
-        descricao: "",
-        ativa: true,
     });
 
     const { mutate: createItem, isPending: creating } = useCreateCategoria();
@@ -34,11 +32,9 @@ const CategoriaFormDialog: React.FC<Props> = ({ open, onOpenChange, initialData 
             if (initialData) {
                 setForm({
                     name: initialData.name ?? "",
-                    descricao: (initialData as any).descricao ?? "",
-                    ativa: (initialData as any).ativa ?? true,
                 });
             } else {
-                setForm({ name: "", descricao: "", ativa: true });
+                setForm({ name: "" });
             }
         }
     }, [open, initialData]);
@@ -70,31 +66,11 @@ const CategoriaFormDialog: React.FC<Props> = ({ open, onOpenChange, initialData 
                             placeholder="Ex.: Operacional"
                         />
                     </div>
-
-                    <div className="grid gap-2">
-                        <Label>Descrição</Label>
-                        <Input
-                            value={form.descricao}
-                            onChange={(e) => setForm((s) => ({ ...s, descricao: e.target.value }))}
-                            placeholder="Descrição opcional da categoria"
-                        />
-                    </div>
-
-                    <div className="flex items-center justify-between rounded-md border p-3">
-                        <div>
-                            <Label className="text-sm">Ativa</Label>
-                            <p className="text-xs text-muted-foreground">Disponibilizar esta categoria</p>
-                        </div>
-                        <Switch
-                            checked={form.ativa}
-                            onCheckedChange={(v) => setForm((s) => ({ ...s, ativa: v }))}
-                        />
-                    </div>
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSubmit} disabled={creating || updating}>
+                    <Button className="cursor-pointer" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button className="cursor-pointer" onClick={handleSubmit} disabled={creating || updating}>
                         {isEdit ? "Salvar alterações" : "Criar"}
                     </Button>
                 </DialogFooter>

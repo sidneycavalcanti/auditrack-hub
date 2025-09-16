@@ -1,12 +1,12 @@
 "use client";
 
 import React from 'react';
-import { FileX, Package, Users, Calendar, AlertCircle } from 'lucide-react';
+import { FileX, Package, Users, Calendar, AlertCircle, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from "@/lib/utils";
 
 interface EmptyStateProps {
-    icon?: 'file' | 'package' | 'users' | 'calendar' | 'alert';
+    icon?: 'file' | 'package' | 'users' | 'calendar' | 'alert' | 'clipboardlist';
     title: string;
     description?: string;
     action?: {
@@ -29,6 +29,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
         users: Users,
         calendar: Calendar,
         alert: AlertCircle,
+        clipboardlist: ClipboardList
     };
 
     const IconComponent = icons[icon];
@@ -51,9 +52,9 @@ const EmptyState: React.FC<EmptyStateProps> = ({
                     {description}
                 </p>
             )}
-            
+
             {action && (
-                <Button 
+                <Button
                     onClick={action.onClick}
                     variant="premium"
                     size="lg"

@@ -10,6 +10,7 @@ import {
     Trash2,
     Shield,
     User as UserIcon,
+    X,
 } from "lucide-react";
 import {
     Pagination,
@@ -60,7 +61,7 @@ export default function UsuariosPage() {
     const [selectedUsuario, setSelectedUsuario] = useState<User | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [page, setPage] = useState(1);
-    const [limit] = useState(10);
+    const [limit, setLimitSize] = useState(10);
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [usuarioToDelete, setUsuarioToDelete] = useState<User | null>(
@@ -68,7 +69,7 @@ export default function UsuariosPage() {
     );
 
 
-    const { data: usuariosResp, isLoading } = useUsuarios({
+    const { data: usuariosResp, isLoading, error, isFetching } = useUsuarios({
         name: searchTerm || undefined,
         page: page,
         limit: limit
@@ -133,11 +134,17 @@ export default function UsuariosPage() {
 
     if (isLoading) {
         return (
-            <div className="flex h-64 items-center justify-center">
+            <div className="flex h-screen items-center justify-center">
                 <LoadingSpinner size="lg" text="Carregando usuários..." />
             </div>
         );
     }
+
+    const clearFilters = () => {
+        setSearchTerm("");
+        setPage(1);
+        setLimitSize(10)
+    };
 
     return (
         <div className="space-y-3">
@@ -170,12 +177,23 @@ export default function UsuariosPage() {
                                 className="pl-10"
                             />
                         </div>
+                        {searchTerm && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={clearFilters}
+                                className="flex items-center gap-2 cursor-pointer"
+                            >
+                                <X className="h-4 w-4" />
+                                Limpar filtro
+                            </Button>
+                        )}
                     </div>
                 </CardContent>
             </Card>
 
             {/* Lista / Empty */}
-            {usuarios.length === 0 ? (
+            {usuarios.length === 0 && !isLoading ? (
                 <EmptyState
                     icon="users"
                     title="Nenhum usuário encontrado"

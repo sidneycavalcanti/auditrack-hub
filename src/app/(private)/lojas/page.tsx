@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Store, Plus, Search, Edit, Trash2, MapPin } from "lucide-react";
+import { Store, Plus, Search, Edit, Trash2, MapPin, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -75,8 +75,8 @@ export default function LojasPage() {
         setDialogOpen(true);
     };
 
-    const handleDeleteClick = (usuario: Loja) => {
-        setLojaToDelete(usuario);
+    const handleDeleteClick = (loja: Loja) => {
+        setLojaToDelete(loja);
         setDeleteDialogOpen(true);
     };
 
@@ -100,13 +100,19 @@ export default function LojasPage() {
         setCurrentPage(1);
     };
 
-    if (isLoading && !isFetching) {
+    if (isLoading) {
         return (
-            <div className="flex h-64 items-center justify-center">
+            <div className="flex h-screen items-center justify-center">
                 <LoadingSpinner size="lg" text="Carregando lojas..." />
             </div>
         );
     }
+
+    const clearFilters = () => {
+        setSearchTerm("");
+        setCurrentPage(1);
+        setPageSize(9)
+    };
 
     return (
         <div className="space-y-3">
@@ -139,13 +145,16 @@ export default function LojasPage() {
             {/* Filtros */}
             <Card className="bg-gradient-card shadow-card">
                 <CardContent className="px-6 py-0">
-                    <div className="flex gap-4">
+                    <div className="flex flex-col gap-4 sm:flex-row">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
                             <Input
                                 placeholder="Buscar por código ou descrição..."
                                 value={searchTerm}
-                                onChange={(e) => handleSearchChange(e.target.value)}
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    setCurrentPage(1);
+                                }}
                                 className="pl-10"
                             />
                         </div>
@@ -161,16 +170,28 @@ export default function LojasPage() {
                                 <SelectItem value="36">36 por página</SelectItem>
                             </SelectContent>
                         </Select>
+
+                        {searchTerm && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={clearFilters}
+                                className="flex items-center gap-2 cursor-pointer"
+                            >
+                                <X className="h-4 w-4" />
+                                Limpar filtro
+                            </Button>
+                        )}
                     </div>
                 </CardContent>
             </Card>
 
             {/* Loading (refetch) */}
-            {isFetching && (
+            {/* {isFetching && (
                 <div className="flex items-center justify-center py-8">
                     <LoadingSpinner size="sm" text="Atualizando..." />
                 </div>
-            )}
+            )} */}
 
             {/* Lista */}
             {lojas.length === 0 && !isLoading ? (

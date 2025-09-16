@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Tag, Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Tag, Plus, Search, Edit, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +12,14 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination";
 import {
     Table,
     TableBody,
@@ -45,12 +53,33 @@ export default function CategoriasPage() {
         null
     );
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [page, setPage] = useState(1);
+    const [limit] = useState(10);
 
-    const { data: categoriasResp, isLoading } = useCategorias({
-        name: searchTerm,
-        limit: 50,
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [categoriaToDelete, setCategoriaToDelete] = useState<Categoria | null>(
+        null
+    );
+
+    const { data: categoriasResp, isLoading, isFetched } = useCategorias({
+        name: searchTerm || undefined,
+        page: page,
+        limit: limit,
     });
-    const { mutate: deleteCategoria } = useDeleteCategoria();
+    const deleteMutation = useDeleteCategoria();
+
+    const categorias = categoriasResp?.data ?? [];
+    const paginatedData = {
+        total: categoriasResp?.total ?? 0,
+        totalPages: categoriasResp?.totalPages ?? 1,
+        currentPage: categoriasResp?.page ?? 1,
+        limit: categoriasResp?.limit ?? 10
+    }
+
+    const handleSearch = (term: string) => {
+        setSearchTerm(term);
+        setPage(1);
+    };
 
     // a API retorna { cats: Categoria[] }
     const categoriasArray: Categoria[] = (categoriasResp as any)?.cats ?? [];
@@ -65,8 +94,17 @@ export default function CategoriasPage() {
         setDialogOpen(true);
     };
 
-    const handleDelete = (id: number) => {
-        deleteCategoria(id);
+    const handleDeleteClick = (categoria: Categoria) => {
+        setCategoriaToDelete(categoria);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (categoriaToDelete) {
+            await deleteMutation.mutateAsync(categoriaToDelete.id);
+            setDeleteDialogOpen(false);
+            setCategoriaToDelete(null);
+        }
     };
 
     const formatDate = (dateString?: string) => {
@@ -83,11 +121,16 @@ export default function CategoriasPage() {
 
     if (isLoading) {
         return (
-            <div className="flex h-64 items-center justify-center">
+            <div className="flex h-screen items-center justify-center">
                 <LoadingSpinner size="lg" text="Carregando categorias..." />
             </div>
         );
     }
+
+    const clearFilters = () => {
+        setSearchTerm("");
+        setPage(1);
+    };
 
     return (
         <div className="space-y-3">
@@ -103,7 +146,7 @@ export default function CategoriasPage() {
                     </p>
                 </div>
 
-                <Button variant="premium" size="lg" onClick={handleCreate}>
+                <Button className="cursor-pointer" variant="premium" size="lg" onClick={handleCreate}>
                     <Plus className="mr-2 h-4 w-4" />
                     Nova Categoria
                 </Button>
@@ -112,7 +155,7 @@ export default function CategoriasPage() {
             {/* Busca */}
             <Card className="bg-gradient-card shadow-card">
                 <CardContent className="px-6 py-0">
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-4 sm:flex-row">
                         <div className="flex-1 relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -122,47 +165,50 @@ export default function CategoriasPage() {
                                 className="pl-9"
                             />
                         </div>
+
+                        {searchTerm && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={clearFilters}
+                                className="flex items-center gap-2 cursor-pointer"
+                            >
+                                <X className="h-4 w-4" />
+                                Limpar filtro
+                            </Button>
+                        )}
                     </div>
                 </CardContent>
             </Card>
 
             {/* Lista / Empty */}
-            {categoriasArray.length === 0 ? (
+            {categorias.length === 0 && !isLoading ? (
                 <EmptyState
-                icon="package"
-                title="Nenhuma categoria encontrada"
-                description={
-                    searchTerm
-                    ? "Nenhuma categoria encontrada com os critérios informados."
-                    : "Comece criando a primeira categoria do sistema."
-                }
-                action={{
-                    label: "Nova Categoria",
-                    onClick: handleCreate,
-                }}
+                    icon="package"
+                    title="Nenhuma categoria encontrada"
+                    description={
+                        searchTerm
+                            ? "Nenhuma categoria encontrada com os critérios informados."
+                            : "Comece criando a primeira categoria do sistema."
+                    }
+                    action={{
+                        label: "Nova Categoria",
+                        onClick: handleCreate,
+                    }}
                 />
             ) : (
-                <Card className="bg-gradient-card shadow-card">
-                    <CardHeader>
-                        <CardTitle>Categorias Cadastradas</CardTitle>
-                        <CardDescription>
-                            {categoriasArray.length} categoria
-                            {categoriasArray.length !== 1 ? "s" : ""} encontrada
-                            {categoriasArray.length !== 1 ? "s" : ""}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Nome</TableHead>
-                                    <TableHead>Criada em</TableHead>
-                                    <TableHead>Atualizada em</TableHead>
-                                    <TableHead className="text-right">Ações</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {categoriasArray.map((categoria) => (
+                <div className="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="bg-muted/50 text-muted-foreground">
+                                <TableHead>Nome</TableHead>
+                                <TableHead>Criada em</TableHead>
+                                <TableHead className="text-right">Ações</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {categorias.map((categoria: Categoria) => {
+                                return (
                                     <TableRow key={categoria.id}>
                                         <TableCell>
                                             <div className="flex items-center gap-3">
@@ -180,14 +226,12 @@ export default function CategoriasPage() {
                                         <TableCell className="text-muted-foreground">
                                             {formatDate(categoria.createdAt)}
                                         </TableCell>
-                                        <TableCell className="text-muted-foreground">
-                                            {formatDate(categoria.updatedAt)}
-                                        </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex items-center justify-end gap-2">
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
+                                                    className="cursor-pointer"
                                                     onClick={() => handleEdit(categoria)}
                                                     aria-label={`Editar ${categoria.name}`}
                                                     title="Editar"
@@ -195,44 +239,94 @@ export default function CategoriasPage() {
                                                     <Edit className="h-4 w-4" />
                                                 </Button>
 
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button 
-                                                            variant="outline"
-                                                            size="sm" aria-label="Excluir"
-                                                            className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground" 
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                Tem certeza que deseja excluir a categoria "
-                                                                {categoria.name}"? Esta ação não pode ser desfeita e pode
-                                                                afetar usuários que utilizam esta categoria.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                            <AlertDialogAction
-                                                                onClick={() => handleDelete(categoria.id)}
-                                                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                                            >
-                                                                Excluir
-                                                            </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleDeleteClick(categoria)}
+                                                    aria-label={`Excluir ${categoria.name}`}
+                                                    title="Excluir"
+                                                    className="border-destructive text-destructive hover:bg-destructive-light hover:text-destructive-glow cursor-pointer"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+
+
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
+
+            {/* Paginação */}
+            {paginatedData.totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-0">
+                    {/* Contagem */}
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                            {paginatedData.total > 0
+                                ? `Mostrando ${(paginatedData.currentPage - 1) * paginatedData.limit + 1
+                                } a ${Math.min(
+                                    paginatedData.currentPage * paginatedData.limit,
+                                    paginatedData.total
+                                )} de ${paginatedData.total} usuários`
+                                : "Nenhuma questão encontrada"}
+                        </p>
+                    </div>
+                    <Pagination>
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious
+                                    onClick={() =>
+                                        setPage(Math.max(1, paginatedData.currentPage - 1))
+                                    }
+                                    className={
+                                        paginatedData.currentPage === 1
+                                            ? "pointer-events-none opacity-50"
+                                            : "cursor-pointer"
+                                    }
+                                />
+                            </PaginationItem>
+
+                            {Array.from({ length: Math.min(5, paginatedData.totalPages) }, (_, i) => {
+                                let pageNum: number;
+                                if (paginatedData.totalPages <= 5) pageNum = i + 1;
+                                else if (paginatedData.currentPage <= 3) pageNum = i + 1;
+                                else if (paginatedData.currentPage >= paginatedData.totalPages - 2)
+                                    pageNum = paginatedData.totalPages - 4 + i;
+                                else pageNum = paginatedData.currentPage - 2 + i;
+
+                                return (
+                                    <PaginationItem key={pageNum}>
+                                        <PaginationLink
+                                            onClick={() => setPage(pageNum)}
+                                            isActive={paginatedData.currentPage === pageNum}
+                                            className="cursor-pointer"
+                                        >
+                                            {pageNum}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                );
+                            })}
+
+                            <PaginationItem>
+                                <PaginationNext
+                                    onClick={() =>
+                                        setPage(Math.min(paginatedData.totalPages, paginatedData.currentPage + 1))
+                                    }
+                                    className={
+                                        paginatedData.currentPage === paginatedData.totalPages
+                                            ? "pointer-events-none opacity-50"
+                                            : "cursor-pointer"
+                                    }
+                                />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                </div>
             )}
 
             <CategoriaFormDialog
@@ -243,6 +337,34 @@ export default function CategoriasPage() {
                 }}
                 initialData={selectedCategoria}
             />
+
+            {/* Confirmação de exclusão */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Tem certeza que deseja excluir a categoria "
+                            {categoriaToDelete?.name}"? Esta ação não pode ser desfeita e pode
+                            afetar usuários que utilizam esta categoria.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="cursor-pointer">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction className="shadow-none" asChild>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleDeleteConfirm}
+                                className="bg-background border-destructive text-destructive hover:bg-destructive-light hover:text-destructive-glow cursor-pointer"
+                                title="Excluir"
+                            >
+                                Excluir
+                            </Button>
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

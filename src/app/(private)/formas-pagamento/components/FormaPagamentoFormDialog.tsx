@@ -64,40 +64,40 @@ export function FormaPagamentoFormDialog({
     // Preenche o form quando abrir/editar; limpa quando fechar
     useEffect(() => {
         if (open) {
-        if (formaPagamento) {
-            form.reset({
-            name: formaPagamento.name,
-            situacao: !!formaPagamento.situacao,
-            });
-        } else {
-            form.reset({ name: "", situacao: true });
-        }
+            if (formaPagamento) {
+                form.reset({
+                    name: formaPagamento.name,
+                    situacao: !!formaPagamento.situacao,
+                });
+            } else {
+                form.reset({ name: "", situacao: true });
+            }
         }
     }, [open, formaPagamento, form]);
 
     const onSubmit = async (data: FormaPagamentoFormData) => {
         setIsSubmitting(true);
         try {
-        if (isEditing) {
-            if (formaPagamento?.id == null) {
-            throw new Error("ID da forma de pagamento ausente.");
+            if (isEditing) {
+                if (formaPagamento?.id == null) {
+                    throw new Error("ID da forma de pagamento ausente.");
+                }
+                await updateMutation.mutateAsync({
+                    id: formaPagamento.id,
+                    data,
+                });
+            } else {
+                await createMutation.mutateAsync({
+                    name: data.name,
+                    situacao: data.situacao,
+                });
             }
-            await updateMutation.mutateAsync({
-            id: formaPagamento.id,
-            data,
-            });
-        } else {
-            await createMutation.mutateAsync({
-            name: data.name,
-            situacao: data.situacao,
-            });
-        }
-        form.reset();
-        onOpenChange(false);
+            form.reset();
+            onOpenChange(false);
         } catch (error) {
-        console.error("Erro ao salvar forma de pagamento:", error);
+            console.error("Erro ao salvar forma de pagamento:", error);
         } finally {
-        setIsSubmitting(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -121,8 +121,8 @@ export function FormaPagamentoFormDialog({
                     </DialogTitle>
                     <DialogDescription>
                         {isEditing
-                        ? "Edite as informações da forma de pagamento."
-                        : "Preencha as informações para criar uma nova forma de pagamento."}
+                            ? "Edite as informações da forma de pagamento."
+                            : "Preencha as informações para criar uma nova forma de pagamento."}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -133,16 +133,16 @@ export function FormaPagamentoFormDialog({
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Nome</FormLabel>
-                                <FormControl>
-                                    <Input
-                                    placeholder="Digite o nome da forma de pagamento"
-                                    {...field}
-                                    autoFocus
-                                    disabled={isSubmitting}
-                                    />
-                                </FormControl>
-                                <FormMessage />
+                                    <FormLabel>Nome</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="Digite o nome da forma de pagamento"
+                                            {...field}
+                                            autoFocus
+                                            disabled={isSubmitting}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
                                 </FormItem>
                             )}
                         />
@@ -152,19 +152,19 @@ export function FormaPagamentoFormDialog({
                             name="situacao"
                             render={({ field }) => (
                                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                <div className="space-y-0.5">
-                                    <FormLabel className="text-base">Situação</FormLabel>
-                                    <div className="text-sm text-muted-foreground">
-                                    Defina se a forma de pagamento está ativa ou inativa
+                                    <div className="space-y-0.5">
+                                        <FormLabel className="text-base">Situação</FormLabel>
+                                        <div className="text-sm text-muted-foreground">
+                                            Defina se a forma de pagamento está ativa ou inativa
+                                        </div>
                                     </div>
-                                </div>
-                                <FormControl>
-                                    <Switch
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                    disabled={isSubmitting}
-                                    />
-                                </FormControl>
+                                    <FormControl>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                            disabled={isSubmitting}
+                                        />
+                                    </FormControl>
                                 </FormItem>
                             )}
                         />
@@ -175,10 +175,11 @@ export function FormaPagamentoFormDialog({
                                 variant="outline"
                                 onClick={handleCancel}
                                 disabled={isSubmitting}
+                                className="cursor-pointer"
                             >
                                 Cancelar
                             </Button>
-                            <Button type="submit" disabled={isSubmitting}>
+                            <Button className="cursor-pointer" type="submit" disabled={isSubmitting}>
                                 {isSubmitting ? "Salvando..." : isEditing ? "Atualizar" : "Criar"}
                             </Button>
                         </DialogFooter>
