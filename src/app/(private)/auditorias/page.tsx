@@ -15,6 +15,14 @@ import {
     PaginationPrevious,
 } from "@/components/ui/pagination";
 import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -57,10 +65,14 @@ export default function AuditoriasPage() {
 
     const deleteMutation = useDeleteAuditoria();
 
-    const paginatedData = resp as PaginatedResponse<Auditoria> | undefined;
-    const auditorias = paginatedData?.data ?? [];
-    const total = paginatedData?.total ?? 0;
-    const totalPages = paginatedData?.totalPages ?? 0;
+    const auditorias = resp?.data ?? [];
+    const paginatedData = {
+        total: resp?.total ?? 0,
+        totalPages: resp?.totalPages ?? 0,
+        currentPage: resp?.page ?? 1,
+        limit: resp?.limit ?? 10
+    }
+
 
     const handleEdit = (auditoria: Auditoria) => {
         setSelectedAuditoria(auditoria);
@@ -87,7 +99,7 @@ export default function AuditoriasPage() {
 
     if (isLoading) {
         return (
-            <div className="flex h-screen items-center justify-center">
+            <div className="flex h-full items-center justify-center">
                 <LoadingSpinner size="lg" text="Carregando auditorias..." />
             </div>
         );
@@ -167,35 +179,34 @@ export default function AuditoriasPage() {
                     }}
                 />
             ) : (
-                <div className="space-y-2">
-                    {/* Tabela */}
-                    <div className="overflow-x-auto rounded-md border">
-                        <table className="w-full text-sm">
-                            <thead className="bg-muted/50 text-muted-foreground">
-                                <tr>
-                                    <th className="px-4 py-2 text-left">Loja</th>
-                                    <th className="px-4 py-2 text-left">Data</th>
-                                    <th className="px-4 py-2 text-left">Hora Inicial</th>
-                                    <th className="px-4 py-2 text-left">Hora Final</th>
-                                    <th className="px-4 py-2 text-left">Auditor</th>
-                                    <th className="px-4 py-2 text-left">Criador</th>
-                                    <th className="px-4 py-2 text-right">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {auditorias.map((auditoria) => (
-                                    <tr key={auditoria.id} className="border-t">
-                                        <td className="px-4 py-2">
+                <div className="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="bg-gradient-card text-muted-foreground">
+                                <TableHead className="rounded-tl-md px-4 py-2 text-left">Loja</TableHead>
+                                <TableHead className="px-4 py-2 text-left">Data</TableHead>
+                                <TableHead className="px-4 py-2 text-left">Hora Inicial</TableHead>
+                                <TableHead className="px-4 py-2 text-left">Hora Final</TableHead>
+                                <TableHead className="px-4 py-2 text-left">Auditor</TableHead>
+                                <TableHead className="px-4 py-2 text-left">Criador</TableHead>
+                                <TableHead className="rounded-tr-md px-4 py-2 text-right">Ações</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {auditorias.map((auditoria) => {
+                                return (
+                                    <TableRow key={auditoria.id} className="border-t">
+                                        <TableCell className="px-4 py-1.5">
                                             {auditoria.loja?.name ? `${auditoria.lojaId} - ${auditoria.loja.name}` : auditoria.lojaId}
-                                        </td>
-                                        <td className="px-4 py-2">
+                                        </TableCell>
+                                        <TableCell className="px-4 py-1.5">
                                             {auditoria.data ? format(new Date(auditoria.data), "dd/MM/yyyy") : "-"}
-                                        </td>
-                                        <td className="px-4 py-2">{auditoria.horaInicial || "-"}</td>
-                                        <td className="px-4 py-2">{auditoria.horaFinal || "-"}</td>
-                                        <td className="px-4 py-2">{auditoria.usuario?.name || auditoria.usuarioId}</td>
-                                        <td className="px-4 py-2">{auditoria.criador?.name || auditoria.criadorId || "-"}</td>
-                                        <td className="px-4 py-2 text-right">
+                                        </TableCell>
+                                        <TableCell className="px-4 py-1.5">{auditoria.horaInicial || "-"}</TableCell>
+                                        <TableCell className="px-4 py-1.5">{auditoria.horaFinal || "-"}</TableCell>
+                                        <TableCell className="px-4 py-1.5">{auditoria.usuario?.name || auditoria.usuarioId}</TableCell>
+                                        <TableCell className="px-4 py-1.5">{auditoria.criador?.name || auditoria.criadorId || "-"}</TableCell>
+                                        <TableCell className="px-4 py-1.5 text-right">
                                             <Button
                                                 size="sm"
                                                 variant="outline"
@@ -212,75 +223,90 @@ export default function AuditoriasPage() {
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {auditorias.length === 0 && (
-                                    <tr>
-                                        <td
-                                            colSpan={7}
-                                            className="px-4 py-8 text-center text-muted-foreground"
-                                        >
-                                            Nenhuma auditoria encontrada.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                        </TableCell>
+                                    </TableRow>
+                                )
+                            })}
+                            {auditorias.length === 0 && (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={7}
+                                        className="px-4 py-8 text-center text-muted-foreground"
+                                    >
+                                        Nenhuma auditoria encontrada.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
+
+            {/* Paginação */}
+            {paginatedData.totalPages >= 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-0">
+                    {/* Contagem */}
+                    <div className="flex items-center justify-between">
+                        <p className="flex-wrap md:max-w-48 text-xs text-muted-foreground">
+                            {paginatedData.total > 0
+                                ? `Mostrando ${(paginatedData.currentPage - 1) * paginatedData.limit + 1
+                                } a ${Math.min(
+                                    paginatedData.currentPage * paginatedData.limit,
+                                    paginatedData.total
+                                )} de ${paginatedData.total} auditorias`
+                                : "Nenhuma questão encontrada"}
+                        </p>
                     </div>
+                    <Pagination>
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious
+                                    onClick={() =>
+                                        setPage(Math.max(1, paginatedData.currentPage - 1))
+                                    }
+                                    className={
+                                        paginatedData.currentPage === 1
+                                            ? "pointer-events-none opacity-50"
+                                            : "cursor-pointer"
+                                    }
+                                />
+                            </PaginationItem>
 
-                    {/* Paginação */}
-                    {totalPages > 1 && (
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
-                            <div className="text-sm text-muted-foreground">
-                                Mostrando {(page - 1) * limit + 1} a{" "}
-                                {Math.min(page * limit, total)} de {total} auditorias
-                            </div>
-                            <Pagination>
-                                <PaginationContent>
-                                    <PaginationItem>
-                                        <PaginationPrevious
-                                            onClick={() => setPage(Math.max(1, page - 1))}
-                                            className={
-                                                page === 1
-                                                    ? "pointer-events-none opacity-50"
-                                                    : "cursor-pointer"
-                                            }
-                                        />
-                                    </PaginationItem>
-                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                        let pageNum: number;
-                                        if (totalPages <= 5) pageNum = i + 1;
-                                        else if (page <= 3) pageNum = i + 1;
-                                        else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
-                                        else pageNum = page - 2 + i;
+                            {Array.from({ length: Math.min(5, paginatedData.totalPages) }, (_, i) => {
+                                let pageNum: number;
+                                if (paginatedData.totalPages <= 5) pageNum = i + 1;
+                                else if (paginatedData.currentPage <= 3) pageNum = i + 1;
+                                else if (paginatedData.currentPage >= paginatedData.totalPages - 2)
+                                    pageNum = paginatedData.totalPages - 4 + i;
+                                else pageNum = paginatedData.currentPage - 2 + i;
 
-                                        return (
-                                            <PaginationItem key={pageNum}>
-                                                <PaginationLink
-                                                    onClick={() => setPage(pageNum)}
-                                                    isActive={page === pageNum}
-                                                    className="cursor-pointer"
-                                                >
-                                                    {pageNum}
-                                                </PaginationLink>
-                                            </PaginationItem>
-                                        );
-                                    })}
-                                    <PaginationItem>
-                                        <PaginationNext
-                                            onClick={() => setPage(Math.min(totalPages, page + 1))}
-                                            className={
-                                                page === totalPages
-                                                    ? "pointer-events-none opacity-50"
-                                                    : "cursor-pointer"
-                                            }
-                                        />
+                                return (
+                                    <PaginationItem key={pageNum}>
+                                        <PaginationLink
+                                            onClick={() => setPage(pageNum)}
+                                            isActive={paginatedData.currentPage === pageNum}
+                                            className="cursor-pointer"
+                                        >
+                                            {pageNum}
+                                        </PaginationLink>
                                     </PaginationItem>
-                                </PaginationContent>
-                            </Pagination>
-                        </div>
-                    )}
+                                );
+                            })}
+
+                            <PaginationItem>
+                                <PaginationNext
+                                    onClick={() =>
+                                        setPage(Math.min(paginatedData.totalPages, paginatedData.currentPage + 1))
+                                    }
+                                    className={
+                                        paginatedData.currentPage === paginatedData.totalPages
+                                            ? "pointer-events-none opacity-50"
+                                            : "cursor-pointer"
+                                    }
+                                />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
                 </div>
             )}
 

@@ -118,6 +118,7 @@ export default function CadAvOperacionalFormDialog({
             <Label htmlFor="situacao">Situação ativa</Label>
             <Switch
               id="situacao"
+              className="cursor-pointer"
               checked={form.situacao}
               onCheckedChange={(checked) =>
                 setForm((s) => ({ ...s, situacao: checked }))
@@ -130,12 +131,14 @@ export default function CadAvOperacionalFormDialog({
         <DialogFooter>
           <Button
             variant="outline"
+            className="cursor-pointer"
             onClick={() => onOpenChange(false)}
             disabled={creating || updating}
           >
             Cancelar
           </Button>
           <Button
+            className="cursor-pointer"
             onClick={handleSubmit}
             disabled={creating || updating || !isFormValid}
           >

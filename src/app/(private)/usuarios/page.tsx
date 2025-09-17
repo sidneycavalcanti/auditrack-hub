@@ -134,7 +134,7 @@ export default function UsuariosPage() {
 
     if (isLoading) {
         return (
-            <div className="flex h-screen items-center justify-center">
+            <div className="flex h-full items-center justify-center">
                 <LoadingSpinner size="lg" text="Carregando usuários..." />
             </div>
         );
@@ -211,12 +211,12 @@ export default function UsuariosPage() {
                 <div className="rounded-md border">
                     <Table>
                         <TableHeader>
-                            <TableRow className="bg-muted/50 text-muted-foreground">
-                                <TableHead>Usuário</TableHead>
+                            <TableRow className="bg-gradient-card text-muted-foreground">
+                                <TableHead className="rounded-tl-md">Usuário</TableHead>
                                 <TableHead>Nome de usuário</TableHead>
                                 <TableHead>Categoria</TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Ações</TableHead>
+                                <TableHead className="rounded-tr-md text-right">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -224,7 +224,7 @@ export default function UsuariosPage() {
                                 const Icon = getCategoryIcon(usuario.categoria?.name);
                                 return (
                                     <TableRow key={usuario.id}>
-                                        <TableCell>
+                                        <TableCell className="py-1.5">
                                             <div className="flex items-center gap-3">
                                                 <Avatar>
                                                     <AvatarFallback>{getInitials(usuario.name)}</AvatarFallback>
@@ -238,18 +238,18 @@ export default function UsuariosPage() {
                                             </div>
                                         </TableCell>
 
-                                        <TableCell className="font-mono">
+                                        <TableCell className="font-mono py-1.5">
                                             {usuario.username}
                                         </TableCell>
 
-                                        <TableCell>
+                                        <TableCell className="py-1.5">
                                             <div className="flex items-center gap-2">
                                                 <Icon className="h-4 w-4" />
                                                 <span>{usuario.categoria?.name ?? "Sem categoria"}</span>
                                             </div>
                                         </TableCell>
 
-                                        <TableCell>
+                                        <TableCell className="py-1.5">
                                             <Badge variant={usuario.situacao ? "default" : "secondary"}
                                                 className={
                                                     usuario.situacao
@@ -261,7 +261,7 @@ export default function UsuariosPage() {
                                             </Badge>
                                         </TableCell>
 
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right py-1.5">
                                             <div className="flex items-center justify-end gap-2">
                                                 <Button
                                                     variant="outline"
@@ -294,11 +294,11 @@ export default function UsuariosPage() {
             )}
 
             {/* Paginação */}
-            {paginatedData.totalPages > 1 && (
+            {paginatedData.totalPages >= 1 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-0">
                     {/* Contagem */}
                     <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="flex-wrap md:max-w-48 text-xs text-muted-foreground">
                             {paginatedData.total > 0
                                 ? `Mostrando ${(paginatedData.currentPage - 1) * paginatedData.limit + 1
                                 } a ${Math.min(

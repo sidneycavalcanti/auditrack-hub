@@ -118,7 +118,7 @@ export default function LoginPage() {
                                     type="submit"
                                     variant="premium"
                                     size="lg"
-                                    className="w-full"
+                                    className="w-full cursor-pointer"
                                     disabled={isLoading || !credentials.name || !credentials.senha}
                                 >
                                     {isLoading ? <LoadingSpinner size="lg" text="Entrando..." /> : "Entrar"}

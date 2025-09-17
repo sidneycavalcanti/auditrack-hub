@@ -121,7 +121,7 @@ export default function CategoriasPage() {
 
     if (isLoading) {
         return (
-            <div className="flex h-screen items-center justify-center">
+            <div className="flex h-full items-center justify-center">
                 <LoadingSpinner size="lg" text="Carregando categorias..." />
             </div>
         );
@@ -200,17 +200,17 @@ export default function CategoriasPage() {
                 <div className="rounded-md border">
                     <Table>
                         <TableHeader>
-                            <TableRow className="bg-muted/50 text-muted-foreground">
-                                <TableHead>Nome</TableHead>
+                            <TableRow className="bg-gradient-card text-muted-foreground">
+                                <TableHead className="rounded-tl-md">Nome</TableHead>
                                 <TableHead>Criada em</TableHead>
-                                <TableHead className="text-right">Ações</TableHead>
+                                <TableHead className="rounded-tr-md text-right">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {categorias.map((categoria: Categoria) => {
                                 return (
                                     <TableRow key={categoria.id}>
-                                        <TableCell>
+                                        <TableCell className="py-1.5">
                                             <div className="flex items-center gap-3">
                                                 <div className="rounded-lg bg-primary/10 p-2">
                                                     <Tag className="h-4 w-4 text-primary" />
@@ -223,10 +223,10 @@ export default function CategoriasPage() {
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-muted-foreground">
+                                        <TableCell className="text-muted-foreground py-1.5">
                                             {formatDate(categoria.createdAt)}
                                         </TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right py-1.5">
                                             <div className="flex items-center justify-end gap-2">
                                                 <Button
                                                     variant="outline"
@@ -262,17 +262,17 @@ export default function CategoriasPage() {
             )}
 
             {/* Paginação */}
-            {paginatedData.totalPages > 1 && (
+            {paginatedData.totalPages >= 1 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-0">
                     {/* Contagem */}
                     <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="flex-wrap md:max-w-48 text-xs text-muted-foreground">
                             {paginatedData.total > 0
                                 ? `Mostrando ${(paginatedData.currentPage - 1) * paginatedData.limit + 1
                                 } a ${Math.min(
                                     paginatedData.currentPage * paginatedData.limit,
                                     paginatedData.total
-                                )} de ${paginatedData.total} usuários`
+                                )} de ${paginatedData.total} categorias`
                                 : "Nenhuma questão encontrada"}
                         </p>
                     </div>

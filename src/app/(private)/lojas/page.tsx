@@ -102,7 +102,7 @@ export default function LojasPage() {
 
     if (isLoading) {
         return (
-            <div className="flex h-screen items-center justify-center">
+            <div className="flex h-full items-center justify-center">
                 <LoadingSpinner size="lg" text="Carregando lojas..." />
             </div>
         );
@@ -282,11 +282,13 @@ export default function LojasPage() {
                     </div>
 
                     {/* Paginação */}
-                    {totalPages > 1 && (
+                    {totalPages >= 1 && (
                         <div className="flex flex-col items-center justify-between gap-4 py-4 sm:flex-row">
-                            <div className="text-sm text-muted-foreground">
-                                Mostrando {Math.min((currentPage - 1) * pageSize + 1, totalItems)} a{" "}
-                                {Math.min(currentPage * pageSize, totalItems)} de {totalItems} resultados
+                            <div className="flex items-center justify-between">
+                                <p className="flex-wrap md:max-w-48 text-xs text-muted-foreground">
+                                    Mostrando {Math.min((currentPage - 1) * pageSize + 1, totalItems)} a{" "}
+                                    {Math.min(currentPage * pageSize, totalItems)} de {totalItems} lojas
+                                </p>
                             </div>
 
                             <Pagination>

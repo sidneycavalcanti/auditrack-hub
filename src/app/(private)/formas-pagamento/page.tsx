@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,10 +30,17 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import EmptyState from "@/components/common/EmptyState";
-// ⚠️ Importe o dialog do caminho relativo da própria rota:
 import { FormaPagamentoFormDialog } from "./components/FormaPagamentoFormDialog";
 import {
     useFormasPagamento,
@@ -44,18 +51,31 @@ import type { FormaPagamento } from "@/types";
 export default function FormasPagamentoPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
-    const [selectedFormaPagamento, setSelectedFormaPagamento] =
-        useState<FormaPagamento | null>(null);
+    const [selectedFormaPagamento, setSelectedFormaPagamento] = useState<FormaPagamento | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [formaPagamentoToDelete, setFormaPagamentoToDelete] =
-        useState<FormaPagamento | null>(null);
+    const [formaPagamentoToDelete, setFormaPagamentoToDelete] = useState<FormaPagamento | null>(null);
+    const [page, setPage] = useState(1);
+    const [limit] = useState(10);
 
     const filters = searchTerm ? { name: searchTerm } : {};
-    const { data: formasPagamentoResp, isLoading, error } = useFormasPagamento(filters);
 
-    const formasPagamento: FormaPagamento[] = (formasPagamentoResp ?? []) as FormaPagamento[];
+    const { data: formasPagamentoResp, isLoading, error } = useFormasPagamento({
+        name: searchTerm || undefined,
+        page: page,
+        limit: limit,
+    });
+
+    // const formasPagamento: FormaPagamento[] = (formasPagamentoResp as any)?.formadepagamento ?? [];
 
     const deleteMutation = useDeleteFormaPagamento();
+
+    const formasdepagamento = formasPagamentoResp?.data ?? []
+    const paginatedData = {
+        total: formasPagamentoResp?.total ?? 0,
+        totalPages: formasPagamentoResp?.totalPages ?? 1,
+        currentPage: formasPagamentoResp?.page ?? 1,
+        limit: formasPagamentoResp?.limit ?? 10
+    }
 
     const handleCreate = () => {
         setSelectedFormaPagamento(null);
@@ -87,8 +107,8 @@ export default function FormasPagamentoPage() {
 
     if (isLoading) {
         return (
-            <div className="flex min-h-[400px] items-center justify-center">
-                <LoadingSpinner />
+            <div className="flex h-full items-center justify-center">
+                <LoadingSpinner size="lg" text="Carregando formas de pagamento..." />
             </div>
         );
     }
@@ -103,6 +123,11 @@ export default function FormasPagamentoPage() {
             </div>
         );
     }
+
+    const clearFilters = () => {
+        setSearchTerm("");
+        setPage(1);
+    };
 
     return (
         <div className="space-y-3">
@@ -125,7 +150,7 @@ export default function FormasPagamentoPage() {
             {/* Busca */}
             <Card className="bg-gradient-card shadow-card">
                 <CardContent className="px-6 py-0">
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-4 sm:flex-row">
                         <div className="flex-1 relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -135,11 +160,23 @@ export default function FormasPagamentoPage() {
                                 className="pl-10"
                             />
                         </div>
+
+                        {searchTerm && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={clearFilters}
+                                className="flex items-center gap-2 cursor-pointer"
+                            >
+                                <X className="h-4 w-4" />
+                                Limpar filtro
+                            </Button>
+                        )}
                     </div>
                 </CardContent>
             </Card>
 
-            {formasPagamento.length === 0 && !isLoading ? (
+            {formasdepagamento.length === 0 && !isLoading ? (
                 <EmptyState
                     title="Nenhuma forma de pagamento encontrada"
                     description={
@@ -153,57 +190,127 @@ export default function FormasPagamentoPage() {
                 <div className="rounded-md border">
                     <Table>
                         <TableHeader>
-                            <TableRow>
-                                <TableHead>Nome</TableHead>
+                            <TableRow className="bg-gradient-card text-muted-foreground">
+                                <TableHead className="rounded-tl-md">Nome</TableHead>
                                 <TableHead>Situação</TableHead>
                                 <TableHead>Data de Criação</TableHead>
-                                <TableHead className="text-right">Ações</TableHead>
+                                <TableHead className="rounded-tr-md text-right">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {formasPagamento.map((fp) => (
-                                <TableRow key={fp.id}>
-                                    <TableCell className="font-medium">{fp.name}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={fp.situacao ? "default" : "secondary"}
-                                            className={
-                                                fp.situacao
-                                                    ? "bg-success/10 text-success hover:bg-success/20"
-                                                    : ""
-                                            }
-                                        >
-                                            {fp.situacao ? "Ativa" : "Inativa"}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>{formatDate(fp.createdAt)}</TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="cursor-pointer"
-                                                onClick={() => handleEdit(fp)}
-                                                aria-label={`Editar ${fp.name}`}
-                                                title="Editar"
+                            {formasdepagamento.map((fp: FormaPagamento) => {
+                                return (
+                                    <TableRow key={fp.id}>
+                                        <TableCell className="font-medium py-1.5">{fp.name}</TableCell>
+                                        <TableCell className="py-1.5">
+                                            <Badge variant={fp.situacao ? "default" : "secondary"}
+                                                className={
+                                                    fp.situacao
+                                                        ? "bg-success/10 text-success hover:bg-success/20"
+                                                        : ""
+                                                }
                                             >
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleDeleteClick(fp)}
-                                                aria-label={`Excluir ${fp.name}`}
-                                                title="Excluir"
-                                                className="border-destructive text-destructive hover:bg-destructive-light hover:text-destructive-glow cursor-pointer"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
+                                                {fp.situacao ? "Ativa" : "Inativa"}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="py-1.5">{formatDate(fp.createdAt)}</TableCell>
+                                        <TableCell className="py-1.5 text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="cursor-pointer"
+                                                    onClick={() => handleEdit(fp)}
+                                                    aria-label={`Editar ${fp.name}`}
+                                                    title="Editar"
+                                                >
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleDeleteClick(fp)}
+                                                    aria-label={`Excluir ${fp.name}`}
+                                                    title="Excluir"
+                                                    className="border-destructive text-destructive hover:bg-destructive-light hover:text-destructive-glow cursor-pointer"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
                         </TableBody>
                     </Table>
+                </div>
+            )}
+
+            {/* Paginação */}
+            {paginatedData.totalPages >= 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-0">
+                    {/* Contagem */}
+                    <div className="flex items-center justify-between">
+                        <p className="flex-wrap md:max-w-48 text-xs text-muted-foreground">
+                            {paginatedData.total > 0
+                                ? `Mostrando ${(paginatedData.currentPage - 1) * paginatedData.limit + 1
+                                } a ${Math.min(
+                                    paginatedData.currentPage * paginatedData.limit,
+                                    paginatedData.total
+                                )} de ${paginatedData.total} formas de pagamento`
+                                : "Nenhuma questão encontrada"}
+                        </p>
+                    </div>
+                    <Pagination>
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious
+                                    onClick={() =>
+                                        setPage(Math.max(1, paginatedData.currentPage - 1))
+                                    }
+                                    className={
+                                        paginatedData.currentPage === 1
+                                            ? "pointer-events-none opacity-50"
+                                            : "cursor-pointer"
+                                    }
+                                />
+                            </PaginationItem>
+
+                            {Array.from({ length: Math.min(5, paginatedData.totalPages) }, (_, i) => {
+                                let pageNum: number;
+                                if (paginatedData.totalPages <= 5) pageNum = i + 1;
+                                else if (paginatedData.currentPage <= 3) pageNum = i + 1;
+                                else if (paginatedData.currentPage >= paginatedData.totalPages - 2)
+                                    pageNum = paginatedData.totalPages - 4 + i;
+                                else pageNum = paginatedData.currentPage - 2 + i;
+
+                                return (
+                                    <PaginationItem key={pageNum}>
+                                        <PaginationLink
+                                            onClick={() => setPage(pageNum)}
+                                            isActive={paginatedData.currentPage === pageNum}
+                                            className="cursor-pointer"
+                                        >
+                                            {pageNum}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                );
+                            })}
+
+                            <PaginationItem>
+                                <PaginationNext
+                                    onClick={() =>
+                                        setPage(Math.min(paginatedData.totalPages, paginatedData.currentPage + 1))
+                                    }
+                                    className={
+                                        paginatedData.currentPage === paginatedData.totalPages
+                                            ? "pointer-events-none opacity-50"
+                                            : "cursor-pointer"
+                                    }
+                                />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
                 </div>
             )}
 
