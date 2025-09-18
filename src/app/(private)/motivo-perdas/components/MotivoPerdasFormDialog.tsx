@@ -1,7 +1,7 @@
 // FILE: src/app/(private)/motivo-perdas/components/MotivoPerdasFormDialog.tsx
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,8 +26,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import type { MotivoPerda } from "@/types";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+
+import { useCreateMotivoPerda, useUpdateMotivoPerda } from "../hooks/useMotivoPerdas";
+import type { MotivoPerda } from "@/types";
 
 const formSchema = z.object({
     name: z
@@ -44,17 +46,19 @@ interface MotivoPerdasFormDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     motivoPerda?: MotivoPerda | null;
-    onSubmit: (data: FormData) => Promise<void>;
-    isSubmitting: boolean;
 }
 
 export default function MotivoPerdasFormDialog({
     open,
     onOpenChange,
     motivoPerda,
-    onSubmit,
-    isSubmitting,
 }: MotivoPerdasFormDialogProps) {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const isEditing = !!motivoPerda;
+
+    const createMutation = useCreateMotivoPerda();
+    const updateMutation = useUpdateMotivoPerda();
+
     const form = useForm<FormData>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -68,23 +72,49 @@ export default function MotivoPerdasFormDialog({
     useEffect(() => {
         if (!open) return;
         if (motivoPerda) {
-        form.reset({
-            name: motivoPerda.name,
-            situacao: motivoPerda.situacao,
-            obs: motivoPerda.obs ?? "",
-        });
+            form.reset({
+                name: motivoPerda.name,
+                situacao: motivoPerda.situacao,
+                obs: motivoPerda.obs ?? "",
+            });
         } else {
-        form.reset({
-            name: "",
-            situacao: true,
-            obs: "",
-        });
+            form.reset({
+                name: "",
+                situacao: true,
+                obs: "",
+            });
         }
     }, [open, motivoPerda, form]);
 
-    const handleSubmit = async (data: FormData) => {
-        await onSubmit(data);
-        if (!motivoPerda) form.reset();
+    const onSubmit = async (data: FormData) => {
+        setIsSubmitting(true);
+        try {
+            if (isEditing) {
+                if (motivoPerda?.id == null) {
+                    throw new Error("ID motivo de perda ausente.")
+                }
+                await updateMutation.mutateAsync({
+                    id: motivoPerda.id,
+                    data,
+                });
+            } else {
+                await createMutation.mutateAsync({
+                    name: data.name,
+                    situacao: data.situacao,
+                    obs: data?.obs,
+                });
+            }
+            form.reset();
+            onOpenChange(false);
+        } catch (error) {
+            console.error("Erro ao salvar forma de pagamento:", error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleCancel = () => {
+        form.reset();
         onOpenChange(false);
     };
 
@@ -99,28 +129,27 @@ export default function MotivoPerdasFormDialog({
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle className="text-xl font-bold">
-                        {motivoPerda ? "Editar Motivo de Perda" : "Novo Motivo de Perda"}
+                        {isEditing ? "Editar Motivo de Perda" : "Novo Motivo de Perda"}
                     </DialogTitle>
                     <DialogDescription>
-                        {motivoPerda
+                        {isEditing
                             ? "Edite as informações do motivo de perda abaixo."
                             : "Preencha as informações para criar um novo motivo de perda."}
                     </DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <FormField
                             control={form.control}
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel className="text-base font-medium">Nome *</FormLabel>
+                                    <FormLabel className="text-base font-medium">Nome *</FormLabel>
                                     <FormControl>
                                         <Input
                                             placeholder="Digite o nome do motivo de perda"
                                             {...field}
-                                            className="h-11"
                                             autoFocus
                                             disabled={isSubmitting}
                                         />
@@ -146,6 +175,7 @@ export default function MotivoPerdasFormDialog({
                                             checked={field.value}
                                             onCheckedChange={field.onChange}
                                             disabled={isSubmitting}
+                                            className="cursor-pointer"
                                         />
                                     </FormControl>
                                 </FormItem>
@@ -180,17 +210,18 @@ export default function MotivoPerdasFormDialog({
                                     onOpenChange(false);
                                 }}
                                 disabled={isSubmitting}
+                                className="cursor-pointer"
                             >
                                 Cancelar
                             </Button>
-                            <Button type="submit" disabled={isSubmitting} className="min-w-[120px]">
-                                {isSubmitting ? (
-                                    <LoadingSpinner size="sm" text="Salvando..." />
-                                ) : motivoPerda ? (
-                                    "Salvar Alterações"
-                                ) : (
-                                    "Criar Motivo"
-                                )}
+                            <Button
+                                type="submit"
+                                variant="outline"
+                                onClick={handleCancel}
+                                disabled={isSubmitting}
+                                className="cursor-pointer"
+                            >
+                                {isSubmitting ? "Salvando..." : isEditing ? "Atualizar" : "Criar"}
                             </Button>
                         </DialogFooter>
                     </form>
