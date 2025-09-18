@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Search, Edit, Trash2, Filter } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -67,8 +67,8 @@ export default function CadQuestoesPage() {
         limit,
         name: searchTerm || undefined,
         cadavoperacionalId: selectedAvOperacional
-        ? Number(selectedAvOperacional)
-        : undefined,
+            ? Number(selectedAvOperacional)
+            : undefined,
     });
 
     const { data: avaliacoesOperacionais } = useCadAvOperacional();
@@ -103,7 +103,7 @@ export default function CadQuestoesPage() {
         setPage(1);
     };
 
-    if (isLoading) return <LoadingSpinner size="lg" text="Carregando questões cadastradas" />;
+
 
     if (error) {
         return (
@@ -121,6 +121,19 @@ export default function CadQuestoesPage() {
         limit: questoesData?.limit ?? 10,
     };
 
+    if (isLoading) {
+        return (
+            <div className="flex h-full items-center justify-center">
+                <LoadingSpinner size="lg" text="Carregando questões cadastradas..." />
+            </div>
+        );
+    }
+
+    const clearFilters = () => {
+        setSearchTerm("");
+        setPage(1);
+    };
+
     return (
         <div className="space-y-3">
             {/* Header */}
@@ -132,7 +145,7 @@ export default function CadQuestoesPage() {
                     </p>
                 </div>
                 {/* Novo */}
-                <Button onClick={() => setFormDialogOpen(true)} variant="premium">
+                <Button className="cursor-pointer" onClick={() => setFormDialogOpen(true)} variant="premium">
                     <Plus className="mr-2 h-4 w-4" />
                     Nova Questão
                 </Button>
@@ -154,30 +167,42 @@ export default function CadQuestoesPage() {
                         </div>
 
                         {/* Filtro por Avaliação Operacional */}
-                        <div>
-                            <Select
-                                value={selectedAvOperacional || "all"}
-                                onValueChange={handleFilterChange}
+
+                        <Select
+                            value={selectedAvOperacional || "all"}
+                            onValueChange={handleFilterChange}
+                        >
+                            <SelectTrigger>
+                                <Filter className="mr-2 h-4 w-4" />
+                                <SelectValue placeholder="Filtrar por Avaliação" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todas as Avaliações</SelectItem>
+                                {avaliacoesOperacionais?.data?.map((av: any) => (
+                                    <SelectItem key={av.id} value={av.id.toString()}>
+                                        {av.descricao}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+
+                        {searchTerm && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={clearFilters}
+                                className="flex items-center gap-2 cursor-pointer"
                             >
-                                <SelectTrigger>
-                                    <Filter className="mr-2 h-4 w-4" />
-                                    <SelectValue placeholder="Filtrar por Avaliação" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Todas as Avaliações</SelectItem>
-                                    {avaliacoesOperacionais?.data?.map((av: any) => (
-                                        <SelectItem key={av.id} value={av.id.toString()}>
-                                            {av.descricao}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                <X className="h-4 w-4" />
+                                Limpar filtro
+                            </Button>
+                        )}
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Tabela */}            
+            {/* Tabela */}
             {questoes.length === 0 ? (
                 <EmptyState
                     title="Nenhuma questão encontrada"
@@ -191,23 +216,23 @@ export default function CadQuestoesPage() {
                 <div className="rounded-md border">
                     <Table>
                         <TableHeader>
-                            <TableRow className="bg-muted/50 text-muted-foreground">
-                                <TableHead>ID</TableHead>
+                            <TableRow className="bg-gradient-card text-muted-foreground">
+                                <TableHead className="rounded-tl-md">ID</TableHead>
                                 <TableHead>Nome</TableHead>
                                 <TableHead>Avaliação Operacional</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Data de Criação</TableHead>
-                                <TableHead className="text-right">Ações</TableHead>
+                                <TableHead className="rounded-tr-md text-right">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {questoes.map((questao: CadQuestoes) => (
                                 <TableRow key={questao.id}>
-                                    <TableCell className="font-medium">#{questao.id}</TableCell>
-                                    <TableCell>
+                                    <TableCell className="font-medium py-1.5">#{questao.id}</TableCell>
+                                    <TableCell className="py-1.5">
                                         <p className="font-medium text-wrap">{questao.name}</p>
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell className="py-1.5">
                                         {questao.cadavoperacional ? (
                                             <Badge variant="secondary">
                                                 {questao.cadavoperacional.descricao}
@@ -216,12 +241,18 @@ export default function CadQuestoesPage() {
                                             <span className="text-muted-foreground">-</span>
                                         )}
                                     </TableCell>
-                                    <TableCell>
-                                        <Badge variant={questao.situacao ? "default" : "secondary"}>
+                                    <TableCell className="py-1.5">
+                                        <Badge variant={questao.situacao ? "default" : "secondary"}
+                                            className={
+                                                questao.situacao
+                                                    ? "bg-success/10 text-success hover:bg-success/20"
+                                                    : ""
+                                            }
+                                        >
                                             {questao.situacao ? "Ativo" : "Inativo"}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell className="py-1.5">
                                         {questao.createdAt && (
                                             <span className="text-muted-foreground">
                                                 {format(new Date(questao.createdAt), "dd/MM/yyyy", {
@@ -230,11 +261,12 @@ export default function CadQuestoesPage() {
                                             </span>
                                         )}
                                     </TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="text-right py-1.5">
                                         <div className="flex items-center justify-end gap-2">
                                             <Button
                                                 variant="outline"
-                                                size="icon"
+                                                size="sm"
+                                                className="cursor-pointer"
                                                 onClick={() => handleEdit(questao)}
                                                 aria-label={`Editar ${questao.name}`}
                                                 title="Editar"
@@ -243,9 +275,9 @@ export default function CadQuestoesPage() {
                                             </Button>
                                             <Button
                                                 variant="outline"
-                                                size="icon"
+                                                size="sm"
                                                 onClick={() => handleDeleteClick(questao)}
-                                                className="text-destructive hover:text-destructive"
+                                                className="border-destructive text-destructive hover:bg-destructive-light hover:text-destructive-glow cursor-pointer"
                                                 aria-label={`Excluir ${questao.name}`}
                                                 title="Excluir"
                                             >
@@ -261,14 +293,13 @@ export default function CadQuestoesPage() {
             )}
 
             {/* Paginação */}
-            {pagination.totalPages > 1 && (                    
+            {pagination.totalPages >= 1 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-0">
                     {/* Contagem */}
                     <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="flex-wrap md:max-w-48 text-xs text-muted-foreground">
                             {pagination.total > 0
-                                ? `Mostrando ${
-                                    (pagination.currentPage - 1) * pagination.limit + 1
+                                ? `Mostrando ${(pagination.currentPage - 1) * pagination.limit + 1
                                 } a ${Math.min(
                                     pagination.currentPage * pagination.limit,
                                     pagination.total
@@ -343,12 +374,17 @@ export default function CadQuestoesPage() {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleDeleteConfirm}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                            Excluir
+                        <AlertDialogCancel className="cursor-pointer">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction className="shadow-none" asChild >
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleDeleteConfirm}
+                                className="bg-background border-destructive text-destructive hover:bg-destructive-light hover:text-destructive-glow cursor-pointer"
+                                title="Excluir"
+                            >
+                                Excluir
+                            </Button>
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

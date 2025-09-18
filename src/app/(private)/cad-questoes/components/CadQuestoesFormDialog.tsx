@@ -183,6 +183,7 @@ export default function CadQuestoesFormDialog({
                       checked={field.value}
                       onCheckedChange={field.onChange}
                       disabled={isLoading}
+                      className="cursor-pointer"
                     />
                   </FormControl>
                 </FormItem>
@@ -197,11 +198,12 @@ export default function CadQuestoesFormDialog({
                   form.reset();
                   onOpenChange(false);
                 }}
+                className="cursor-pointer"
                 disabled={isLoading}
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button className="cursor-pointer" type="submit" disabled={isLoading}>
                 {isLoading ? "Salvando..." : isEditing ? "Atualizar" : "Criar"}
               </Button>
             </div>
