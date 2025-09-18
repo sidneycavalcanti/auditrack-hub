@@ -107,7 +107,7 @@ export default function MotivoPerdasFormDialog({
             form.reset();
             onOpenChange(false);
         } catch (error) {
-            console.error("Erro ao salvar forma de pagamento:", error);
+            console.error("Erro ao salvar motivo de perda:", error);
         } finally {
             setIsSubmitting(false);
         }

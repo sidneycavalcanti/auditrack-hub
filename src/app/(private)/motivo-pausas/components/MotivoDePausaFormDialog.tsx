@@ -1,7 +1,7 @@
 // FILE: src/app/(private)/motivo-pausas/components/MotivoDePausaFormDialog.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { useCreateMotivoDepausa, useUpdateMotivoDepausa } from "../hooks/useMotivoPausas";
 import type { MotivoDepausa } from "@/types";
 
 const formSchema = z.object({
@@ -37,17 +38,19 @@ interface MotivoDePausaFormDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     motivoDepausa?: MotivoDepausa | null;
-    onSubmit: (data: FormData) => Promise<void>;
-    isSubmitting?: boolean;
 }
 
 export default function MotivoDePausaFormDialog({
     open,
     onOpenChange,
     motivoDepausa,
-    onSubmit,
-    isSubmitting = false,
 }: MotivoDePausaFormDialogProps) {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const isEditing = !!motivoDepausa;
+
+    const createMutation = useCreateMotivoDepausa();
+    const updateMutation = useUpdateMotivoDepausa();
+
     const form = useForm<FormData>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -55,8 +58,6 @@ export default function MotivoDePausaFormDialog({
             situacao: true, // ✅ default fica no RHF
         },
     });
-
-    const isEditing = !!motivoDepausa;
 
     // Preenche quando abrir/editar; limpa quando abrir/criar
     useEffect(() => {
@@ -71,9 +72,34 @@ export default function MotivoDePausaFormDialog({
         }
     }, [open, motivoDepausa, form]);
 
-    const handleSubmit = async (data: FormData) => {
-        await onSubmit(data);
-        if (!motivoDepausa) form.reset();
+    const onSubmit = async (data: FormData) => {
+        setIsSubmitting(true);
+        try {
+            if (isEditing) {
+                if (motivoDepausa?.id == null) {
+                    throw new Error("ID motivo de pausa ausente.")
+                }
+                await updateMutation.mutateAsync({
+                    id: motivoDepausa.id,
+                    data,
+                });
+            } else {
+                await createMutation.mutateAsync({
+                    name: data.name,
+                    situacao: data.situacao,
+                });
+            }
+            form.reset();
+            onOpenChange(false);
+        } catch (error) {
+            console.error("Erro ao salvar motivo de pausa:", error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleCancel = () => {
+        form.reset();
         onOpenChange(false);
     };
 
@@ -93,13 +119,13 @@ export default function MotivoDePausaFormDialog({
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <FormField
                             control={form.control}
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Nome *</FormLabel>
+                                    <FormLabel>Nome *</FormLabel>
                                     <FormControl>
                                         <Input
                                             placeholder="Digite o nome do motivo de pausa..."
