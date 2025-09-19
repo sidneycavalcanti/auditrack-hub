@@ -126,7 +126,7 @@ export default function MotivoPerdasPage() {
     }
 
     return (
-        <div className="space-y-3">
+        <div className="space-y-3 pb-2">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>

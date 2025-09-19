@@ -115,7 +115,7 @@ export default function LojasPage() {
     };
 
     return (
-        <div className="space-y-3">
+        <div className="space-y-3 pb-2">
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
