@@ -1,10 +1,10 @@
 // src/app/(private)/dashboard/page.tsx
 "use client"
 import React from 'react';
-import { 
-    TrendingUp, 
-    Store, 
-    Calendar, 
+import {
+    TrendingUp,
+    Store,
+    Calendar,
     ClipboardCheck,
     Users,
     AlertTriangle,
@@ -54,8 +54,8 @@ const mockChartData = {
 
 const Dashboard: React.FC = () => {
     return (
-        <div className="space-y-3">
-        {/* Header */}
+        <div className="space-y-3 pb-2">
+            {/* Header */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
@@ -63,7 +63,7 @@ const Dashboard: React.FC = () => {
                         Visão geral das auditorias e indicadores de performance
                     </p>
                 </div>
-                
+
                 <div className="flex gap-3">
                     <Button variant="outline">
                         <Calendar className="h-4 w-4 mr-2" />
@@ -131,7 +131,7 @@ const Dashboard: React.FC = () => {
                                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                                 <XAxis dataKey="name" />
                                 <YAxis />
-                                <Tooltip 
+                                <Tooltip
                                     contentStyle={{
                                         backgroundColor: 'var(--card)',
                                         border: '1px solid var(--border)',
@@ -196,17 +196,17 @@ const Dashboard: React.FC = () => {
                             <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                             <XAxis dataKey="name" />
                             <YAxis domain={[7, 10]} />
-                            <Tooltip 
+                            <Tooltip
                                 contentStyle={{
                                     backgroundColor: 'var(--card)',
                                     border: '1px solid var(--border)',
                                     borderRadius: 'var(--radius)',
                                 }}
                             />
-                            <Line 
-                                type="monotone" 
-                                dataKey="value" 
-                                stroke="var(--success)" 
+                            <Line
+                                type="monotone"
+                                dataKey="value"
+                                stroke="var(--success)"
                                 strokeWidth={3}
                                 dot={{ fill: 'var(--success)', r: 6 }}
                             />
@@ -225,19 +225,19 @@ const Dashboard: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <Button variant="outline" className="h-20 flex-col gap-2">
+                        <Button variant="outline" className="h-20 flex-col gap-2 cursor-pointer">
                             <Calendar className="h-6 w-6" />
                             <span>Nova Auditoria</span>
                         </Button>
-                        <Button variant="outline" className="h-20 flex-col gap-2">
+                        <Button variant="outline" className="h-20 flex-col gap-2 cursor-pointer">
                             <Store className="h-6 w-6" />
                             <span>Cadastrar Loja</span>
                         </Button>
-                        <Button variant="outline" className="h-20 flex-col gap-2">
+                        <Button variant="outline" className="h-20 flex-col gap-2 cursor-pointer">
                             <Users className="h-6 w-6" />
                             <span>Gerenciar Usuários</span>
                         </Button>
-                        <Button variant="outline" className="h-20 flex-col gap-2">
+                        <Button variant="outline" className="h-20 flex-col gap-2 cursor-pointer">
                             <TrendingUp className="h-6 w-6" />
                             <span>Relatórios</span>
                         </Button>
@@ -273,14 +273,13 @@ const StatsCard: React.FC<StatsCardProps> = ({
                         <Icon className="h-6 w-6 text-primary" />
                     </div>
                     {trend && (
-                        <span className={`text-sm font-medium ${
-                            trendUp ? 'text-success' : 'text-destructive'
-                        }`}>
+                        <span className={`text-sm font-medium ${trendUp ? 'text-success' : 'text-destructive'
+                            }`}>
                             {trend}
                         </span>
                     )}
                 </div>
-                
+
                 <div>
                     <h3 className="text-2xl font-bold text-foreground mb-1">
                         {value}
