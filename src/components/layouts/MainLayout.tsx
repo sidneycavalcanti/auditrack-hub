@@ -19,6 +19,8 @@ import {
     LogOut,
     Menu,
     X,
+    ArchiveRestore,
+    ArrowDownUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,7 +53,7 @@ type NavSection = {
 // ✅ um único array com a propriedade `section`
 const NAV_ITEMS: NavItem[] = [
     // raiz (fica acima das seções)
-    { name: "Dashboard", href: "/", icon: LayoutDashboard, section: "root" },
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, section: "root" },
     // gestão de auditoria
     { name: "Lojas", href: "/lojas", icon: Store, section: "GESTÃO DE AUDITORIA" },
     { name: "Categorias", href: "/categorias", icon: Tag, section: "GESTÃO DE AUDITORIA" },
@@ -62,7 +64,11 @@ const NAV_ITEMS: NavItem[] = [
     { name: "Motivo de perdas", href: "/motivo-perdas", icon: AlertCircle, section: "GESTÃO DE AUDITORIA" },
     { name: "Motivo de pausas", href: "/motivo-pausas", icon: Settings, section: "GESTÃO DE AUDITORIA" },
     // relatórios
-    { name: "Relatórios", href: "/relatorios", icon: FileText, section: "RELATÓRIOS" },
+    { name: "Rel. Vendas", href: "/relatorios/vendas", icon: ArchiveRestore, section: "RELATÓRIOS" },
+    { name: "Rel. Fluxos", href: "/relatorios/fluxos", icon: ArrowDownUp, section: "RELATÓRIOS" },
+    { name: "Rel. Perdas", href: "/relatorios/perdas", icon: FileText, section: "RELATÓRIOS" },
+    { name: "Rel. Pausas", href: "/relatorios/pausas", icon: FileText, section: "RELATÓRIOS" },
+    { name: "Rel. Av. Oper.", href: "/relatorios/avoperacional", icon: ArchiveRestore, section: "RELATÓRIOS" },
     // administração
     { name: "Usuários", href: "/usuarios", icon: Users, section: "ADMINISTRAÇÃO" },
 ];
@@ -71,30 +77,14 @@ const NAV_ITEMS: NavItem[] = [
 const USE_ACCORDION = true;
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
-    // const pathname = usePathname();
+    const pathname = usePathname();
     const [sidebarOpen, setSidebarOpen] = React.useState(false);
     const { user, signOut } = useAuth();
 
-    const segments = useSelectedLayoutSegments();
-
-    const pathname = "/" + segments.join("/");
-
-    const normalize = (s?: string) => {
-        if (!s) return "/";
-        // remove query/hash e barra final (exceto na raiz)
-        const path = s.split("?")[0].split("#")[0];
-        return path !== "/" ? path.replace(/\/+$/, "") : "/";
-    };
-
     const isActive = React.useCallback(
         (href: string) => {
-            // raiz só é ativa quando não há segmentos
-            if (href === "/") return segments.length === 0;
-
-            // ativa quando é exatamente a rota ou um filho dela
-            return pathname === href || pathname.startsWith(href + "/");
-        },
-        [segments, pathname]
+            if (href === "/") return pathname === "/"; return pathname?.startsWith(href);
+        }, [pathname]
     );
 
     return (
