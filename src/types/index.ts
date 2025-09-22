@@ -210,11 +210,16 @@ export interface AvOperacional {
     id: number;
     auditoriaId: number;
     cadAvOperacionalId: number;
-    pontuacao: number;
-    observacoes?: string;
-    // usuarioId e lojaId não expostos na UI
+    pontuacao: number;          // backend usa "nota" (vamos mapear)
+    observacoes?: string;       // backend usa "resposta" (vamos mapear)
     auditoria?: Auditoria;
     cadAvOperacional?: CadAvOperacional;
+    // 👇 novas (opcionais) para relatório/gráficos
+    resposta?: string | null;
+    nota?: number | null;
+    // opcionalmente expor a questão:
+    questao?: { id: number; name: string; situacao?: boolean };
+
     createdAt?: string;
     updatedAt?: string;
 }
