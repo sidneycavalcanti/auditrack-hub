@@ -52,6 +52,20 @@ const mockChartData = {
     ],
 };
 
+const RADIAN = Math.PI / 180;
+
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-(midAngle ?? 0) * RADIAN);
+    const y = cy + radius * Math.sin(-(midAngle ?? 0) * RADIAN);
+
+    return (
+        <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+            {`${name} ${(percent * 100).toFixed(0)}%`}
+        </text>
+    );
+};
+
 const Dashboard: React.FC = () => {
     return (
         <div className="space-y-3 pb-2">
@@ -163,8 +177,8 @@ const Dashboard: React.FC = () => {
                                     cx="50%"
                                     cy="50%"
                                     labelLine={false}
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                    outerRadius={80}
+                                    label={renderCustomizedLabel}
+                                    outerRadius={130}
                                     fill="#8884d8"
                                     dataKey="value"
                                 >

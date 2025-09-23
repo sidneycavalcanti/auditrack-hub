@@ -4,109 +4,58 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { avOperacionalAPI } from "@/services/api";
-import type { AvOperacional, FilterOptions } from "@/types";
-
-/** Filtros suportados pelo seu endpoint de avaliações operacionais */
-export type AvOperacionalFilters = FilterOptions & {
-    lojaId?: number;
-    usuarioId?: number;
-    cadAvOperacionalId?: number; // "cadavoperacional"
-    questaoId?: number;          // "cadquestoes"
-    dateFrom?: string;           // ex: '2025-06-01'
-    dateTo?: string;             // ex: '2025-06-30'
-};
+import type { AvOperacional, FilterOptions, PaginatedResponse } from "@/types";
 
 /** Chave estável da query */
 const QUERY_KEY = "avoperacional";
 
 /** Normaliza filtros para key estável e evita enviar undefineds desnecessários */
-function normalizeFilters(filters: AvOperacionalFilters = {}) {
-    return {
-        page: filters.page ?? 1,
-        limit: filters.limit ?? 10,
-        lojaId: filters.lojaId ?? undefined,
-        usuarioId: filters.usuarioId ?? undefined,
-        cadAvOperacionalId: filters.cadAvOperacionalId ?? undefined,
-        questaoId: filters.questaoId ?? undefined,
-        dateFrom: filters.dateFrom ?? undefined,
-        dateTo: filters.dateTo ?? undefined,
-        search: (filters as any).search ?? (filters as any).q ?? undefined,
-    };
-}
+const normalize = (f: FilterOptions = {}) => ({
+    page: f.page ?? 1,
+    limit: f.limit ?? 10,
+    search: f.search ?? f.name ?? undefined,
+});
 
 /**
  * Hook principal – apenas GET – para relatórios/gráficos.
  * Retorna dados já mapeados + paginação.
  */
-export function useAvaliacoesOperacional(filters: AvOperacionalFilters = {}) {
-    const normalized = normalizeFilters(filters);
+export function useAvaliacoesOperacional(filters: FilterOptions = {}) {
+    const norm = normalize(filters);
 
-    return useQuery({
-        queryKey: [QUERY_KEY, normalized],
-        queryFn: async () => {
-            const res = await avOperacionalAPI.getAll(normalized as any);
+    return useQuery<PaginatedResponse<AvOperacional>>({
+        queryKey: [QUERY_KEY, norm],
+        queryFn: async (): Promise<PaginatedResponse<AvOperacional>> => {
+            const res = await avOperacionalAPI.getAll(norm as any);
             const payload = res.data as any;
 
-            // A API retorna "avaliacoes: []" + paginação (totalItems/totalPages/currentPage)
             const list: any[] = Array.isArray(payload?.avaliacoes) ? payload.avaliacoes : [];
 
-            const items: AvOperacional[] = list.map((a) => {
-                // objetos aninhados: auditoria, cadavoperacional, cadquestoes
-                const auditoria = a.auditoria
-                    ? {
-                        ...a.auditoria,
-                        // garantir shape mínimo usado nos gráficos
-                        loja: a.auditoria.loja ? { id: a.auditoria.loja.id, name: a.auditoria.loja.name } : undefined,
-                        usuario: a.auditoria.usuario
-                            ? { id: a.auditoria.usuario.id, name: a.auditoria.usuario.name }
-                            : undefined,
-                    }
-                    : undefined;
+            const items: AvOperacional[] = list.map((a: any) => ({
+                id: a.id,
+                auditoriaId: a.auditoriaId ?? a.auditoria?.id,
+                cadAvOperacionalId: a.cadavoperacionalId ?? a.cadavoperacional?.id,
+                pontuacao: a.nota ?? 0,
+                observacoes: a.resposta ?? undefined,
 
-                const cadAvOperacional = a.cadavoperacional
-                    ? {
-                        id: a.cadavoperacional.id,
-                        descricao: a.cadavoperacional.descricao,
-                        situacao: true,
-                    }
-                    : undefined;
+                createdAt: a.createdAt,
+                updatedAt: a.updatedAt,
 
-                const questao = a.cadquestoes
-                    ? {
-                        id: a.cadquestoes.id,
-                        name: a.cadquestoes.name,
-                        situacao: a.cadquestoes.situacao,
-                    }
-                    : undefined;
+                // extras (opcionais) – o seu tipo permite
+                auditoria: a.auditoria,               // já vem com loja/usuario/data
+                cadAvOperacional: a.cadavoperacional, // já vem com descricao
+            }));
 
-                return {
-                    id: a.id,
-                    auditoriaId: a.auditoriaId ?? a.auditoria?.id,
-                    cadAvOperacionalId: a.cadAvOperacionalId ?? a.cadavoperacional?.id,
-                    pontuacao: a.nota ?? null,              // compat: seu tipo usa "pontuacao"
-                    observacoes: a.resposta ?? undefined,   // compat: seu tipo usa "observacoes"
+            // console.log(items);
 
-                    // campos extras (opcionais) – úteis para gráficos
-                    resposta: a.resposta ?? null,
-                    nota: a.nota ?? null,
-                    questao,
-
-                    auditoria,
-                    cadAvOperacional,
-                    createdAt: a.createdAt,
-                    updatedAt: a.updatedAt,
-                } as AvOperacional;
-            });
 
             const total = payload.totalItems ?? payload.total ?? items.length;
-            const fallbackLimit = items.length > 0 ? items.length : 10
-            const limit = payload.limit ?? normalized.limit ?? fallbackLimit;
+            const limit = (payload.limit ?? norm.limit ?? items.length) || 10;
             const totalPages = payload.totalPages ?? (limit > 0 ? Math.max(1, Math.ceil(total / limit)) : 1);
-            const page = payload.currentPage ?? payload.page ?? normalized.page ?? 1;
+            const page = payload.currentPage ?? payload.page ?? norm.page ?? 1;
 
             return { data: items, total, totalPages, page, limit };
         },
-        retry: 1,
         staleTime: 5 * 60 * 1000,
         placeholderData: (d) => d,
     });
