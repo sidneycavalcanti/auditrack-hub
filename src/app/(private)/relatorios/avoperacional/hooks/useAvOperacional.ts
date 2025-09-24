@@ -2,52 +2,72 @@
 "use client";
 
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { avOperacionalAPI } from "@/services/api";
 import type { AvOperacional, FilterOptions, PaginatedResponse } from "@/types";
+import { toast } from "sonner";
 
-/** Chave estável da query */
 const QUERY_KEY = "avoperacional";
 
-/** Normaliza filtros para key estável e evita enviar undefineds desnecessários */
-const normalize = (f: FilterOptions = {}) => ({
+// adicionamos campos de filtro (mes/ano/lojaId)
+type AvOperacionalFilters = FilterOptions & {
+    mes?: number;   // 1..12
+    ano?: number;   // ex: 2025
+    lojaId?: number;
+};
+
+const normalizeFilters = (f: AvOperacionalFilters = {}) => ({
     page: f.page ?? 1,
     limit: f.limit ?? 10,
     search: f.search ?? f.name ?? undefined,
+    mes: f.mes ?? undefined,
+    ano: f.ano ?? undefined,
+    lojaId: f.lojaId ?? undefined,
 });
 
-/**
- * Hook principal – apenas GET – para relatórios/gráficos.
- * Retorna dados já mapeados + paginação.
- */
-export function useAvaliacoesOperacional(filters: FilterOptions = {}) {
-    const norm = normalize(filters);
+export function useAvaliacoesOperacional(filters: AvOperacionalFilters = {}) {
+    const norm = normalizeFilters(filters);
 
     return useQuery<PaginatedResponse<AvOperacional>>({
         queryKey: [QUERY_KEY, norm],
-        queryFn: async (): Promise<PaginatedResponse<AvOperacional>> => {
+        queryFn: async () => {
             const res = await avOperacionalAPI.getAll(norm as any);
             const payload = res.data as any;
 
+            // Array de avaliações
             const list: any[] = Array.isArray(payload?.avaliacoes) ? payload.avaliacoes : [];
 
-            const items: AvOperacional[] = list.map((a: any) => ({
+            // Mapeia para o tipo do front
+            let items: AvOperacional[] = list.map((a: any) => ({
                 id: a.id,
                 auditoriaId: a.auditoriaId ?? a.auditoria?.id,
                 cadAvOperacionalId: a.cadavoperacionalId ?? a.cadavoperacional?.id,
                 pontuacao: a.nota ?? 0,
                 observacoes: a.resposta ?? undefined,
 
+                auditoria: a.auditoria,                 // contém data/loja/usuario
+                cadAvOperacional: a.cadavoperacional,   // contém descricao
+                questao: a.cadquestoes,                 // se o backend enviar
+
+                nota: a.nota,
+                resposta: a.resposta,
+
                 createdAt: a.createdAt,
                 updatedAt: a.updatedAt,
-
-                // extras (opcionais) – o seu tipo permite
-                auditoria: a.auditoria,               // já vem com loja/usuario/data
-                cadAvOperacional: a.cadavoperacional, // já vem com descricao
             }));
 
-            // console.log(items);
-
+            // 🔎 Filtros locais (fallback), caso o backend não aplique:
+            if (norm.ano || norm.mes || norm.lojaId) {
+                items = items.filter((it) => {
+                    const d = it.auditoria?.data?.slice(0, 10);
+                    const lojaMatch = norm.lojaId ? (it.auditoria?.loja?.id === norm.lojaId) : true;
+                    const anoMatch =
+                        norm.ano ? (d ? Number(d.slice(0, 4)) === norm.ano : false) : true;
+                    const mesMatch =
+                        norm.mes ? (d ? Number(d.slice(5, 7)) === norm.mes : false) : true;
+                    return lojaMatch && anoMatch && mesMatch;
+                });
+            }
 
             const total = payload.totalItems ?? payload.total ?? items.length;
             const limit = (payload.limit ?? norm.limit ?? items.length) || 10;
@@ -61,133 +81,28 @@ export function useAvaliacoesOperacional(filters: FilterOptions = {}) {
     });
 }
 
-/** GET por ID (caso precise detalhar uma avaliação) */
-export function useAvaliacaoOperacionalById(id?: number, enabled = !!id) {
-    return useQuery({
-        queryKey: [QUERY_KEY, "byId", id],
-        enabled,
-        queryFn: async () => (await avOperacionalAPI.getById(id as number)).data,
+/** UPDATE (corrigir texto/nota) */
+export function useUpdateAvOperacional() {
+    const qc = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, data }: { id: number; data: { resposta?: string; nota?: number; pontuacao?: number } }) => {
+            // envia na nomenclatura que seu backend espera
+            const payload: any = {};
+            if (data.resposta !== undefined) payload.resposta = data.resposta;
+            if (data.nota !== undefined) payload.nota = data.nota;
+            if (data.pontuacao !== undefined) payload.nota = data.pontuacao;
+            const res = await avOperacionalAPI.update(id, payload);
+            return res.data;
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: [QUERY_KEY] });
+            toast.success("Avaliação operacional atualizada.");
+        },
+        onError: (err: any) => {
+            toast.error("Não foi possível atualizar a avaliação.", {
+                description: err?.message ?? "Tente novamente.",
+            });
+        },
     });
-}
-
-/* =====================================================================================
- * Helpers para gráficos/relatórios
- * ===================================================================================== */
-
-/** Média e contagem de notas por loja (Bar/Column chart) */
-export function useAvOpGroupByLoja(items: AvOperacional[] = []) {
-    return React.useMemo(() => {
-        const map = new Map<
-            string,
-            { label: string; count: number; sum: number; avg: number }
-        >();
-
-        for (const it of items) {
-            const label =
-                it.auditoria?.loja?.name ||
-                (it.auditoria?.loja as any)?.descricao ||
-                `Loja ${it.auditoria?.loja?.id ?? "-"}`;
-
-            const nota = typeof it.nota === "number" ? it.nota : (typeof it.pontuacao === "number" ? it.pontuacao : null);
-            if (nota == null) continue;
-
-            const entry = map.get(label) ?? { label, count: 0, sum: 0, avg: 0 };
-            entry.count += 1;
-            entry.sum += nota;
-            map.set(label, entry);
-        }
-
-        const rows = [...map.values()].map((r) => ({ ...r, avg: r.count ? r.sum / r.count : 0 }));
-        // ideal para Recharts: labels + series
-        return {
-            labels: rows.map((r) => r.label),
-            seriesAvg: rows.map((r) => Number(r.avg.toFixed(2))),
-            seriesCount: rows.map((r) => r.count),
-            table: rows,
-        };
-    }, [items]);
-}
-
-/** Média e contagem de notas por auditor (Bar/Column chart) */
-export function useAvOpGroupByAuditor(items: AvOperacional[] = []) {
-    return React.useMemo(() => {
-        const map = new Map<string, { label: string; count: number; sum: number; avg: number }>();
-
-        for (const it of items) {
-            const label = it.auditoria?.usuario?.name ?? `Usuário ${it.auditoria?.usuario?.id ?? "-"}`;
-            const nota = typeof it.nota === "number" ? it.nota : (typeof it.pontuacao === "number" ? it.pontuacao : null);
-            if (nota == null) continue;
-
-            const entry = map.get(label) ?? { label, count: 0, sum: 0, avg: 0 };
-            entry.count += 1;
-            entry.sum += nota;
-            map.set(label, entry);
-        }
-
-        const rows = [...map.values()].map((r) => ({ ...r, avg: r.count ? r.sum / r.count : 0 }));
-        return {
-            labels: rows.map((r) => r.label),
-            seriesAvg: rows.map((r) => Number(r.avg.toFixed(2))),
-            seriesCount: rows.map((r) => r.count),
-            table: rows,
-        };
-    }, [items]);
-}
-
-/** Média de notas por questão (útil para ranking de perguntas) */
-export function useAvOpGroupByQuestao(items: AvOperacional[] = []) {
-    return React.useMemo(() => {
-        const map = new Map<number, { id: number; label: string; count: number; sum: number; avg: number }>();
-
-        for (const it of items) {
-            if (!it.questao) continue;
-            const id = it.questao.id;
-            const label = it.questao.name;
-            const nota = typeof it.nota === "number" ? it.nota : (typeof it.pontuacao === "number" ? it.pontuacao : null);
-            if (nota == null) continue;
-
-            const entry = map.get(id) ?? { id, label, count: 0, sum: 0, avg: 0 };
-            entry.count += 1;
-            entry.sum += nota;
-            map.set(id, entry);
-        }
-
-        const rows = [...map.values()].map((r) => ({ ...r, avg: r.count ? r.sum / r.count : 0 }));
-        return {
-            labels: rows.map((r) => r.label),
-            seriesAvg: rows.map((r) => Number(r.avg.toFixed(2))),
-            seriesCount: rows.map((r) => r.count),
-            table: rows,
-        };
-    }, [items]);
-}
-
-/** Série temporal (por data da auditoria) – média de nota por dia */
-export function useAvOpTimeline(items: AvOperacional[] = []) {
-    return React.useMemo(() => {
-        const map = new Map<string, { date: string; count: number; sum: number; avg: number }>();
-
-        for (const it of items) {
-            const dateStr = it.auditoria?.data ?? it.createdAt?.slice(0, 10);
-            if (!dateStr) continue;
-
-            const nota = typeof it.nota === "number" ? it.nota : (typeof it.pontuacao === "number" ? it.pontuacao : null);
-            if (nota == null) continue;
-
-            const entry = map.get(dateStr) ?? { date: dateStr, count: 0, sum: 0, avg: 0 };
-            entry.count += 1;
-            entry.sum += nota;
-            map.set(dateStr, entry);
-        }
-
-        const points = [...map.values()]
-            .sort((a, b) => a.date.localeCompare(b.date))
-            .map((p) => ({ ...p, avg: p.count ? p.sum / p.count : 0 }));
-
-        return {
-            points,                            // [{date, avg, count, sum}]
-            labels: points.map((p) => p.date), // eixo X
-            seriesAvg: points.map((p) => Number(p.avg.toFixed(2))),
-        };
-    }, [items]);
 }

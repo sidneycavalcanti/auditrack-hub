@@ -6,6 +6,7 @@ import {
     ResponsiveContainer,
     LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend,
     BarChart, Bar, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+    ReferenceLine,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import useThemeColors from "../hooks/useThemeColors";
@@ -13,15 +14,15 @@ import type { AvOperacional } from "@/types";
 import { cn } from "@/lib/utils";
 import { Table } from "@/components/ui/table";
 
-type Props = { items: AvOperacional[] };
+type AvOperacionalChartsPreviewProps = { items: AvOperacional[] };
 
 function toNumber(v: unknown): number | null {
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
 }
 
-export function AvOperacionalChartsPreview({ items }: Props) {
-    const { primary, accent, success, warning, destructive, violet, muted, grid, palette } = useThemeColors();
+export function AvOperacionalChartsPreview({ items }: AvOperacionalChartsPreviewProps) {
+    const { primary, accent, success, warning, destructive, violet_500, violet_600, muted, grid, palette } = useThemeColors();
     // Normalização dos dados vindos do backend
     const rows = React.useMemo(() => {
         return items.map((it) => {
@@ -98,14 +99,16 @@ export function AvOperacionalChartsPreview({ items }: Props) {
     const hasRows = rows.length > 0;
 
     return (
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-3 lg:grid-cols-2">
             {/* Evolução média por dia */}
             <Card className="bg-gradient-card shadow-card">
                 <CardHeader><CardTitle>Evolução média por dia</CardTitle></CardHeader>
                 <CardContent className="h-64">
                     {hasRows ? (
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={mediaDia}>
+                            <LineChart
+                                data={mediaDia}
+                            >
                                 <CartesianGrid stroke={grid} strokeDasharray="3 3" />
                                 <XAxis dataKey="data" fontSize={12} stroke={muted} />
                                 <YAxis domain={[0, 10]} stroke={muted} />
@@ -136,13 +139,21 @@ export function AvOperacionalChartsPreview({ items }: Props) {
                 <CardContent className="h-64">
                     {hasRows ? (
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={distNotas}>
-                                <CartesianGrid stroke={grid} strokeDasharray="3 3" />
-                                <XAxis dataKey="nota" stroke={muted} />
+                            <BarChart
+                                data={distNotas}
+                                margin={{
+                                    top: 5,
+                                    right: 0,
+                                    left: 0,
+                                    bottom: 5,
+                                }}
+                            >
+                                <CartesianGrid stroke={muted} strokeDasharray="3 3" />
+                                <XAxis dataKey="nota" fill={violet_600} stroke={muted} fontSize={12} />
                                 <YAxis allowDecimals={false} stroke={muted} />
                                 <Tooltip />
                                 <Legend />
-                                <Bar dataKey="qtd" name="Qtd" fill={accent} />
+                                <Bar dataKey="qtd" name="Qtd" fill={violet_500} />
                             </BarChart>
                         </ResponsiveContainer>
                     ) : (
@@ -161,7 +172,7 @@ export function AvOperacionalChartsPreview({ items }: Props) {
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={mediaLoja}>
                                 <CartesianGrid stroke={grid} strokeDasharray="3 3" />
-                                <XAxis dataKey="name" stroke={muted} tick={{ fontSize: 12 }} />
+                                <XAxis dataKey="name" stroke={muted} tick={{ fontSize: 10 }} />
                                 <YAxis domain={[0, 10]} stroke={muted} />
                                 <Tooltip />
                                 <Legend />
@@ -207,6 +218,7 @@ export function AvOperacionalChartsPreview({ items }: Props) {
                 </CardContent>
             </Card>
 
+
             {/* Radar comparativo simples (ex.: top 5 lojas) */}
             <Card className="bg-gradient-card shadow-card lg:col-span-2">
                 <CardHeader><CardTitle>Comparativo (Radar)</CardTitle></CardHeader>
@@ -215,8 +227,8 @@ export function AvOperacionalChartsPreview({ items }: Props) {
                         <ResponsiveContainer width="100%" height="100%">
                             <RadarChart data={mediaLoja.slice(0, 5)}>
                                 <PolarGrid stroke={grid} />
-                                <PolarAngleAxis dataKey="name" stroke={muted} />
-                                <PolarRadiusAxis domain={[0, 10]} stroke={muted} />
+                                <PolarAngleAxis dataKey="name" stroke={muted} fontSize={12} />
+                                <PolarRadiusAxis domain={[0, 10]} stroke={muted} fontSize={10} />
                                 <Radar
                                     name="Média"
                                     dataKey="media"
@@ -234,7 +246,8 @@ export function AvOperacionalChartsPreview({ items }: Props) {
                     )}
                 </CardContent>
             </Card>
-            <Table></Table>
+
+
         </div>
     );
 }

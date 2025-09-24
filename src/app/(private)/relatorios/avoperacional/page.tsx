@@ -1,15 +1,14 @@
 // src/app/(private)/relatorios/avoperacional/page.tsx
-"use client"
+"use client";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { AvOperacionalChartsPreview } from "./components/AvOperacionalCharts";
 import { useAvaliacoesOperacional } from "./hooks/useAvOperacional";
+import AvOperacionalTable from "./components/AvOperacionalTable";
 
 export default function ClientRelatorioAvOperacional() {
     const { data, isLoading } = useAvaliacoesOperacional({ page: 1, limit: 200 });
 
     const items = data?.data ?? [];
-    console.log("Items do ClientRelatorioAvOperacional: ", items);
-
 
     if (isLoading) {
         return (
@@ -20,7 +19,8 @@ export default function ClientRelatorioAvOperacional() {
     }
 
     return (
-        <div className="space-y-4 p-6">
+        <div className="space-y-3 pb-2">
+            <AvOperacionalTable items={items} />
             <AvOperacionalChartsPreview items={items} />
         </div>
     );

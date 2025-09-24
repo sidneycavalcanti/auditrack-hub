@@ -210,15 +210,15 @@ export interface AvOperacional {
     id: number;
     auditoriaId: number;
     cadAvOperacionalId: number;
-    pontuacao: number;          // backend usa "nota" (vamos mapear)
-    observacoes?: string;       // backend usa "resposta" (vamos mapear)
+    pontuacao: number;
+    observacoes?: string;
+
+    // 🔽 extras úteis p/ tela (já vêm do backend)
     auditoria?: Auditoria;
     cadAvOperacional?: CadAvOperacional;
-    // 👇 novas (opcionais) para relatório/gráficos
-    resposta?: string | null;
-    nota?: number | null;
-    // opcionalmente expor a questão:
-    questao?: { id: number; name: string; situacao?: boolean };
+    questao?: { id: number; name: string; situacao?: boolean }; // <- backend manda "cadquestoes"
+    nota?: number;         // alias compatível
+    resposta?: string;     // alias compatível
 
     createdAt?: string;
     updatedAt?: string;

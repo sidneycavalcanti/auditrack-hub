@@ -1,0 +1,373 @@
+// src/app/(private)/relatorios/avoperacional/components/AvOperacionalTable.tsx
+"use client";
+
+import * as React from "react";
+import { Save, Download, FileSpreadsheet, FileText, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { AvOperacional, Loja } from "@/types";
+import { useLojas } from "@/app/(private)/lojas/hooks/useLojas";
+import { useUpdateAvOperacional } from "../hooks/useAvOperacional";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+type AvOperacionalTableProps = {
+    items: AvOperacional[];
+};
+
+type DiaFmt = { dia: string; mes: string; ano: string; display: string };
+
+const INVALID_DAY: DiaFmt = { dia: "-", mes: "-", ano: "-", display: "-" };
+
+function fmtDia(iso?: string | null): DiaFmt {
+    if (!iso) return INVALID_DAY;
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return INVALID_DAY;
+
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = String(d.getFullYear());
+    return { dia: dd, mes: mm, ano: yyyy, display: `${dd}/${mm}/${yyyy}` };
+}
+
+const ALL = "all"; // sentinela para "Todos"
+
+const MONTHS = [
+    { v: 1, n: "Jan" }, { v: 2, n: "Fev" }, { v: 3, n: "Mar" }, { v: 4, n: "Abr" },
+    { v: 5, n: "Mai" }, { v: 6, n: "Jun" }, { v: 7, n: "Jul" }, { v: 8, n: "Ago" },
+    { v: 9, n: "Set" }, { v: 10, n: "Out" }, { v: 11, n: "Nov" }, { v: 12, n: "Dez" },
+];
+
+export default function AvOperacionalTable({ items }: AvOperacionalTableProps) {
+    const { data: lojasResp } = useLojas({ limit: 500 });
+    const lojas = (lojasResp?.data as Loja[]) ?? [];
+
+    // filtros
+    const anos = React.useMemo(() => {
+        const set = new Set<number>();
+        items.forEach((i) => {
+            const y = Number(i.auditoria?.data?.slice(0, 4));
+            if (y) set.add(y);
+        });
+        return Array.from(set).sort((a, b) => b - a);
+    }, [items]);
+
+    const [ano, setAno] = React.useState<number | undefined>(anos[0]);
+    const [mes, setMes] = React.useState<number | undefined>(undefined);
+    const [lojaId, setLojaId] = React.useState<number | undefined>(undefined);
+    const [search, setSearch] = React.useState("");
+
+    const filtered = React.useMemo(() => {
+        return items.filter((i) => {
+            const d = i.auditoria?.data?.slice(0, 10);
+            const y = d ? Number(d.slice(0, 4)) : undefined;
+            const m = d ? Number(d.slice(5, 7)) : undefined;
+
+            if (ano && y !== ano) return false;
+            if (mes && m !== mes) return false;
+            if (lojaId && i.auditoria?.loja?.id !== lojaId) return false;
+            if (search) {
+                const s = search.toLowerCase();
+                const auditor = i.auditoria?.usuario?.name?.toLowerCase() ?? "";
+                const loja = (i.auditoria?.loja?.name ?? (i.auditoria?.loja as any)?.descricao ?? "").toLowerCase();
+                const itemOp = i.cadAvOperacional?.descricao?.toLowerCase() ?? "";
+                const questao = i.questao?.name?.toLowerCase() ?? "";
+                const obs = (i.resposta ?? i.observacoes ?? "").toLowerCase();
+                if (![auditor, loja, itemOp, questao, obs].some((t) => t.includes(s))) return false;
+            }
+            return true;
+        });
+    }, [items, ano, mes, lojaId, search]);
+
+    return (
+        <Card className="bg-gradient-card shadow-card">
+            <CardHeader className="pb-2">
+                {lojaId === undefined || mes === undefined || ano === undefined ? (
+                    <CardTitle>
+                        Observações da Avaliação Operacional
+                    </CardTitle>
+                ) : (
+                    <CardTitle className="flex items-center justify-between">
+                        <div>Observações da Avaliação Operacional</div>
+                        <div>{` Loja: ${lojaId} - Mês: ${mes} / Ano: ${ano}`}</div>
+                    </CardTitle>
+                )}
+            </CardHeader>
+            <CardContent className="space-y-3">
+                {/* filtros */}
+                <div className="flex items-center justify-between flex-col gap-2 sm:flex-row">
+                    {/* Mês */}
+                    < div className="flex-2 space-y gap-0.5">
+                        <Select
+                            value={mes ? String(mes) : ALL}
+                            onValueChange={(v) => setMes(v === ALL ? undefined : Number(v))}
+                        >
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Selecionar Mês" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL}>Selecionar Mês</SelectItem>
+                                {MONTHS.map((m) => (
+                                    <SelectItem key={m.v} value={String(m.v)}>{m.n}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    {/* Ano */}
+                    <div className="flex-2 gap-0.5">
+                        <Select
+                            value={ano ? String(ano) : ALL}
+                            onValueChange={(v) => setAno(v === ALL ? undefined : Number(v))}
+                        >
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Selecionar Ano" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL}>Selecionar Ano</SelectItem>
+                                {anos.map((y) => (
+                                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    {/* Loja */}
+                    <div className="flex-2 gap-0.5">
+                        <Select
+                            value={lojaId ? String(lojaId) : ALL}
+                            onValueChange={(v) => setLojaId(v === ALL ? undefined : Number(v))}
+                        >
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Selecionar Loja" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL}>Selecionar Loja</SelectItem>
+                                {lojas.map((l) => (
+                                    <SelectItem key={l.id} value={String(l.id)}>
+                                        {l.descricao ?? l.name ?? `Loja ${l.id}`}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+
+                    {/* ações de export */}
+                    <div className="flex md:flex-1 w-full flex-col md:flex-row gap-2">
+                        <Button variant="outline" className="cursor-pointer" onClick={() => exportXLSX(filtered, "rel-av-operacional.xlsx")}>
+                            <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar .xlsx
+                        </Button>
+                        <Button variant="outline" className="cursor-pointer" onClick={() => exportXLS(filtered, "rel-av-operacional.xls")}>
+                            <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar .xls
+                        </Button>
+                        <Button variant="outline" className="cursor-pointer" onClick={() => exportPDF(filtered, "rel-av-operacional.pdf")}>
+                            <FileText className="mr-2 h-4 w-4" /> Exportar PDF
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
+                    <Input className="pl-10" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Auditor, loja, item, questão..." />
+                </div>
+
+                {/* tabela */}
+                <div className="overflow-x-auto rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-12">Nº</TableHead>
+                                <TableHead>Dia</TableHead>
+                                <TableHead>Auditor</TableHead>
+                                <TableHead>Item Operacional</TableHead>
+                                <TableHead>Questão</TableHead>
+                                <TableHead>Observação</TableHead>
+                                <TableHead className="text-right">Ação</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filtered.map((it, idx) => {
+                                const d = fmtDia(it.auditoria?.data);
+                                return (
+                                    <Row key={it.id} index={idx + 1} item={it} dia={d.display} />
+                                );
+                            })}
+                            {filtered.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                                        Nenhum registro encontrado.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function Row({ item, index, dia }: { item: AvOperacional; index: number; dia: string }) {
+    const [open, setOpen] = React.useState(false);
+    const auditor = item.auditoria?.usuario?.name ?? `Usuário ${item.auditoria?.usuario?.id ?? "-"}`;
+    const loja =
+        item.auditoria?.loja?.name ??
+        (item.auditoria?.loja as any)?.descricao ??
+        `Loja ${item.auditoria?.loja?.id ?? "-"}`;
+    const itemOp = item.cadAvOperacional?.descricao ?? `Item ${item.cadAvOperacionalId}`;
+    const questao = item.questao?.name ?? "-";
+    const obs = item.resposta ?? item.observacoes ?? "-";
+
+    return (
+        <TableRow>
+            <TableCell className="py-1.5">{index}</TableCell>
+            <TableCell className="py-1.5">{dia}</TableCell>
+            <TableCell className="py-1.5">{auditor}</TableCell>
+            <TableCell className="py-1.5">{itemOp}</TableCell>
+            <TableCell className="py-1.5">{questao}</TableCell>
+            <TableCell className="py-1.5">{obs}</TableCell>
+            <TableCell className="py-1.5 text-right">
+                <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => setOpen(true)}>
+                    <Save className="h-4 w-4 mr-2" /> Editar
+                </Button>
+
+                <EditDialog open={open} onOpenChange={setOpen} item={item} />
+            </TableCell>
+        </TableRow>
+    );
+}
+
+/** Dialog de edição (resposta/nota) */
+function EditDialog({ open, onOpenChange, item }: { open: boolean; onOpenChange: (v: boolean) => void; item: AvOperacional }) {
+    const [resposta, setResposta] = React.useState(item.resposta ?? item.observacoes ?? "");
+    const [nota, setNota] = React.useState<number | "">((item.nota ?? item.pontuacao) as number);
+
+    React.useEffect(() => {
+        if (open) {
+            setResposta(item.resposta ?? item.observacoes ?? "");
+            setNota((item.nota ?? item.pontuacao) as number);
+        }
+    }, [open, item]);
+
+    const update = useUpdateAvOperacional();
+
+    const handleSave = async () => {
+        await update.mutateAsync({
+            id: item.id,
+            data: {
+                resposta: resposta?.trim(),
+                nota: typeof nota === "number" ? nota : undefined,
+            },
+        });
+        onOpenChange(false);
+    };
+
+    const canSave = (resposta ?? "").trim().length > 0 || typeof nota === "number";
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>Editar avaliação #{item.id}</DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-3">
+                    <div>
+                        <Label>Nota (0–10)</Label>
+                        <Input
+                            type="number"
+                            min={0}
+                            max={10}
+                            step={1}
+                            value={nota}
+                            onChange={(e) => {
+                                const v = e.target.value;
+                                setNota(v === "" ? "" : Math.max(0, Math.min(10, Number(v))));
+                            }}
+                        />
+                    </div>
+
+                    <div>
+                        <Label>Observação</Label>
+                        <Textarea value={resposta} onChange={(e) => setResposta(e.target.value)} rows={6} />
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button variant="outline" className="cursor-pointer" onClick={() => onOpenChange(false)}>
+                        Cancelar
+                    </Button>
+                    <Button className="cursor-pointer" onClick={handleSave} disabled={!canSave || update.isPending}>
+                        Salvar
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+/* ========================= Exportações =========================
+    Obs: precisa ter as libs instaladas no projeto:
+    npm i xlsx jspdf jspdf-autotable
+   (imports são dinâmicos para rodar apenas no client) */
+
+function toFlatRows(src: AvOperacional[]) {
+    return src.map((it, i) => {
+        const d = fmtDia(it.auditoria?.data).display;
+        const auditor = it.auditoria?.usuario?.name ?? `Usuário ${it.auditoria?.usuario?.id ?? "-"}`;
+        const itemOp = it.cadAvOperacional?.descricao ?? `Item ${it.cadAvOperacionalId}`;
+        const questao = it.questao?.name ?? "-";
+        return {
+            "Nº": i + 1,
+            DIA: d,
+            AUDITOR: auditor,
+            "ITEM OPERACIONAL": itemOp,
+            QUESTÃO: questao,
+            OBSERVAÇÃO: it.resposta ?? it.observacoes ?? "",
+        };
+    });
+}
+
+async function exportXLSX(rows: AvOperacional[], filename: string) {
+    const XLSX = (await import("xlsx")).default;
+    const ws = XLSX.utils.json_to_sheet(toFlatRows(rows));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Avaliações");
+    XLSX.writeFile(wb, filename, { bookType: "xlsx" });
+}
+
+async function exportXLS(rows: AvOperacional[], filename: string) {
+    const XLSX = (await import("xlsx")).default;
+    const ws = XLSX.utils.json_to_sheet(toFlatRows(rows));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Avaliações");
+    XLSX.writeFile(wb, filename, { bookType: "xls" }); // suportado pelo SheetJS
+}
+
+async function exportPDF(rows: AvOperacional[], filename: string) {
+    const { default: jsPDF } = await import("jspdf");
+    await import("jspdf-autotable");
+
+    const doc = new jsPDF({ orientation: "l", unit: "pt", format: "a4" });
+    const data = toFlatRows(rows);
+
+    (doc as any).autoTable({
+        head: [Object.keys(data[0] ?? { "Nº": "", DIA: "", AUDITOR: "", "ITEM OPERACIONAL": "", QUESTÃO: "", OBSERVAÇÃO: "" })],
+        body: data.map((r) => Object.values(r)),
+        styles: { fontSize: 8, cellPadding: 3, overflow: "linebreak" },
+        headStyles: { fillColor: [33, 33, 33] },
+        columnStyles: { 5: { cellWidth: 300 } }, // OBS larga
+        margin: { top: 40, left: 20, right: 20, bottom: 20 },
+    });
+
+    doc.save(filename);
+}

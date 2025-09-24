@@ -37,12 +37,13 @@ function useThemeColors() {
         const success = pick("--success", "oklch(64% 0.13 145)");
         const warning = pick("--warning", "oklch(75% 0.12 85)");
         const destructive = pick("--destructive", "oklch(62% 0.17 30)");
-        const violet = "oklch(62% 0.20 305)"; // extra fixo (se quiser)
+        const violet_500 = "oklch(60.6% 0.25 292.717)"; // extra fixo (se quiser)
+        const violet_600 = "oklch(54.1% 0.281 293.009)"; // extra fixo (se quiser)
         const muted = pick("--muted-foreground", "oklch(65% 0.02 260)");
         const grid = pick("--muted", "oklch(35% 0.02 260)");
 
-        const palette = [primary, accent, success, warning, destructive, violet];
-        return { primary, accent, success, warning, destructive, violet, muted, grid, palette };
+        const palette = [primary, accent, success, warning, destructive, violet_500, violet_600];
+        return { primary, accent, success, warning, destructive, violet_500, violet_600, muted, grid, palette };
     }, [pick]);
 }
 

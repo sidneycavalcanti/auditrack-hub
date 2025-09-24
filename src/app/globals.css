@@ -48,6 +48,12 @@
   --color-ring: var(--ring);
   --color-ring-primary: var(--ring-primary);
 
+  --color-gradient-primary: var(--gradient-primary);
+  --color-gradient-success: var(--gradient-success);
+  --color-gradient-card: var(--gradient-card);
+  --color-gradient-dashboard: var(--gradient-dashboard);
+
+
   /* Sidebar + charts (se usar) */
   --color-sidebar: var(--sidebar-background);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -100,8 +106,8 @@
   --muted-foreground: oklch(from hsl(215 15% 45%) l c h);
 
   /* Accent - Azul Claro para Highlights */
-  --accent: oklch(from hsl(215 50% 95%) l c h);
-  --accent-foreground: oklch(from hsl(215 85% 25%) l c h);
+  --accent: oklch(from oklch(95.667% 0.01211 259.931) l c h);
+  --accent-foreground: oklch(from oklch(34.87% 0.11813 258.452) l c h);
 
   /* Success - Verde Corporativo */
   --success: oklch(from hsl(142 76% 36%) l c h);
