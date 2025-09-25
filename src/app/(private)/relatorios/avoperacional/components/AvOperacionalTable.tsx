@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { Save, Download, FileSpreadsheet, FileText, Search } from "lucide-react";
+import { Save, Download, FileSpreadsheet, FileText, Search, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -15,9 +15,10 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import type { AvOperacional, Loja } from "@/types";
 import { useLojas } from "@/app/(private)/lojas/hooks/useLojas";
-import { useUpdateAvOperacional } from "../hooks/useAvOperacional";
+import { useAvaliacoesOperacional, useUpdateAvOperacional } from "../hooks/useAvOperacional";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -66,6 +67,23 @@ export default function AvOperacionalTable({ items }: AvOperacionalTableProps) {
     const [mes, setMes] = React.useState<number | undefined>(undefined);
     const [lojaId, setLojaId] = React.useState<number | undefined>(undefined);
     const [search, setSearch] = React.useState("");
+    const [page, setPage] = React.useState(1);
+    const [limit] = React.useState(10);
+    const [statusFilter, setStatusFilter] = React.useState<string>(ALL);
+
+    const { data: avOperacionalResp, isLoading, error } = useAvaliacoesOperacional({
+        name: search || undefined,
+        page: page,
+        limit: limit,
+    });
+
+    const motivosperda = avOperacionalResp?.data ?? [];
+    const pagination = {
+        total: avOperacionalResp?.total ?? 0,
+        totalPages: avOperacionalResp?.totalPages ?? 1,
+        currentPage: avOperacionalResp?.page ?? 1,
+        limit: avOperacionalResp?.limit ?? 10,
+    };
 
     const filtered = React.useMemo(() => {
         return items.filter((i) => {
@@ -89,132 +107,307 @@ export default function AvOperacionalTable({ items }: AvOperacionalTableProps) {
         });
     }, [items, ano, mes, lojaId, search]);
 
+    const clearFilters = () => {
+        setMes(undefined)
+        setAno(anos[0]);
+        setLojaId(undefined)
+    };
+
+    const clearSearch = () => {
+        setSearch("");
+        setPage(1);
+    };
+
+
+
     return (
-        <Card className="bg-gradient-card shadow-card">
-            <CardHeader className="pb-2">
-                {lojaId === undefined || mes === undefined || ano === undefined ? (
-                    <CardTitle>
-                        Observações da Avaliação Operacional
-                    </CardTitle>
-                ) : (
-                    <CardTitle className="flex items-center justify-between">
-                        <div>Observações da Avaliação Operacional</div>
-                        <div>{` Loja: ${lojaId} - Mês: ${mes} / Ano: ${ano}`}</div>
-                    </CardTitle>
-                )}
-            </CardHeader>
-            <CardContent className="space-y-3">
-                {/* filtros */}
-                <div className="flex items-center justify-between flex-col gap-2 sm:flex-row">
-                    {/* Mês */}
-                    < div className="flex-2 space-y gap-0.5">
-                        <Select
-                            value={mes ? String(mes) : ALL}
-                            onValueChange={(v) => setMes(v === ALL ? undefined : Number(v))}
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Selecionar Mês" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value={ALL}>Selecionar Mês</SelectItem>
-                                {MONTHS.map((m) => (
-                                    <SelectItem key={m.v} value={String(m.v)}>{m.n}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    {/* Ano */}
-                    <div className="flex-2 gap-0.5">
-                        <Select
-                            value={ano ? String(ano) : ALL}
-                            onValueChange={(v) => setAno(v === ALL ? undefined : Number(v))}
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Selecionar Ano" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value={ALL}>Selecionar Ano</SelectItem>
-                                {anos.map((y) => (
-                                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    {/* Loja */}
-                    <div className="flex-2 gap-0.5">
-                        <Select
-                            value={lojaId ? String(lojaId) : ALL}
-                            onValueChange={(v) => setLojaId(v === ALL ? undefined : Number(v))}
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Selecionar Loja" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value={ALL}>Selecionar Loja</SelectItem>
-                                {lojas.map((l) => (
-                                    <SelectItem key={l.id} value={String(l.id)}>
-                                        {l.descricao ?? l.name ?? `Loja ${l.id}`}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+        <>
+            <div className="space-y-3">
+                <Card className="bg-gradient-card shadow-card">
+                    <CardHeader>
+                        {lojaId === undefined || mes === undefined || ano === undefined ? (
+                            <CardTitle>
+                                <h3>Filtrar por período</h3>
+                            </CardTitle>
+                        ) : (
+                            <CardTitle className="flex items-center justify-between">
+                                <h3>Filtrar por período</h3>
+                                <div>{` Loja: ${lojaId} - Mês: ${mes} / Ano: ${ano}`}</div>
+                            </CardTitle>
+                        )}
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        {/* filtros */}
+                        <div className="flex flex-col lg:flex-row lg:flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-col lg:flex-row flex-5 gap-2 w-full">
+                                {/* Mês */}
+                                < div className="flex-2 gap-0.5">
+                                    <Select
+                                        value={mes ? String(mes) : ALL}
+                                        onValueChange={(v) => setMes(v === ALL ? undefined : Number(v))}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Selecionar Mês" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value={ALL}>Selecionar Mês</SelectItem>
+                                            {MONTHS.map((m) => (
+                                                <SelectItem key={m.v} value={String(m.v)}>{m.n}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                {/* Ano */}
+                                <div className="flex-2 gap-0.5">
+                                    <Select
+                                        value={ano ? String(ano) : ALL}
+                                        onValueChange={(v) => setAno(v === ALL ? undefined : Number(v))}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Selecionar Ano" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value={ALL}>Selecionar Ano</SelectItem>
+                                            {anos.map((y) => (
+                                                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                {/* Loja */}
+                                <div className="flex-2 gap-0.5">
+                                    <Select
+                                        value={lojaId ? String(lojaId) : ALL}
+                                        onValueChange={(v) => setLojaId(v === ALL ? undefined : Number(v))}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Selecionar Loja" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value={ALL}>Selecionar Loja</SelectItem>
+                                            {lojas.map((l) => (
+                                                <SelectItem key={l.id} value={String(l.id)}>
+                                                    {l.descricao ?? l.name ?? `Loja ${l.id}`}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* btn limpar filtros */}
+                                {(setMes !== undefined || setLojaId !== undefined || setAno !== undefined) && (
+                                    <div>
+                                        <Button
+                                            variant="premium"
+                                            size="sm"
+                                            onClick={clearFilters}
+                                            className="flex w-full items-center cursor-pointer"
+                                        >
+                                            <X className="h-4 w-4" />
+                                            Limpar filtros
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
 
 
-                    {/* ações de export */}
-                    <div className="flex md:flex-1 w-full flex-col md:flex-row gap-2">
-                        <Button variant="outline" className="cursor-pointer" onClick={() => exportXLSX(filtered, "rel-av-operacional.xlsx")}>
-                            <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar .xlsx
-                        </Button>
-                        <Button variant="outline" className="cursor-pointer" onClick={() => exportXLS(filtered, "rel-av-operacional.xls")}>
-                            <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar .xls
-                        </Button>
-                        <Button variant="outline" className="cursor-pointer" onClick={() => exportPDF(filtered, "rel-av-operacional.pdf")}>
-                            <FileText className="mr-2 h-4 w-4" /> Exportar PDF
-                        </Button>
-                    </div>
-                </div>
+                            {/* ações de export */}
+                            <div className="flex flex-col flex-1 w-full md:flex-row gap-2">
+                                <div className="md:flex-1">
+                                    <ExportSelect rows={filtered} />
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="bg-gradient-card shadow-card">
+                    <CardHeader className="pb-2">
+                        <CardTitle>
+                            <h3>Observações da Avaliação Operacional</h3>
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
+                                <Input className="pl-10" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Auditor, loja, item, questão..." />
+                            </div>
 
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
-                    <Input className="pl-10" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Auditor, loja, item, questão..." />
-                </div>
-
-                {/* tabela */}
-                <div className="overflow-x-auto rounded-md border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-12">Nº</TableHead>
-                                <TableHead>Dia</TableHead>
-                                <TableHead>Auditor</TableHead>
-                                <TableHead>Item Operacional</TableHead>
-                                <TableHead>Questão</TableHead>
-                                <TableHead>Observação</TableHead>
-                                <TableHead className="text-right">Ação</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filtered.map((it, idx) => {
-                                const d = fmtDia(it.auditoria?.data);
-                                return (
-                                    <Row key={it.id} index={idx + 1} item={it} dia={d.display} />
-                                );
-                            })}
-                            {filtered.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center text-muted-foreground">
-                                        Nenhum registro encontrado.
-                                    </TableCell>
-                                </TableRow>
+                            {(search) && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={clearSearch}
+                                    className="flex items-center gap-2 cursor-pointer"
+                                >
+                                    <X className="h-4 w-4" />
+                                    Limpar buscas
+                                </Button>
                             )}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
+                        </div>
+                        {/* tabela */}
+                        <div className="overflow-x-auto rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-12">Nº</TableHead>
+                                        <TableHead>Dia</TableHead>
+                                        <TableHead>Auditor</TableHead>
+                                        <TableHead>Item Operacional</TableHead>
+                                        <TableHead>Questão</TableHead>
+                                        <TableHead>Observação</TableHead>
+                                        <TableHead className="text-right">Ação</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filtered.map((it, idx) => {
+                                        const d = fmtDia(it.auditoria?.data);
+                                        return (
+                                            <Row key={it.id} index={idx + 1} item={it} dia={d.display} />
+                                        );
+                                    })}
+                                    {filtered.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={7} className="text-center text-muted-foreground">
+                                                Nenhum registro encontrado.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        {/* Paginação */}
+                        {pagination.totalPages >= 1 && (
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-0">
+                                {/* Contagem */}
+                                <div className="flex items-center justify-between">
+                                    <p className="flex-wrap md:max-w-48 text-xs text-muted-foreground">
+                                        {pagination.total > 0
+                                            ? `Mostrando ${(pagination.currentPage - 1) * pagination.limit + 1
+                                            } a ${Math.min(
+                                                pagination.currentPage * pagination.limit,
+                                                pagination.total
+                                            )} de ${pagination.total} Observações Avaliações Operacional`
+                                            : "Nenhuma questão encontrada"}
+                                    </p>
+                                </div>
+                                <Pagination>
+                                    <PaginationContent>
+                                        <PaginationItem>
+                                            <PaginationPrevious
+                                                onClick={() => setPage(Math.max(1, pagination.currentPage - 1))}
+                                                className={
+                                                    pagination.currentPage === 1
+                                                        ? "pointer-events-none opacity-50"
+                                                        : "cursor-pointer"
+                                                }
+                                            />
+                                        </PaginationItem>
+                                        {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                                            let pageNum: number;
+                                            if (pagination.totalPages <= 5) pageNum = i + 1;
+                                            else if (pagination.currentPage <= 3) pageNum = i + 1;
+                                            else if (pagination.currentPage >= pagination.totalPages - 2) pageNum = pagination.totalPages - 4 + i;
+                                            else pageNum = pagination.currentPage - 2 + i;
+
+                                            return (
+                                                <PaginationItem key={pageNum}>
+                                                    <PaginationLink
+                                                        onClick={() => setPage(pageNum)}
+                                                        isActive={pagination.currentPage === pageNum}
+                                                        className="cursor-pointer"
+                                                    >
+                                                        {pageNum}
+                                                    </PaginationLink>
+                                                </PaginationItem>
+                                            );
+                                        })}
+                                        <PaginationItem>
+                                            <PaginationNext
+                                                onClick={() => setPage(Math.min(pagination.totalPages, pagination.currentPage + 1))}
+                                                className={
+                                                    pagination.currentPage === pagination.totalPages
+                                                        ? "pointer-events-none opacity-50"
+                                                        : "cursor-pointer"
+                                                }
+                                            />
+                                        </PaginationItem>
+                                    </PaginationContent>
+                                </Pagination>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+        </>
+    );
+
+}
+
+// helpers já existentes no arquivo:
+/// exportXLSX(rows, filename), exportXLS(rows, filename), exportPDF(rows, filename)
+
+function defaultName(kind: "xlsx" | "xls" | "pdf" | "none") {
+    switch (kind) {
+        case "xlsx": return "rel-av-operacional.xlsx";
+        case "xls": return "rel-av-operacional.xls";
+        case "pdf": return "rel-av-operacional.pdf";
+        default: return "";
+    }
+}
+
+function ExportSelect({ rows }: { rows: AvOperacional[] }) {
+    // não use string vazia como value (evita erro do shadcn Select)
+    const [kind, setKind] = React.useState<"none" | "xlsx" | "xls" | "pdf">("none");
+    const [pending, setPending] = React.useState(false);
+
+    const filename = defaultName(kind);
+    const canExport = kind !== "none" && rows.length > 0 && !pending;
+
+    const handleExport = async () => {
+        if (!canExport) return;
+        setPending(true);
+        try {
+            if (kind === "xlsx") await exportXLSX(rows, filename);
+            else if (kind === "xls") await exportXLS(rows, filename);
+            else if (kind === "pdf") await exportPDF(rows, filename);
+        } finally {
+            setPending(false);
+            // volta para placeholder após exportar
+            setKind("none");
+        }
+    };
+
+    return (
+        <div className="flex gap-2">
+            <Select value={kind} onValueChange={(v) => setKind(v as any)}>
+                <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Exportar…" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="none" disabled>Exportar…</SelectItem>
+                    <SelectItem value="xlsx">Excel (.xlsx)</SelectItem>
+                    <SelectItem value="xls">Excel 97–2003 (.xls)</SelectItem>
+                    <SelectItem value="pdf">PDF</SelectItem>
+                </SelectContent>
+            </Select>
+
+            <Button
+                variant="default"
+                size="sm"
+                onClick={handleExport}
+                disabled={!canExport}
+                className="cursor-pointer"
+            >
+                {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Exportar
+            </Button>
+        </div>
     );
 }
+
+
 
 function Row({ item, index, dia }: { item: AvOperacional; index: number; dia: string }) {
     const [open, setOpen] = React.useState(false);
@@ -338,7 +531,8 @@ function toFlatRows(src: AvOperacional[]) {
 }
 
 async function exportXLSX(rows: AvOperacional[], filename: string) {
-    const XLSX = (await import("xlsx")).default;
+    // NÃO use .default – pegue o namespace
+    const XLSX = await import("xlsx");
     const ws = XLSX.utils.json_to_sheet(toFlatRows(rows));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Avaliações");
@@ -346,21 +540,23 @@ async function exportXLSX(rows: AvOperacional[], filename: string) {
 }
 
 async function exportXLS(rows: AvOperacional[], filename: string) {
-    const XLSX = (await import("xlsx")).default;
+    const XLSX = await import("xlsx");
     const ws = XLSX.utils.json_to_sheet(toFlatRows(rows));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Avaliações");
-    XLSX.writeFile(wb, filename, { bookType: "xls" }); // suportado pelo SheetJS
+    // SheetJS suporta writeFile com bookType "xls"
+    XLSX.writeFile(wb, filename, { bookType: "xls" });
 }
 
 async function exportPDF(rows: AvOperacional[], filename: string) {
-    const { default: jsPDF } = await import("jspdf");
-    await import("jspdf-autotable");
+    // no ESM use jsPDF via named export, e a função autoTable separada
+    const { jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
 
-    const doc = new jsPDF({ orientation: "l", unit: "pt", format: "a4" });
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
     const data = toFlatRows(rows);
 
-    (doc as any).autoTable({
+    autoTable(doc, {
         head: [Object.keys(data[0] ?? { "Nº": "", DIA: "", AUDITOR: "", "ITEM OPERACIONAL": "", QUESTÃO: "", OBSERVAÇÃO: "" })],
         body: data.map((r) => Object.values(r)),
         styles: { fontSize: 8, cellPadding: 3, overflow: "linebreak" },

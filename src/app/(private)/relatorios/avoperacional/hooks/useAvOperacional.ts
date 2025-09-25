@@ -10,10 +10,20 @@ import { toast } from "sonner";
 const QUERY_KEY = "avoperacional";
 
 // adicionamos campos de filtro (mes/ano/lojaId)
-type AvOperacionalFilters = FilterOptions & {
-    mes?: number;   // 1..12
-    ano?: number;   // ex: 2025
+export type AvOperacionalFilters = FilterOptions & {
+    // já existiam:
+    mes?: number;     // 1..12
+    ano?: number;     // ex: 2025
     lojaId?: number;
+
+    // novos:
+    from?: string;    // "YYYY-MM-DD"
+    to?: string;      // "YYYY-MM-DD"
+    auditorId?: number;
+    questaoId?: number;
+    cadAvOperacionalId?: number;
+    notaMin?: number;
+    notaMax?: number;
 };
 
 const normalizeFilters = (f: AvOperacionalFilters = {}) => ({
@@ -23,7 +33,61 @@ const normalizeFilters = (f: AvOperacionalFilters = {}) => ({
     mes: f.mes ?? undefined,
     ano: f.ano ?? undefined,
     lojaId: f.lojaId ?? undefined,
+
+    from: f.from ?? undefined,
+    to: f.to ?? undefined,
+    auditorId: f.auditorId ?? undefined,
+    questaoId: f.questaoId ?? undefined,
+    cadAvOperacionalId: f.cadAvOperacionalId ?? undefined,
+    notaMin: f.notaMin ?? undefined,
+    notaMax: f.notaMax ?? undefined,
 });
+
+/** Filtro local reutilizável (fallback caso o backend não filtre tudo) */
+export function applyAvOpFilters(items: AvOperacional[], f: AvOperacionalFilters) {
+    const n = normalizeFilters(f);
+    return items.filter((it) => {
+        // datas
+        const dateISO = it.auditoria?.data ?? it.createdAt?.slice(0, 10);
+        if (n.ano || n.mes) {
+            if (!dateISO) return false;
+            const y = Number(dateISO.slice(0, 4));
+            const m = Number(dateISO.slice(5, 7));
+            if (n.ano && y !== n.ano) return false;
+            if (n.mes && m !== n.mes) return false;
+        }
+        if (n.from && dateISO && dateISO < n.from) return false;
+        if (n.to && dateISO && dateISO > n.to) return false;
+
+        // entidades
+        if (n.lojaId && it.auditoria?.loja?.id !== n.lojaId) return false;
+        if (n.auditorId && it.auditoria?.usuario?.id !== n.auditorId) return false;
+        if (n.cadAvOperacionalId && (it.cadAvOperacionalId ?? it.cadAvOperacional?.id) !== n.cadAvOperacionalId) return false;
+        if (n.questaoId && it.questao?.id !== n.questaoId) return false;
+
+        // notas
+        const nota = typeof it.nota === "number" ? it.nota
+            : typeof it.pontuacao === "number" ? it.pontuacao
+                : null;
+        if (nota != null) {
+            if (n.notaMin != null && nota < n.notaMin) return false;
+            if (n.notaMax != null && nota > n.notaMax) return false;
+        }
+
+        // search
+        if (n.search) {
+            const s = n.search.toLowerCase();
+            const auditor = it.auditoria?.usuario?.name?.toLowerCase() ?? "";
+            const loja = (it.auditoria?.loja?.name ?? (it.auditoria?.loja as any)?.descricao ?? "").toLowerCase();
+            const itemOp = it.cadAvOperacional?.descricao?.toLowerCase() ?? "";
+            const questao = it.questao?.name?.toLowerCase() ?? "";
+            const obs = (it.resposta ?? it.observacoes ?? "").toLowerCase();
+            if (![auditor, loja, itemOp, questao, obs].some((t) => t.includes(s))) return false;
+        }
+
+        return true;
+    });
+}
 
 export function useAvaliacoesOperacional(filters: AvOperacionalFilters = {}) {
     const norm = normalizeFilters(filters);
@@ -31,43 +95,28 @@ export function useAvaliacoesOperacional(filters: AvOperacionalFilters = {}) {
     return useQuery<PaginatedResponse<AvOperacional>>({
         queryKey: [QUERY_KEY, norm],
         queryFn: async () => {
+            // passamos todos os filtros que o backend suportar
             const res = await avOperacionalAPI.getAll(norm as any);
             const payload = res.data as any;
 
-            // Array de avaliações
             const list: any[] = Array.isArray(payload?.avaliacoes) ? payload.avaliacoes : [];
-
-            // Mapeia para o tipo do front
             let items: AvOperacional[] = list.map((a: any) => ({
                 id: a.id,
                 auditoriaId: a.auditoriaId ?? a.auditoria?.id,
                 cadAvOperacionalId: a.cadavoperacionalId ?? a.cadavoperacional?.id,
                 pontuacao: a.nota ?? 0,
                 observacoes: a.resposta ?? undefined,
-
-                auditoria: a.auditoria,                 // contém data/loja/usuario
-                cadAvOperacional: a.cadavoperacional,   // contém descricao
-                questao: a.cadquestoes,                 // se o backend enviar
-
+                auditoria: a.auditoria,
+                cadAvOperacional: a.cadavoperacional,
+                questao: a.cadquestoes,
                 nota: a.nota,
                 resposta: a.resposta,
-
                 createdAt: a.createdAt,
                 updatedAt: a.updatedAt,
             }));
 
-            // 🔎 Filtros locais (fallback), caso o backend não aplique:
-            if (norm.ano || norm.mes || norm.lojaId) {
-                items = items.filter((it) => {
-                    const d = it.auditoria?.data?.slice(0, 10);
-                    const lojaMatch = norm.lojaId ? (it.auditoria?.loja?.id === norm.lojaId) : true;
-                    const anoMatch =
-                        norm.ano ? (d ? Number(d.slice(0, 4)) === norm.ano : false) : true;
-                    const mesMatch =
-                        norm.mes ? (d ? Number(d.slice(5, 7)) === norm.mes : false) : true;
-                    return lojaMatch && anoMatch && mesMatch;
-                });
-            }
+            // 🔁 fallback local
+            items = applyAvOpFilters(items, norm);
 
             const total = payload.totalItems ?? payload.total ?? items.length;
             const limit = (payload.limit ?? norm.limit ?? items.length) || 10;

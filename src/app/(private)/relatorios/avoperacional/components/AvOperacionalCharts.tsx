@@ -12,7 +12,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import useThemeColors from "../hooks/useThemeColors";
 import type { AvOperacional } from "@/types";
 import { cn } from "@/lib/utils";
-import { Table } from "@/components/ui/table";
 
 type AvOperacionalChartsPreviewProps = { items: AvOperacional[] };
 
