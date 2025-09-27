@@ -1,9 +1,10 @@
 "use client";
 import * as React from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { FunnelX } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { AvOperacional } from "@/types";
 import type { AvOperacionalFilters } from "../hooks/useAvOperacional";
@@ -78,16 +79,23 @@ export default function AvOpChartsFilters({ items, value, onChange, onClear, cla
 
     return (
         <Card className={cn("bg-gradient-card shadow-card", className)}>
-            <CardContent className="space-y-3 py-4">
-                <div className="grid gap-2 lg:grid-cols-6">
+            <CardHeader>
+                <CardTitle>
+                    Filtrar gráficos
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 py-4">
+                <div className="flex flex-col lg:flex-row gap-2">
                     {/* Mês */}
-                    <div>
-                        <Label>Mês</Label>
+                    <div className="lg:flex-2 space-y-1">
+                        <Label className="ml-1.5">Mês</Label>
                         <Select
                             value={value.mes ? String(value.mes) : ALL}
                             onValueChange={(v) => onChange({ mes: v === ALL ? undefined : Number(v) })}
                         >
-                            <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Todos" />
+                            </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value={ALL}>Todos</SelectItem>
                                 {MONTHS.map((m) => <SelectItem key={m.v} value={String(m.v)}>{m.n}</SelectItem>)}
@@ -96,13 +104,15 @@ export default function AvOpChartsFilters({ items, value, onChange, onClear, cla
                     </div>
 
                     {/* Ano */}
-                    <div>
-                        <Label>Ano</Label>
+                    <div className="lg:flex-2 space-y-1">
+                        <Label className="ml-1.5">Ano</Label>
                         <Select
                             value={value.ano ? String(value.ano) : ALL}
                             onValueChange={(v) => onChange({ ano: v === ALL ? undefined : Number(v) })}
                         >
-                            <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Todos" />
+                            </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value={ALL}>Todos</SelectItem>
                                 {anos.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
@@ -111,13 +121,15 @@ export default function AvOpChartsFilters({ items, value, onChange, onClear, cla
                     </div>
 
                     {/* Loja */}
-                    <div>
-                        <Label>Loja</Label>
+                    <div className="lg:flex-2 space-y-1">
+                        <Label className="ml-1.5">Loja</Label>
                         <Select
                             value={value.lojaId ? String(value.lojaId) : ALL}
                             onValueChange={(v) => onChange({ lojaId: v === ALL ? undefined : Number(v) })}
                         >
-                            <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Todas" />
+                            </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value={ALL}>Todas</SelectItem>
                                 {lojas.map((l) => <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>)}
@@ -126,13 +138,14 @@ export default function AvOpChartsFilters({ items, value, onChange, onClear, cla
                     </div>
 
                     {/* Auditor */}
-                    <div>
-                        <Label>Auditor</Label>
+                    <div className="lg:flex-2 space-y-1">
+                        <Label className="ml-1.5">Auditor</Label>
                         <Select
                             value={value.auditorId ? String(value.auditorId) : ALL}
                             onValueChange={(v) => onChange({ auditorId: v === ALL ? undefined : Number(v) })}
                         >
-                            <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                            <SelectTrigger className="w-full"><SelectValue placeholder="Todos" />
+                            </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value={ALL}>Todos</SelectItem>
                                 {auditores.map((a) => <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>)}
@@ -141,13 +154,13 @@ export default function AvOpChartsFilters({ items, value, onChange, onClear, cla
                     </div>
 
                     {/* Item Operacional */}
-                    <div>
-                        <Label>Item Operacional</Label>
+                    <div className="lg:flex-2 space-y-1">
+                        <Label className="ml-1.5">Item Operacional</Label>
                         <Select
                             value={value.cadAvOperacionalId ? String(value.cadAvOperacionalId) : ALL}
                             onValueChange={(v) => onChange({ cadAvOperacionalId: v === ALL ? undefined : Number(v) })}
                         >
-                            <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                            <SelectTrigger className="w-full"><SelectValue placeholder="Todos" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value={ALL}>Todos</SelectItem>
                                 {itensOp.map((i) => <SelectItem key={i.id} value={String(i.id)}>{i.name}</SelectItem>)}
@@ -156,13 +169,13 @@ export default function AvOpChartsFilters({ items, value, onChange, onClear, cla
                     </div>
 
                     {/* Questão */}
-                    <div>
-                        <Label>Questão</Label>
+                    <div className="lg:flex-2 space-y-1">
+                        <Label className="ml-1.5">Questão</Label>
                         <Select
                             value={value.questaoId ? String(value.questaoId) : ALL}
                             onValueChange={(v) => onChange({ questaoId: v === ALL ? undefined : Number(v) })}
                         >
-                            <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                            <SelectTrigger className="w-full"><SelectValue placeholder="Todas" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value={ALL}>Todas</SelectItem>
                                 {questoes.map((q) => <SelectItem key={q.id} value={String(q.id)}>{q.name}</SelectItem>)}
@@ -171,52 +184,54 @@ export default function AvOpChartsFilters({ items, value, onChange, onClear, cla
                     </div>
                 </div>
 
-                <div className="grid gap-2 lg:grid-cols-6">
+                <div className="flex flex-col md:flex-row gap-2">
                     {/* Período livre */}
-                    <div className="lg:col-span-2">
-                        <Label>De</Label>
+                    <div className="space-y-1">
+                        <Label className="sm:ml-1.5">De</Label>
                         <Input type="date" value={value.from ?? ""} onChange={(e) => onChange({ from: e.target.value || undefined })} />
                     </div>
-                    <div className="lg:col-span-2">
-                        <Label>Até</Label>
+                    <div className="space-y-1">
+                        <Label className="sm:ml-1.5">Até</Label>
                         <Input type="date" value={value.to ?? ""} onChange={(e) => onChange({ to: e.target.value || undefined })} />
                     </div>
 
                     {/* Faixa de nota */}
-                    <div>
-                        <Label>Nota Min</Label>
+                    <div className="space-y-1">
+                        <Label className="sm:ml-1.5">Nota Min</Label>
                         <Input
                             type="number" min={0} max={10} step={1}
                             value={value.notaMin ?? ""}
                             onChange={(e) => onChange({ notaMin: e.target.value === "" ? undefined : Number(e.target.value) })}
                         />
                     </div>
-                    <div>
-                        <Label>Nota Max</Label>
+                    <div className="space-y-1">
+                        <Label className="sm:ml-1.5">Nota Max</Label>
                         <Input
                             type="number" min={0} max={10} step={1}
                             value={value.notaMax ?? ""}
                             onChange={(e) => onChange({ notaMax: e.target.value === "" ? undefined : Number(e.target.value) })}
                         />
                     </div>
+
+                    {/* Busca livre + Ações */}
+                    <div className="flex lg:flex-row flex-6 gap-2">
+                        <div className="flex-6 space-y-1">
+                            <Label className="sm:ml-1.5">Busca</Label>
+                            <Input
+                                placeholder="Auditor, loja, item, questão, observação…"
+                                value={value.search ?? ""}
+                                onChange={(e) => onChange({ search: e.target.value || undefined })}
+                            />
+                        </div>
+                        <div className="flex items-end gap-2">
+                            <Button type="button" size="sm" variant="outline" className="bg-background border-destructive text-destructive hover:bg-destructive-light hover:text-destructive-glow cursor-pointer" title="Limpar filtro" onClick={onClear}>
+                                <FunnelX />
+                            </Button>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Busca livre + Ações */}
-                <div className="grid gap-2 lg:grid-cols-6">
-                    <div className="lg:col-span-4">
-                        <Label>Busca</Label>
-                        <Input
-                            placeholder="Auditor, loja, item, questão, observação…"
-                            value={value.search ?? ""}
-                            onChange={(e) => onChange({ search: e.target.value || undefined })}
-                        />
-                    </div>
-                    <div className="flex items-end gap-2 lg:col-span-2">
-                        <Button type="button" variant="outline" className="cursor-pointer w-full" onClick={onClear}>
-                            Limpar filtros
-                        </Button>
-                    </div>
-                </div>
+
             </CardContent>
         </Card>
     );

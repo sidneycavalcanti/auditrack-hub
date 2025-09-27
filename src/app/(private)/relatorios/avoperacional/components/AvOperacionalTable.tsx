@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { Save, Download, FileSpreadsheet, FileText, Search, X, Loader2 } from "lucide-react";
+import { Save, Download, FileSpreadsheet, FileText, Search, X, Loader2, FunnelX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -123,115 +123,122 @@ export default function AvOperacionalTable({ items }: AvOperacionalTableProps) {
     return (
         <>
             <div className="space-y-3">
-                <Card className="bg-gradient-card shadow-card">
+                {/* <Card className="bg-gradient-card shadow-card">
                     <CardHeader>
-                        {lojaId === undefined || mes === undefined || ano === undefined ? (
-                            <CardTitle>
-                                <h3>Filtrar por período</h3>
-                            </CardTitle>
-                        ) : (
-                            <CardTitle className="flex items-center justify-between">
-                                <h3>Filtrar por período</h3>
-                                <div>{` Loja: ${lojaId} - Mês: ${mes} / Ano: ${ano}`}</div>
-                            </CardTitle>
-                        )}
+                        
                     </CardHeader>
                     <CardContent className="space-y-3">
-                        {/* filtros */}
-                        <div className="flex flex-col lg:flex-row lg:flex-wrap items-center justify-between gap-2">
-                            <div className="flex flex-col lg:flex-row flex-5 gap-2 w-full">
-                                {/* Mês */}
-                                < div className="flex-2 gap-0.5">
-                                    <Select
-                                        value={mes ? String(mes) : ALL}
-                                        onValueChange={(v) => setMes(v === ALL ? undefined : Number(v))}
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Selecionar Mês" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value={ALL}>Selecionar Mês</SelectItem>
-                                            {MONTHS.map((m) => (
-                                                <SelectItem key={m.v} value={String(m.v)}>{m.n}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                {/* Ano */}
-                                <div className="flex-2 gap-0.5">
-                                    <Select
-                                        value={ano ? String(ano) : ALL}
-                                        onValueChange={(v) => setAno(v === ALL ? undefined : Number(v))}
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Selecionar Ano" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value={ALL}>Selecionar Ano</SelectItem>
-                                            {anos.map((y) => (
-                                                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                {/* Loja */}
-                                <div className="flex-2 gap-0.5">
-                                    <Select
-                                        value={lojaId ? String(lojaId) : ALL}
-                                        onValueChange={(v) => setLojaId(v === ALL ? undefined : Number(v))}
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Selecionar Loja" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value={ALL}>Selecionar Loja</SelectItem>
-                                            {lojas.map((l) => (
-                                                <SelectItem key={l.id} value={String(l.id)}>
-                                                    {l.descricao ?? l.name ?? `Loja ${l.id}`}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                {/* btn limpar filtros */}
-                                {(setMes !== undefined || setLojaId !== undefined || setAno !== undefined) && (
-                                    <div>
-                                        <Button
-                                            variant="premium"
-                                            size="sm"
-                                            onClick={clearFilters}
-                                            className="flex w-full items-center cursor-pointer"
-                                        >
-                                            <X className="h-4 w-4" />
-                                            Limpar filtros
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-
-
-                            {/* ações de export */}
-                            <div className="flex flex-col flex-1 w-full md:flex-row gap-2">
-                                <div className="md:flex-1">
-                                    <ExportSelect rows={filtered} />
-                                </div>
-                            </div>
-                        </div>
+                        
                     </CardContent>
-                </Card>
+                </Card> */}
                 <Card className="bg-gradient-card shadow-card">
-                    <CardHeader className="pb-2">
-                        <CardTitle>
-                            <h3>Observações da Avaliação Operacional</h3>
+                    <CardHeader className="">
+                        <CardTitle className="space-y-3">
+                            {/* <h3>Observações da Avaliação Operacional</h3> */}
+                            {lojaId === undefined || mes === undefined || ano === undefined ? (
+                                <h3>Filtrar apenas tabela</h3>
+                            ) : (
+                                <div className="flex items-center justify-between">
+                                    <h3>Filtrar apenas tabela</h3>
+                                    <div>{` Loja: ${lojaId} - Mês: ${mes} / Ano: ${ano}`}</div>
+                                </div>
+                            )}
+
+                            {/* filtros */}
+                            <div className="flex flex-col gap-2">
+                                <div className="flex flex-col md:flex-row flex-5 gap-2 w-full">
+                                    {/* Mês */}
+                                    < div className="flex-2 gap-0.5">
+                                        <Select
+                                            value={mes ? String(mes) : ALL}
+                                            onValueChange={(v) => setMes(v === ALL ? undefined : Number(v))}
+                                        >
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Selecionar Mês" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value={ALL}>Selecionar Mês</SelectItem>
+                                                {MONTHS.map((m) => (
+                                                    <SelectItem key={m.v} value={String(m.v)}>{m.n}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    {/* Ano */}
+                                    <div className="flex-2 gap-0.5">
+                                        <Select
+                                            value={ano ? String(ano) : ALL}
+                                            onValueChange={(v) => setAno(v === ALL ? undefined : Number(v))}
+                                        >
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Selecionar Ano" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value={ALL}>Selecionar Ano</SelectItem>
+                                                {anos.map((y) => (
+                                                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    {/* Loja */}
+                                    <div className="flex-2 gap-0.5">
+                                        <Select
+                                            value={lojaId ? String(lojaId) : ALL}
+                                            onValueChange={(v) => setLojaId(v === ALL ? undefined : Number(v))}
+                                        >
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Selecionar Loja" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value={ALL}>Selecionar Loja</SelectItem>
+                                                {lojas.map((l) => (
+                                                    <SelectItem key={l.id} value={String(l.id)}>
+                                                        {l.descricao ?? l.name ?? `Loja ${l.id}`}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+
+
+                                    {/* ações de export */}
+                                    <div className="flex flex-col flex-1 w-full md:flex-row gap-2">
+                                        <div className="md:flex-1">
+                                            <ExportSelect rows={filtered} />
+                                        </div>
+                                    </div>
+
+                                </div>
+                                <div className="flex gap-2">
+
+                                    <div className="relative flex-6">
+                                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
+                                        <Input className="pl-10" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Auditor, loja, item, questão..." />
+                                    </div>
+
+                                    {/* btn limpar filtros */}
+                                    {(setMes !== undefined || setLojaId !== undefined || setAno !== undefined) && (
+                                        <div>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                title="Limpar filtro"
+                                                onClick={clearFilters}
+                                                className="bg-background border-destructive text-destructive hover:bg-destructive-light hover:text-destructive-glow cursor-pointer"
+                                            >
+                                                <FunnelX />
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         <div className="flex flex-col gap-2 sm:flex-row">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
-                                <Input className="pl-10" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Auditor, loja, item, questão..." />
-                            </div>
+
 
                             {(search) && (
                                 <Button
@@ -394,14 +401,15 @@ function ExportSelect({ rows }: { rows: AvOperacional[] }) {
             </Select>
 
             <Button
-                variant="default"
+                variant="outline"
                 size="sm"
+                title="Exportar"
                 onClick={handleExport}
                 disabled={!canExport}
                 className="cursor-pointer"
             >
                 {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Exportar
+                <Download />
             </Button>
         </div>
     );

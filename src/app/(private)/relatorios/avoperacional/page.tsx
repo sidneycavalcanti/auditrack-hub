@@ -9,6 +9,8 @@ import {
     type AvOperacionalFilters,
 } from "./hooks/useAvOperacional";
 
+import { MessageSquareWarning } from "lucide-react"
+
 // filtros para os gráficos
 import AvOpChartsFilters from "./components/ChartsFilters";
 
@@ -54,6 +56,21 @@ export default function ClientRelatorioAvOperacional() {
 
     return (
         <div className="space-y-3 pb-2">
+            {/* Header */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 className="flex items-center gap-3 text-3xl font-bold text-foreground">
+                        Avaliação Operacional
+                    </h1>
+                    <p className="text-muted-foreground">
+                        Gerencie relatório de avaliação operacional
+                    </p>
+                </div>
+            </div>
+
+            {/* Tabela (mantém filtros próprios e paginação local) */}
+            <AvOperacionalTable items={items} />
+
             {/* Filtros que controlam os gráficos */}
             <AvOpChartsFilters
                 items={items}        // usado para popular selects (auditor/loja/questão/item)
@@ -61,9 +78,6 @@ export default function ClientRelatorioAvOperacional() {
                 onChange={onChangeFilters}
                 onClear={clearFilters}
             />
-
-            {/* Tabela (mantém filtros próprios e paginação local) */}
-            <AvOperacionalTable items={items} />
 
             {/* Gráficos recebem o array já filtrado */}
             <div className="grid gap-3 lg:grid-cols-3">
