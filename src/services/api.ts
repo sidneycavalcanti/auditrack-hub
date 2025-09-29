@@ -202,6 +202,12 @@ export const vendaAPI = {
     delete: (id: number) => api.delete(`/vendas/${id}`),
 };
 
+export const fluxoAPI = {
+    getAll: (filters?: Record<string, any>) => 
+        api.get("/fluxo", { params: filters }),
+    getById: (id: number) => api.get(`/fluxo/${id}`),
+}
+
 export const motivoPerdaAPI = {
     getAll: (filters?: Record<string, any>) =>
         api.get("/motivoperdas", { params: filters }),

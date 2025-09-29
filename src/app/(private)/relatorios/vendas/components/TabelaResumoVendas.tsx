@@ -9,12 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Table, TableHeader, TableHead, TableRow, TableCell, TableBody } from "@/components/ui/table";
 import { useLojas } from "@/app/(private)/lojas/hooks/useLojas";
 import { useVendas, type VendasFilters } from "@/app/(private)/relatorios/vendas/hooks/useVendas";
+import { useFluxoPessoas } from "@/app/(private)/relatorios/fluxos/hooks/useFluxoPessoas";
 import type { Loja } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Download, FunnelX, Search, X } from "lucide-react";
 import type * as ExcelTypes from "exceljs";
 
-const LOGO_URL = "/logo.png"
+const LOGO_PLAZA_URL = "/logo_plaza.png";
 
 // utilitário opcional para carregar o logo como dataURL
 async function loadImageAsDataURL(url: string) {
@@ -63,8 +64,9 @@ function getTurno(d?: string): "manha" | "tarde" | "noite" {
 
 type Row = {
   label: string;
-  kind: "valor" | "qtd";
-  filter?: (v: any) => boolean; // filtro por sexo, etc.
+  kind: "valor" | "qtd" | "fluxo";
+  filter?: (v: any) => boolean;          // para vendas
+  fluxoFilter?: (f: any) => boolean;      // para fluxo
 };
 
 /** define as linhas que sabemos calcular com o dataset atual */
@@ -81,9 +83,9 @@ const ROWS: Row[] = [
 
   // As linhas abaixo existem no modelo, mas exigem outras fontes (especulador, perdidas, fluxo).
   // Mantemos aqui como “zeradas” até existir endpoint/campo correspondente.
-  { label: "Total do fluxo feminino", kind: "qtd", filter: () => false },
-  { label: "Total do fluxo masculino", kind: "qtd", filter: () => false },
-  { label: "Total do fluxo de público", kind: "qtd", filter: () => false },
+  { label: "Total do fluxo feminino",  kind: "fluxo", fluxoFilter: (f) => (f.sexo ?? "").toLowerCase() === "feminino" },
+  { label: "Total do fluxo masculino", kind: "fluxo", fluxoFilter: (f) => (f.sexo ?? "").toLowerCase() === "masculino" },
+  { label: "Total do fluxo de público", kind: "fluxo" },
 
   { label: "Total de Vendas Perdidas - Preço", kind: "qtd", filter: () => false },
   { label: "Total de Vendas Perdidas - Modelo", kind: "qtd", filter: () => false },
@@ -95,7 +97,8 @@ const ROWS: Row[] = [
   { label: "Total de Vendas Perdidas - Outros", kind: "qtd", filter: () => false },
 ];
 
-function aggregate(items: any[], row: Row): TurnoTotals {
+// agregador de vendas (só conta quantidade)
+function aggregateVendas(items: any[], row: Row): TurnoTotals {
   const out = emptyTotals();
   for (const v of items) {
     if (row.filter && !row.filter(v)) continue;
@@ -114,12 +117,26 @@ function aggregate(items: any[], row: Row): TurnoTotals {
   return out;
 }
 
+// agregador de fluxo (só conta quantidade)
+function aggregateFluxo(fluxo: any[], row: Row) {
+  const out = emptyTotals();
+  for (const f of fluxo) {
+    if (row.fluxoFilter && !row.fluxoFilter(f)) continue;
+    const turno = getTurno(f.createdAt ?? f.auditoria?.data);
+    const qtd = typeof f.quantidade === "number" ? f.quantidade : 1;
+
+    out.geral.qtd += qtd;
+    out[turno].qtd += qtd;
+  }
+  return out;
+}
+
 function pct(part: number, whole: number) {
   return whole > 0 ? part / whole : 0;
 }
 
 /** Constrói as linhas prontas para renderizar e exportar */
-function buildTableData(items: any[]) {
+function buildTableData(vendas: any[], fluxo: any[]) {
   type PrintableRow = {
     ITEM: string;
     GERAL: string | number;
@@ -134,11 +151,12 @@ function buildTableData(items: any[]) {
   const rows: PrintableRow[] = [];
 
   for (const r of ROWS) {
-    const a = aggregate(items, r);
-    const baseGeral = r.kind === "valor" ? a.geral.valor : a.geral.qtd;
-    const vManha = r.kind === "valor" ? a.manha.valor : a.manha.qtd;
-    const vTarde = r.kind === "valor" ? a.tarde.valor : a.tarde.qtd;
-    const vNoite = r.kind === "valor" ? a.noite.valor : a.noite.qtd;
+    const agg = r.kind === "fluxo" ? aggregateFluxo(fluxo, r) : aggregateVendas(vendas, r);
+
+    const baseGeral = r.kind === "valor" ? agg.geral.valor : agg.geral.qtd;
+    const vManha    = r.kind === "valor" ? agg.manha.valor : agg.manha.qtd;
+    const vTarde    = r.kind === "valor" ? agg.tarde.valor : agg.tarde.qtd;
+    const vNoite    = r.kind === "valor" ? agg.noite.valor : agg.noite.qtd;
 
     const fmt = (x: number) => (r.kind === "valor" ? currency.format(x) : x);
     rows.push({
@@ -179,6 +197,13 @@ export default function TabelaResumoVendas() {
   const { data, isFetching } = useVendas(queryParams ?? {}, { enabled });
   const items = data?.data ?? [];
 
+  const { data: fluxoResp, isFetching: isFetchingFluxo } = useFluxoPessoas(
+  queryParams ?? {},
+    { enabled }
+  );
+  const fluxoItems = fluxoResp?.data ?? [];
+  const isLoadingAny = isFetching || isFetchingFluxo;
+
   const lojaNome =
     (lojas.find((l) => l.id === queryParams?.lojaId)?.descricao ??
       lojas.find((l) => l.id === queryParams?.lojaId)?.name) ?? "-";
@@ -187,8 +212,7 @@ export default function TabelaResumoVendas() {
   const [exportFmt, setExportFmt] = React.useState<"xlsx" | "xls" | "pdf" | "">("");
 
   const canSearch = !!(formLojaId && formMes && formAno);
-  const canExport = enabled && !isFetching && items.length > 0 && !!exportFmt;
-
+  
   const onBuscar = () => {
     if (!canSearch) return;
     setQueryParams({
@@ -200,8 +224,13 @@ export default function TabelaResumoVendas() {
     });
   };
 
-  const rows = React.useMemo(() => (enabled ? buildTableData(items) : []), [enabled, items]);
-
+  const rows = React.useMemo(
+    () => (enabled ? buildTableData(items, fluxoItems) : []),
+    [enabled, items, fluxoItems]
+  );
+  
+  const canExport = enabled && !isLoadingAny && rows.length > 0 && !!exportFmt;
+  
   const onLimpar = () => {
     setFormLojaId(undefined);
     setFormMes(undefined);
@@ -223,7 +252,7 @@ export default function TabelaResumoVendas() {
   // helper (reaproveita sua função, só garante URL absoluta)
   async function getLogoDataURL() {
     try {
-      const url = new URL(LOGO_URL, window.location.origin).toString();
+      const url = new URL(LOGO_PLAZA_URL, window.location.origin).toString();
       const res = await fetch(url);
       if (!res.ok) return "";
       const blob = await res.blob();
@@ -317,11 +346,11 @@ export default function TabelaResumoVendas() {
     });
 
     // logo (se existir)
-    const logo = await loadImageAsDataURL(LOGO_URL);
+    const logo = await loadImageAsDataURL(LOGO_PLAZA_URL);
     if (logo) {
       const imageId = wb.addImage({ base64: logo, extension: "png" });
       // canto superior esquerdo, tamanho em pixels
-      ws.addImage(imageId, { tl: { col: 0, row: 0 }, ext: { width: 82, height: 48 } });
+      ws.addImage(imageId, { tl: { col: 0, row: 0 }, ext: { width: 39, height: 28 } });
     }
 
     // baixa o arquivo
@@ -344,7 +373,7 @@ export default function TabelaResumoVendas() {
     filename: string,
     header: { title: string; loja: string; periodo: string }
   ) {
-    const logo = await loadImageAsDataURL(LOGO_URL); // opcional
+    const logo = await loadImageAsDataURL(LOGO_PLAZA_URL); // opcional
     const esc = (s: string) =>
       String(s)
         .replace(/&/g, "&amp;")
@@ -426,7 +455,7 @@ export default function TabelaResumoVendas() {
 
     // tentar carregar o logo do /public/logo.png
     try {
-      const absoluteLogoUrl = new URL(LOGO_URL, window.location.origin).toString();
+      const absoluteLogoUrl = new URL(LOGO_PLAZA_URL, window.location.origin).toString();
       const res = await fetch(absoluteLogoUrl);
       if (res.ok) {
         const blob = await res.blob();
@@ -581,15 +610,15 @@ export default function TabelaResumoVendas() {
         <div className="overflow-x-auto rounded-md border">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-[220px]"> </TableHead>
-                <TableHead>GERAL</TableHead>
-                <TableHead>MANHÃ</TableHead>
-                <TableHead>% MANHÃ</TableHead>
-                <TableHead>TARDE</TableHead>
-                <TableHead>% TARDE</TableHead>
-                <TableHead>NOITE</TableHead>
-                <TableHead>% NOITE</TableHead>
+              <TableRow className="bg-gradient-card shadow-card text-muted-foreground">
+                <TableHead className="min-w-[220px] text-center py-1.5">ITEM</TableHead>
+                <TableHead className="py-1.5">GERAL</TableHead>
+                <TableHead className="py-1.5">MANHÃ</TableHead>
+                <TableHead className="py-1.5">% MANHÃ</TableHead>
+                <TableHead className="py-1.5">TARDE</TableHead>
+                <TableHead className="py-1.5">% TARDE</TableHead>
+                <TableHead className="py-1.5">NOITE</TableHead>
+                <TableHead className="py-1.5">% NOITE</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -601,7 +630,7 @@ export default function TabelaResumoVendas() {
                 </TableRow>
               )}
 
-              {enabled && isFetching && (
+              {enabled && isLoadingAny && (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center text-muted-foreground">
                     Carregando…
@@ -609,13 +638,12 @@ export default function TabelaResumoVendas() {
                 </TableRow>
               )}
 
-              {enabled && !isFetching && ROWS.map((r) => {
-                const a = aggregate(items, r);
-                // qual métrica exibe (valor ou quantidade)?
-                const baseGeral = r.kind === "valor" ? a.geral.valor : a.geral.qtd;
-                const vManha = r.kind === "valor" ? a.manha.valor : a.manha.qtd;
-                const vTarde = r.kind === "valor" ? a.tarde.valor : a.tarde.qtd;
-                const vNoite = r.kind === "valor" ? a.noite.valor : a.noite.qtd;
+              {enabled && !isLoadingAny && ROWS.map((r) => {
+                const agg = r.kind === "fluxo" ? aggregateFluxo(fluxoItems, r) : aggregateVendas(items, r);
+                const baseGeral = r.kind === "valor" ? agg.geral.valor : agg.geral.qtd;
+                const vManha    = r.kind === "valor" ? agg.manha.valor : agg.manha.qtd;
+                const vTarde    = r.kind === "valor" ? agg.tarde.valor : agg.tarde.qtd;
+                const vNoite    = r.kind === "valor" ? agg.noite.valor : agg.noite.qtd;
 
                 const fmt = (x: number) => (r.kind === "valor" ? currency.format(x) : x.toString());
                 return (
