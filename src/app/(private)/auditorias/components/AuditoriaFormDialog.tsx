@@ -13,6 +13,33 @@ import { useCreateAuditoria, useUpdateAuditoria } from "../hooks/useAuditorias";
 import { useLojas } from "../../lojas/hooks/useLojas";
 import { useUsuarios } from "../../usuarios/hooks/useUsuarios";
 import type { Auditoria, Loja, User } from "@/types";
+import { Calendar } from "@/components/ui/calendar";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { ChevronDown } from "lucide-react";
+
+/** Util: formata Date -> "YYYY-MM-DD" (sem fuso/UTC) */
+function dateToYMD(d: Date) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+}
+/** Util: "YYYY-MM-DD" -> Date (local) */
+function ymdToDate(s?: string) {
+    if (!s) return undefined;
+    const [y, m, d] = s.split("-").map(Number);
+    if (!y || !m || !d) return undefined;
+    return new Date(y, m - 1, d);
+}
+/** Util: garante HH:mm:ss */
+function ensureSeconds(t?: string | null) {
+    if (!t) return "";
+    return /^\d{2}:\d{2}:\d{2}$/.test(t) ? t : `${t}:00`;
+}
 
 interface AuditoriaFormDialogProps {
     open: boolean;
@@ -34,6 +61,8 @@ const AuditoriaFormDialog: React.FC<AuditoriaFormDialogProps> = ({
         horaInicial: "",
         horaFinal: "",
     });
+
+    const [dateOpen, setDateOpen] = React.useState(false);
 
     // Carregamentos
     const { data: lojasResp } = useLojas({ limit: 100 });
@@ -70,6 +99,8 @@ const AuditoriaFormDialog: React.FC<AuditoriaFormDialogProps> = ({
         }
     }, [open, initialData]);
 
+    const selectedDate = ymdToDate(form.data);
+
     const handleSubmit = () => {
         if (!form.lojaId || !form.usuarioId || !form.data) return;
 
@@ -96,13 +127,14 @@ const AuditoriaFormDialog: React.FC<AuditoriaFormDialogProps> = ({
                 </DialogHeader>
 
                 <div className="space-y-4">
+                    {/* Loja */}
                     <div className="grid gap-2">
                         <Label>Loja</Label>
                         <Select
                             value={form.lojaId ? String(form.lojaId) : ""}
                             onValueChange={(v) => setForm((s) => ({ ...s, lojaId: Number(v) }))}
                         >
-                            <SelectTrigger>
+                            <SelectTrigger className="cursor-pointer">
                                 <SelectValue placeholder="Selecione a loja" />
                             </SelectTrigger>
                             <SelectContent>
@@ -115,13 +147,14 @@ const AuditoriaFormDialog: React.FC<AuditoriaFormDialogProps> = ({
                         </Select>
                     </div>
 
+                    {/* Auditor */}
                     <div className="grid gap-2">
                         <Label>Auditor</Label>
                         <Select
                             value={form.usuarioId ? String(form.usuarioId) : ""}
                             onValueChange={(v) => setForm((s) => ({ ...s, usuarioId: Number(v) }))}
                         >
-                            <SelectTrigger>
+                            <SelectTrigger className="cursor-pointer">
                                 <SelectValue placeholder="Selecione o auditor" />
                             </SelectTrigger>
                             <SelectContent>
@@ -134,32 +167,76 @@ const AuditoriaFormDialog: React.FC<AuditoriaFormDialogProps> = ({
                         </Select>
                     </div>
 
-                    <div className="grid gap-2">
-                        <Label>Data</Label>
-                        <Input
-                            type="date"
-                            value={form.data || ""}
-                            onChange={(e) => setForm((s) => ({ ...s, data: e.target.value }))}
-                        />
-                    </div>
+                    {/* Data + Horários */}
+                    <div className="flex flex-col sm:flex-row justify-between gap-4 ">
+                        {/* Date Picker (Calendar + Popover) */}
+                        <div className="flex-1 grid gap-2">
+                            <Label htmlFor="date-picker">Data</Label>
+                            <Popover open={dateOpen} onOpenChange={setDateOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        id="date-picker"
+                                        className="justify-between font-normal cursor-pointer"
+                                    >
+                                        {selectedDate
+                                            ? selectedDate.toLocaleDateString()
+                                            : "Selecione a data"}
+                                        <ChevronDown className="ml-2 h-4 w-4 opacity-70" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={selectedDate}
+                                        captionLayout="dropdown"
+                                        onSelect={(d) => {
+                                            if (d) {
+                                                setForm((s) => ({ ...s, data: dateToYMD(d) }));
+                                                setDateOpen(false);
+                                            }
+                                        }}
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                        <div className="flex flex-row items-center justify-center  gap-2">
+                            {/* Horário inicial */}
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="time-start">Hora Inicial</Label>
+                                <Input
+                                    id="time-start"
+                                    type="time"
+                                    step="1"
+                                    value={form.horaInicial || ""}
+                                    onChange={(e) =>
+                                        setForm((s) => ({ ...s, horaInicial: e.target.value }))
+                                    }
+                                    className="bg-background appearance-none
+                                    [&::-webkit-calendar-picker-indicator]:hidden
+                                    [&::-webkit-calendar-picker-indicator]:appearance-none"
+                                />
+                            </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div className="grid gap-2">
-                            <Label>Hora Inicial</Label>
-                            <Input
-                                type="time"
-                                value={form.horaInicial || ""}
-                                onChange={(e) => setForm((s) => ({ ...s, horaInicial: e.target.value }))}
-                            />
+                            {/* Horário final */}
+                            <div className="flex flex-col gap-2 ">
+                                <Label htmlFor="time-end">Hora Final</Label>
+                                <Input
+                                    id="time-end"
+                                    type="time"
+                                    step="1"
+                                    value={form.horaFinal || ""}
+                                    onChange={(e) =>
+                                        setForm((s) => ({ ...s, horaFinal: e.target.value }))
+                                    }
+                                    className="bg-background appearance-none
+                                    [&::-webkit-calendar-picker-indicator]:hidden
+                                    [&::-webkit-calendar-picker-indicator]:appearance-none"
+                                />
+                            </div>
                         </div>
-                        <div className="grid gap-2">
-                            <Label>Hora Final</Label>
-                            <Input
-                                type="time"
-                                value={form.horaFinal || ""}
-                                onChange={(e) => setForm((s) => ({ ...s, horaFinal: e.target.value }))}
-                            />
-                        </div>
+
                     </div>
                 </div>
 

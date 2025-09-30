@@ -13,28 +13,31 @@ export const useAuditorias = (filters?: FilterOptions & { q?: string }) => {
     return useQuery({
         queryKey: [QUERY_KEY, filters],
         queryFn: async () => {
-        const response = await auditoriaAPI.getAll(filters as any);
-        const payload = response.data as any;
+            const response = await auditoriaAPI.getAll(filters as any);
+            const payload = response.data as any;
 
-        const items: Auditoria[] = Array.isArray(payload.auditoria)
-            ? payload.auditoria.map((a: any) => ({
-                id: a.id,
-                data: a.data,
-                horaInicial: a.horaInicial,
-                horaFinal: a.horaFinal,
-                lojaId: a.lojaId,
-                usuarioId: a.usuarioId,
-                criadorId: a.criadorId,
-                loja: a.loja as Loja,
-                usuario: a.usuario as User,
-                criador: a.criador as User,
-                createdAt: a.createdAt,
-                updatedAt: a.updatedAt,
+            const items: Auditoria[] = Array.isArray(payload.auditoria)
+                ? payload.auditoria.map((a: any) => ({
+                    id: a.id,
+                    // mantém apenas "YYYY-MM-DD" mesmo se vier ISO completo
+                    data: (a.data ?? "").slice(0, 10),
+                    horaInicial: a.horaInicial,
+                    horaFinal: a.horaFinal,
+                    lojaId: a.lojaId,
+                    usuarioId: a.usuarioId,
+                    criadorId: a.criadorId,
+                    loja: a.loja as Loja,
+                    usuario: a.usuario as User,
+                    criador: a.criador as User,
+                    createdAt: a.createdAt,
+                    updatedAt: a.updatedAt,
                 }))
-            : [];
+                : [];
 
             const total = payload.totalItems ?? payload.total ?? items.length;
-            const totalPages = payload.totalPages ?? (filters?.limit ? Math.ceil(total / (filters.limit || 10)) : 1);
+            const totalPages =
+                payload.totalPages ??
+                (filters?.limit ? Math.ceil(total / (filters.limit || 10)) : 1);
             const page = payload.currentPage ?? payload.page ?? filters?.page ?? 1;
             const limit = payload.limit ?? filters?.limit ?? items.length;
 
@@ -89,16 +92,16 @@ export const useUpdateAuditoria = () => {
 
     return useMutation({
         mutationFn: async ({ id, data }: { id: number; data: Partial<Auditoria> }) => {
-        const payload = {
-            lojaId: data.lojaId,
-            usuarioId: data.usuarioId,
-            criadorId: data.criadorId,
-            data: data.data,
-            horaInicial: data.horaInicial,
-            horaFinal: data.horaFinal,
-        };
-        const response = await auditoriaAPI.update(id, payload as any);
-        return response.data;
+            const payload = {
+                lojaId: data.lojaId,
+                usuarioId: data.usuarioId,
+                criadorId: data.criadorId,
+                data: data.data,
+                horaInicial: data.horaInicial,
+                horaFinal: data.horaFinal,
+            };
+            const response = await auditoriaAPI.update(id, payload as any);
+            return response.data;
         },
         onSuccess: (_, { id }) => {
             queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
@@ -106,7 +109,7 @@ export const useUpdateAuditoria = () => {
             toast.success('Auditoria atualizada', { description: 'Agendamento atualizado com sucesso.' });
         },
         onError: (error) => {
-            toast.error( 'Erro ao atualizar auditoria', { description: handleApiError(error) });
+            toast.error('Erro ao atualizar auditoria', { description: handleApiError(error) });
         },
     });
 };

@@ -45,6 +45,21 @@ import {
     useDeleteAuditoria,
 } from "@/app/(private)/auditorias/hooks/useAuditorias";
 
+// Helper: cria Date “local” a partir de "YYYY-MM-DD" (ou ISO), ignorando fuso
+function asLocalDate(s?: string | null) {
+    if (!s) return null;
+    // "YYYY-MM-DD"
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    if (m) {
+        const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
+        return new Date(y, mo - 1, d); // local
+    }
+    // fallback para ISO completo: ancora no dia local
+    const dIso = new Date(s);
+    if (isNaN(dIso.getTime())) return null;
+    return new Date(dIso.getFullYear(), dIso.getMonth(), dIso.getDate());
+}
+
 export default function AuditoriasPage() {
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
@@ -200,7 +215,7 @@ export default function AuditoriasPage() {
                                             {auditoria.loja?.name ? `${auditoria.lojaId} - ${auditoria.loja.name}` : auditoria.lojaId}
                                         </TableCell>
                                         <TableCell className="px-4 py-1.5">
-                                            {auditoria.data ? format(new Date(auditoria.data), "dd/MM/yyyy") : "-"}
+                                            {(() => { const dt = asLocalDate(auditoria.data); return dt ? format(dt, "dd/MM/yyyy") : "-"; })()}
                                         </TableCell>
                                         <TableCell className="px-4 py-1.5">{auditoria.horaInicial || "-"}</TableCell>
                                         <TableCell className="px-4 py-1.5">{auditoria.horaFinal || "-"}</TableCell>
