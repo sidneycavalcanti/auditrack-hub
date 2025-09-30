@@ -159,8 +159,8 @@ export interface Categoria {
 
 export interface Sexo {
     id: number;
-    descricao: string;
-    ativo?: boolean;
+    name: string;
+    situacao?: boolean;
     createdAt?: string;
     updatedAt?: string;
 }

@@ -10,6 +10,7 @@ import {
     Store,
     Calendar,
     Users,
+    PersonStanding,
     Tag,
     ClipboardCheck,
     CreditCard,
@@ -55,6 +56,7 @@ const NAV_ITEMS: NavItem[] = [
     // raiz (fica acima das seções)
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, section: "root" },
     // gestão de auditoria
+    { name: "Gênero", href: "/genero", icon: PersonStanding, section: "GESTÃO DE AUDITORIA" },
     { name: "Lojas", href: "/lojas", icon: Store, section: "GESTÃO DE AUDITORIA" },
     { name: "Categorias", href: "/categorias", icon: Tag, section: "GESTÃO DE AUDITORIA" },
     { name: "Auditorias", href: "/auditorias", icon: ClipboardCheck, section: "GESTÃO DE AUDITORIA" },
@@ -74,7 +76,7 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 // 👇 altere pra `true` se quiser ver as seções dentro de Accordion
-const USE_ACCORDION = true;
+const USE_ACCORDION = false;
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     const pathname = usePathname();
@@ -259,7 +261,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ items, user, signOut, i
 
                 {/* seções */}
                 {USE_ACCORDION ? (
-                    <Accordion type="single" collapsible defaultValue="GESTÃO DE AUDITORIA" className="space-y-0">
+                    <Accordion type="multiple" className="space-y-0">
                         {sectionKeys.map((label) => (
                             <AccordionItem key={label} value={label} className="border-none">
                                 <AccordionTrigger className="px-3 text-xs font-semibold text-foreground hover:no-underline cursor-pointer">
