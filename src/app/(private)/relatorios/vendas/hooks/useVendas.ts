@@ -16,7 +16,7 @@ export type VendasFilters = FilterOptions & {
   lojaId?: number;
   auditorId?: number;
   formaPagamentoId?: number;
-  sexoId?: number;   // 1=masc, 2=fem (ajuste se sua API usa outros ids)
+  sexoId?: number;   // 1=masc, 2=fem
   valorMin?: number;
   valorMax?: number;
   dateFrom?: string; // ISO
@@ -26,7 +26,7 @@ export type VendasFilters = FilterOptions & {
 
 const normalize = (f: VendasFilters = {}) => ({
   page: f.page ?? 1,
-  limit: f.limit ?? 1000, // p/ resumo; ajuste se necessário
+  limit: f.limit ?? 1000,
   search: f.search ?? f.name ?? undefined,
 
   mes: f.mes ?? undefined,
@@ -43,13 +43,42 @@ const normalize = (f: VendasFilters = {}) => ({
   troca: f.troca ?? undefined,
 });
 
-/** parseia valor vindo como string "780,00" ou "780.00" */
+/**
+ * Converte strings de dinheiro para número.
+ * Aceita: "780,00" | "780.00" | "1.234,56" | "1,234.56" | 451.87
+ */
 function toNumber(v: any): number {
-  if (typeof v === "number") return v;
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
   if (typeof v !== "string") return 0;
-  // tenta converter formatos comuns
-  const s = v.replace(/\./g, "").replace(",", ".");
-  const n = Number(s);
+
+  const s = v.trim();
+  if (!s) return 0;
+
+  const hasComma = s.includes(",");
+  const hasDot = s.includes(".");
+
+  let normalized = s;
+
+  if (hasComma && hasDot) {
+    // Decide o separador decimal pela última ocorrência
+    const lastComma = s.lastIndexOf(",");
+    const lastDot = s.lastIndexOf(".");
+    if (lastComma > lastDot) {
+      // padrão pt-BR: 1.234,56
+      normalized = s.replace(/\./g, "").replace(",", ".");
+    } else {
+      // padrão en-US: 1,234.56
+      normalized = s.replace(/,/g, "");
+    }
+  } else if (hasComma) {
+    // "780,00" -> "780.00"
+    normalized = s.replace(/\./g, "").replace(",", ".");
+  } else {
+    // "780.00" ou "780" -> mantém
+    normalized = s.replace(/,/g, "");
+  }
+
+  const n = Number(normalized);
   return Number.isFinite(n) ? n : 0;
 }
 
@@ -74,17 +103,14 @@ export function useVendas(filters: VendasFilters = {}, opts?: { enabled?: boolea
         formaPagamentoId: v.formadepagamentoId ?? v.formaPagamentoId ?? v.formaPagamento?.id,
         quantidade: v.quantidade ?? 1,
 
-        // extras úteis p/ agregação
+        // datas e metadados
         createdAt: v.createdAt,
         updatedAt: v.updatedAt,
-        auditoria: v.auditoria,                 // { data, loja, usuario }
+        auditoria: v.auditoria, // { data, loja, usuario }
         formaPagamento: v.formadepagamento ?? v.formaPagamento,
-        // campos que podem existir na sua API:
-        
+
         sexoId: v.sexoId ?? v.sexo?.id,
-        
         troca: v.troca ?? false,
-        
         faixaetaria: v.faixaetaria,
       }));
 
@@ -95,7 +121,8 @@ export function useVendas(filters: VendasFilters = {}, opts?: { enabled?: boolea
         norm.dateFrom || norm.dateTo || norm.troca != null
       ) {
         items = items.filter((it) => {
-          const dISO = it.auditoria?.data ?? it.createdAt?.slice(0, 10);
+          // prioriza auditoria.data; se ausente, cai para createdAt
+          const dISO = (it.auditoria?.data as string | undefined) ?? (it.createdAt?.slice(0, 10) as string | undefined);
           const y = dISO ? Number(dISO.slice(0, 4)) : undefined;
           const m = dISO ? Number(dISO.slice(5, 7)) : undefined;
 
@@ -110,8 +137,8 @@ export function useVendas(filters: VendasFilters = {}, opts?: { enabled?: boolea
           if (norm.valorMin != null && it.valor < norm.valorMin) return false;
           if (norm.valorMax != null && it.valor > norm.valorMax) return false;
 
-          if (norm.dateFrom && (it.createdAt ?? "") < norm.dateFrom) return false;
-          if (norm.dateTo && (it.createdAt ?? "") > norm.dateTo) return false;
+          if (norm.dateFrom && (dISO ?? "") < norm.dateFrom) return false;
+          if (norm.dateTo && (dISO ?? "") > norm.dateTo) return false;
 
           // @ts-expect-error
           if (norm.troca != null && !!it.troca !== !!norm.troca) return false;
