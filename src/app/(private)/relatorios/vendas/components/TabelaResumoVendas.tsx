@@ -662,7 +662,9 @@ export default function TabelaResumoVendas() {
               <div className="space-y-1">
                 <Label className="ml-1.5">Loja</Label>
                 <Select value={formLojaId ? String(formLojaId) : ""} onValueChange={(v) => setFormLojaId(v ? Number(v) : undefined)}>
-                  <SelectTrigger><SelectValue placeholder="Selecione a loja" /></SelectTrigger>
+                  <SelectTrigger className="cursor-pointer">
+                    <SelectValue placeholder="Selecione a loja" />
+                  </SelectTrigger>
                   <SelectContent>
                     {lojas.map((l) => (
                       <SelectItem key={l.id} value={String(l.id)}>
@@ -676,7 +678,9 @@ export default function TabelaResumoVendas() {
               <div className="space-y-1">
                 <Label className="ml-1.5">Mês</Label>
                 <Select value={formMes ? String(formMes) : ""} onValueChange={(v) => setFormMes(v ? Number(v) : undefined)}>
-                  <SelectTrigger><SelectValue placeholder="Mês" /></SelectTrigger>
+                  <SelectTrigger className="cursor-pointer">
+                    <SelectValue placeholder="Mês" />
+                  </SelectTrigger>
                   <SelectContent>
                     {MONTHS.map((m) => <SelectItem key={m.v} value={String(m.v)}>{m.n}</SelectItem>)}
                   </SelectContent>
@@ -686,7 +690,9 @@ export default function TabelaResumoVendas() {
               <div className="space-y-1">
                 <Label className="ml-1.5">Ano</Label>
                 <Select value={formAno ? String(formAno) : ""} onValueChange={(v) => setFormAno(v ? Number(v) : undefined)}>
-                  <SelectTrigger><SelectValue placeholder="Ano" /></SelectTrigger>
+                  <SelectTrigger className="cursor-pointer">
+                    <SelectValue placeholder="Ano" />
+                  </SelectTrigger>
                   <SelectContent>
                     {anos.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
                   </SelectContent>
@@ -708,7 +714,9 @@ export default function TabelaResumoVendas() {
                   <div className="space-y-1">
                     <Label className="ml-1.5">Exportar como</Label>
                     <Select value={exportFmt} onValueChange={(v: any) => setExportFmt(v)}>
-                      <SelectTrigger><SelectValue placeholder="Selecione o formato" /></SelectTrigger>
+                      <SelectTrigger className="cursor-pointer">
+                        <SelectValue placeholder="Selecione o formato" />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="xlsx">Excel (.xlsx)</SelectItem>
                         <SelectItem value="xls">Excel 97–2003 (.xls)</SelectItem>

@@ -149,12 +149,12 @@ export default function CadQuestoesFormDialog({
                     disabled={isLoading}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full cursor-pointer">
                         <SelectValue placeholder="Selecione uma avaliação operacional" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="none">Nenhuma</SelectItem>
+                      <SelectItem value="none" className="text-muted">Nenhum</SelectItem>
                       {avaliacoesOperacionais?.data?.map((av: any) => (
                         <SelectItem key={av.id} value={av.id.toString()}>
                           {av.descricao}

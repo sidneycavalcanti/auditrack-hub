@@ -94,7 +94,9 @@ export default function TabelaComparativoVendasHora() {
                             <div className="space-y-1">
                                 <Label className="ml-1.5">Loja</Label>
                                 <Select value={lojaId ? String(lojaId) : ""} onValueChange={v => setLojaId(v ? Number(v) : undefined)}>
-                                    <SelectTrigger><SelectValue placeholder="Selecione a loja" /></SelectTrigger>
+                                    <SelectTrigger className="cursor-pointer">
+                                        <SelectValue placeholder="Selecione a loja" />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         {lojas.map(l =>
                                             <SelectItem key={l.id} value={String(l.id)}>
@@ -108,7 +110,9 @@ export default function TabelaComparativoVendasHora() {
                             <div className="space-y-1">
                                 <Label className="ml-1.5">Mês</Label>
                                 <Select value={mes ? String(mes) : ""} onValueChange={(v) => setMes(v ? Number(v) : undefined)}>
-                                    <SelectTrigger><SelectValue placeholder="Mês" /></SelectTrigger>
+                                    <SelectTrigger className="cursor-pointer">
+                                        <SelectValue placeholder="Mês" />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         {MONTHS.map(m => <SelectItem key={m.v} value={String(m.v)}>{m.n}</SelectItem>)}
                                     </SelectContent>
@@ -118,7 +122,9 @@ export default function TabelaComparativoVendasHora() {
                             <div className="space-y-1">
                                 <Label className="ml-1.5">Ano</Label>
                                 <Select value={ano ? String(ano) : ""} onValueChange={(v) => setAno(v ? Number(v) : undefined)}>
-                                    <SelectTrigger><SelectValue placeholder="Ano" /></SelectTrigger>
+                                    <SelectTrigger className="cursor-pointer">
+                                        <SelectValue placeholder="Ano" />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         {Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - i).map(y =>
                                             <SelectItem key={y} value={String(y)}>{y}</SelectItem>
@@ -132,7 +138,7 @@ export default function TabelaComparativoVendasHora() {
                                 <Select value={semana ? String(semana) : ""} onValueChange={(v) =>
                                     setSemana(v ? (Number(v) as SemanaIndex) : undefined)
                                 }>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="cursor-pointer">
                                         <SelectValue placeholder="Sem." />
                                     </SelectTrigger>
                                     <SelectContent>

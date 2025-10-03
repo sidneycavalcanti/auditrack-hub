@@ -7,7 +7,22 @@ import type { Auditoria, FilterOptions, Loja, User } from "@/types";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
-const QUERY_KEY = 'auditorias';
+const QUERY_KEY = "auditorias";
+
+/** Normaliza "YYYY-MM-DD" para ISO ancorado ao meio-dia UTC (evita -1 dia). */
+function toServerDate(ymd?: string | null): string | undefined {
+    if (!ymd) return undefined;
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd);
+    if (!m) return ymd || undefined; // já vem ISO? envia como está
+    const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
+    return new Date(Date.UTC(y, mo - 1, d, 12, 0, 0)).toISOString();
+}
+
+/** Garante HH:mm:ss (ex.: "14:45" -> "14:45:00"). */
+function normTime(t?: string | null): string | undefined {
+    if (!t) return undefined;
+    return /^\d{2}:\d{2}:\d{2}$/.test(t) ? t : `${t}:00`;
+}
 
 export const useAuditorias = (filters?: FilterOptions & { q?: string }) => {
     return useQuery({
@@ -19,7 +34,7 @@ export const useAuditorias = (filters?: FilterOptions & { q?: string }) => {
             const items: Auditoria[] = Array.isArray(payload.auditoria)
                 ? payload.auditoria.map((a: any) => ({
                     id: a.id,
-                    // mantém apenas "YYYY-MM-DD" mesmo se vier ISO completo
+                    // mantém apenas "YYYY-MM-DD" para o front
                     data: (a.data ?? "").slice(0, 10),
                     horaInicial: a.horaInicial,
                     horaFinal: a.horaFinal,
@@ -66,9 +81,10 @@ export const useCreateAuditoria = () => {
                 lojaId: data.lojaId,
                 usuarioId: data.usuarioId,
                 criadorId: data.criadorId ?? user?.id,
-                data: data.data,
-                horaInicial: data.horaInicial,
-                horaFinal: data.horaFinal,
+                // ⬇⬇⬇ ancorado ao meio-dia UTC
+                data: toServerDate(data.data),
+                horaInicial: normTime(data.horaInicial),
+                horaFinal: normTime(data.horaFinal),
             };
             const response = await auditoriaAPI.create(payload as any);
             return response.data;
@@ -96,9 +112,10 @@ export const useUpdateAuditoria = () => {
                 lojaId: data.lojaId,
                 usuarioId: data.usuarioId,
                 criadorId: data.criadorId,
-                data: data.data,
-                horaInicial: data.horaInicial,
-                horaFinal: data.horaFinal,
+                // ⬇⬇⬇ ancorado ao meio-dia UTC
+                data: toServerDate(data.data),
+                horaInicial: normTime(data.horaInicial),
+                horaFinal: normTime(data.horaFinal),
             };
             const response = await auditoriaAPI.update(id, payload as any);
             return response.data;
@@ -106,10 +123,14 @@ export const useUpdateAuditoria = () => {
         onSuccess: (_, { id }) => {
             queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
             queryClient.invalidateQueries({ queryKey: [QUERY_KEY, id] });
-            toast.success('Auditoria atualizada', { description: 'Agendamento atualizado com sucesso.' });
+            toast.success("Auditoria atualizada", {
+                description: "Agendamento atualizado com sucesso.",
+            });
         },
         onError: (error) => {
-            toast.error('Erro ao atualizar auditoria', { description: handleApiError(error) });
+            toast.error("Erro ao atualizar auditoria", {
+                description: handleApiError(error),
+            });
         },
     });
 };

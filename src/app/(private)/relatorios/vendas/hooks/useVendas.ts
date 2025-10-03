@@ -43,6 +43,8 @@ const normalize = (f: VendasFilters = {}) => ({
   troca: f.troca ?? undefined,
 });
 
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
 /**
  * Converte strings de dinheiro para número.
  * Aceita: "780,00" | "780.00" | "1.234,56" | "1,234.56" | 451.87
@@ -137,8 +139,12 @@ export function useVendas(filters: VendasFilters = {}, opts?: { enabled?: boolea
           if (norm.valorMin != null && it.valor < norm.valorMin) return false;
           if (norm.valorMax != null && it.valor > norm.valorMax) return false;
 
-          if (norm.dateFrom && (dISO ?? "") < norm.dateFrom) return false;
-          if (norm.dateTo && (dISO ?? "") > norm.dateTo) return false;
+          // ✅ compara apenas "YYYY-MM-DD" para evitar problemas com fuso/UTC
+          const dYMD = (dISO ?? "").slice(0, 10);
+          const fromYM = norm.dateFrom?.slice(0, 10);
+          const toYM = norm.dateTo?.slice(0, 10);
+          if (fromYM && (!dYMD || dYMD < fromYM)) return false;
+          if (toYM && (!dYMD || dYMD > toYM)) return false;
 
           // @ts-expect-error
           if (norm.troca != null && !!it.troca !== !!norm.troca) return false;
@@ -157,4 +163,38 @@ export function useVendas(filters: VendasFilters = {}, opts?: { enabled?: boolea
     staleTime: 5 * 60 * 1000,
     placeholderData: (d) => d, // “keep previous data”
   });
+}
+
+/**
+ * Constrói filtros de "um dia" prontos para enviar ao backend.
+ * - dateOnly: "YYYY-MM-DD" (útil para filtros locais)
+ * - dateFrom/dateTo: limites UTC do dia (ISO)
+ * - mes/ano: conveniência
+ */
+export function buildDayFilters(date: Date | string) {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+
+  const ymd = `${y}-${pad2(m)}-${pad2(day)}`;
+  return {
+    mes: m,
+    ano: y,
+    dateOnly: ymd,
+    dateFrom: `${ymd}T00:00:00.000Z`,
+    dateTo: `${ymd}T23:59:59.999Z`,
+  } as const;
+}
+
+/**
+ * Corta a lista de vendas exatamente para o dia informado (YYYY-MM-DD),
+ * priorizando auditoria.data; se ausente, usa createdAt.
+ */
+export function filterVendasByDay<T extends { auditoria?: { data?: string }; createdAt?: string }>(
+  items: T[],
+  dateOnly: string
+): T[] {
+  const d = (s?: string) => (s ?? "").slice(0, 10);
+  return items.filter((it) => d(it.auditoria?.data ?? it.createdAt) === dateOnly);
 }

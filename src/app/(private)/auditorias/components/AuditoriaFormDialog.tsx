@@ -126,15 +126,15 @@ const AuditoriaFormDialog: React.FC<AuditoriaFormDialogProps> = ({
                     <DialogTitle>{isEdit ? "Editar Auditoria" : "Nova Auditoria"}</DialogTitle>
                 </DialogHeader>
 
-                <div className="space-y-4">
+                <div className="flex flex-col space-y-4">
                     {/* Loja */}
-                    <div className="grid gap-2">
+                    <div className="flex-1 flex flex-col gap-2">
                         <Label>Loja</Label>
                         <Select
                             value={form.lojaId ? String(form.lojaId) : ""}
                             onValueChange={(v) => setForm((s) => ({ ...s, lojaId: Number(v) }))}
                         >
-                            <SelectTrigger className="cursor-pointer">
+                            <SelectTrigger className="w-full cursor-pointer">
                                 <SelectValue placeholder="Selecione a loja" />
                             </SelectTrigger>
                             <SelectContent>
@@ -148,13 +148,13 @@ const AuditoriaFormDialog: React.FC<AuditoriaFormDialogProps> = ({
                     </div>
 
                     {/* Auditor */}
-                    <div className="grid gap-2">
+                    <div className="flex-1 flex flex-col gap-2">
                         <Label>Auditor</Label>
                         <Select
                             value={form.usuarioId ? String(form.usuarioId) : ""}
                             onValueChange={(v) => setForm((s) => ({ ...s, usuarioId: Number(v) }))}
                         >
-                            <SelectTrigger className="cursor-pointer">
+                            <SelectTrigger className="w-full cursor-pointer">
                                 <SelectValue placeholder="Selecione o auditor" />
                             </SelectTrigger>
                             <SelectContent>

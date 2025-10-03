@@ -19,6 +19,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import Image from "next/image";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -54,8 +55,14 @@ export default function LoginPage() {
                 <div className="w-full max-w-md">
                     <Card className="bg-gradient-card shadow-hover border-0">
                         <CardHeader className="text-center pb-8">
-                            <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-xl flex items-center justify-center mb-4 shadow-primary">
-                                <ClipboardCheck className="h-8 w-8 text-primary-foreground" />
+                            <div className="mx-auto w-16 h-16  rounded-xl flex items-center justify-center mb-4 shadow-primary">
+                                {/* <img src="/logo.png" className="flex-1 w-full max-h-full" alt="Logo" /> */}
+                                <Image
+                                    src="/logo.png"
+                                    width={64}
+                                    height={64}
+                                    alt="Logo"
+                                />
                             </div>
 
                             <CardTitle className="text-2xl font-bold">
