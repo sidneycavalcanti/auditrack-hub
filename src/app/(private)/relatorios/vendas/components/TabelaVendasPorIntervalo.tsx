@@ -454,7 +454,14 @@ export default function TabelaVendasPorIntervalo() {
                                     <CartesianGrid strokeDasharray="0 3" />
                                     <XAxis dataKey="hora" scale="point" />
                                     <YAxis tickFormatter={(v) => `${v.toFixed(1)}%`} />
-                                    <Tooltip formatter={(v: any) => `${Number(v).toFixed(1)}%`} />
+                                    <Tooltip 
+                                        formatter={(v: any) => `${Number(v).toFixed(1)}%`} 
+                                        contentStyle={{
+                                            backgroundColor: 'var(--card)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: '0.75rem',
+                                        }}
+                                    />
                                     <Bar dataKey="pct" fill="#FFFFC0" />
                                 </BarChart>
                             </ResponsiveContainer>

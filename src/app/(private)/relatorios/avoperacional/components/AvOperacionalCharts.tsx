@@ -111,7 +111,13 @@ export function AvOperacionalChartsPreview({ items }: AvOperacionalChartsPreview
                                 <CartesianGrid stroke={grid} strokeDasharray="3 3" />
                                 <XAxis dataKey="data" fontSize={12} stroke={muted} />
                                 <YAxis domain={[0, 10]} stroke={muted} />
-                                <Tooltip />
+                                <Tooltip 
+                                    contentStyle={{
+                                        backgroundColor: 'var(--card)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: '0.75rem',
+                                    }}
+                                />
                                 <Legend />
                                 <Line
                                     type="monotone"
@@ -150,7 +156,13 @@ export function AvOperacionalChartsPreview({ items }: AvOperacionalChartsPreview
                                 <CartesianGrid stroke={muted} strokeDasharray="3 3" />
                                 <XAxis dataKey="nota" fill={violet_600} stroke={muted} fontSize={12} />
                                 <YAxis allowDecimals={false} stroke={muted} />
-                                <Tooltip />
+                                <Tooltip 
+                                    contentStyle={{
+                                        backgroundColor: 'var(--card)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: '0.75rem',
+                                    }} 
+                                />
                                 <Legend />
                                 <Bar dataKey="qtd" name="Qtd" fill={violet_500} />
                             </BarChart>
@@ -173,8 +185,14 @@ export function AvOperacionalChartsPreview({ items }: AvOperacionalChartsPreview
                                 <CartesianGrid stroke={grid} strokeDasharray="3 3" />
                                 <XAxis dataKey="name" stroke={muted} tick={{ fontSize: 10 }} />
                                 <YAxis domain={[0, 10]} stroke={muted} />
-                                <Tooltip />
-                                <Legend />
+                                <Tooltip 
+                                    contentStyle={{
+                                        backgroundColor: 'var(--card)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: '0.75rem',
+                                    }}
+                                />
+                                
                                 <Bar dataKey="media" name="Média">
                                     {mediaLoja.map((_, i) => (
                                         <Cell key={`cell-loja-${i}`} fill={palette[i % palette.length]} />
@@ -200,7 +218,13 @@ export function AvOperacionalChartsPreview({ items }: AvOperacionalChartsPreview
                                 <CartesianGrid stroke={grid} strokeDasharray="3 3" />
                                 <XAxis dataKey="name" stroke={muted} tick={{ fontSize: 12 }} />
                                 <YAxis domain={[0, 10]} stroke={muted} />
-                                <Tooltip />
+                                <Tooltip 
+                                    contentStyle={{
+                                        backgroundColor: 'var(--card)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: '0.75rem',
+                                    }}
+                                />
                                 <Legend />
                                 <Bar dataKey="media" name="Média">
                                     {mediaQuestao.map((_, i) => (
