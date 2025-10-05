@@ -1,3 +1,4 @@
+// src/app/(private)/relatorios/vendas/components/TabelaVendasPorIntervalo.tsx
 "use client";
 
 import * as React from "react";

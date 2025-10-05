@@ -200,6 +200,19 @@ export const vendaAPI = {
     create: (data: any) => api.post("/vendas", data),
     update: (id: number, data: any) => api.put(`/vendas/${id}`, data),
     delete: (id: number) => api.delete(`/vendas/${id}`),
+
+    reports: {
+        resumoMensal: (params: { lojaId: number; ano: number; mes: number }) =>
+            api.get("/vendas/reports/resumo-mensal", { params }),
+
+        resumoDiario: (params: { lojaId: number; date: string }) =>
+            api.get("/vendas/reports/resumo-diario", { params }),
+
+        porHora: (params:
+            | { lojaId: number; ano: number; mes: number; semana: number }
+            | { lojaId: number; dateFrom: string; dateTo: string }
+        ) => api.get("/vendas/reports/por-hora", { params }),
+    },
 };
 
 export const fluxoAPI = {
