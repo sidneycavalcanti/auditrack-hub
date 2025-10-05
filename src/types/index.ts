@@ -137,16 +137,23 @@ export interface MotivoDepausa {
 }
 
 export interface Pausa {
+  id: number;
+  auditoriaId?: number;
+  usuarioId?: number;          // <- deixe opcional se o back nem sempre envia plano
+  motivoDePausaId?: number;
+  duracao: number;
+  observacoes?: string;
+  auditoria?: {
     id: number;
-    auditoriaId: number;
-    motivoDePausaId: number;
-    duracao: number; // em minutos
-    observacoes?: string;
-    // usuarioId não exposto na UI
-    auditoria?: Auditoria;
-    motivoDepausa?: MotivoDepausa;
-    createdAt?: string;
-    updatedAt?: string;
+    data?: string;
+    loja?: { id: number; name?: string };
+    usuario?: { id: number; name?: string };
+    usuarioId?: number;
+    lojaId?: number;
+  };
+  motivoDepausa?: { id: number; name?: string };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Categoria {
