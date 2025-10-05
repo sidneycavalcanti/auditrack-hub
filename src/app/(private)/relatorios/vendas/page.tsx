@@ -19,7 +19,7 @@ export default function RelatorioVendas() {
         </div>
       </div>
       <Tabs defaultValue="resumo-venda-fluxo">
-        <TabsList className="flex border gap-2 bg-gradient-card shadow-card">
+        <TabsList className="flex flex-wrap  border gap-2 bg-gradient-card h-auto shadow-card">
           <TabsTrigger className="cursor-pointer" value="resumo-venda-fluxo">Resumo mensal de venda e fluxo</TabsTrigger>
           <TabsTrigger className="cursor-pointer" value="resumo-diario-venda-fluxo">Resumo diário de venda e fluxo</TabsTrigger>
           <TabsTrigger className="cursor-pointer" value="comparativo-vendas-horas">Comparativo de vendas por hora</TabsTrigger>

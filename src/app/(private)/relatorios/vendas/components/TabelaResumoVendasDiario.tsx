@@ -107,7 +107,7 @@ export default function TabelaResumoVendasDiario() {
                             </div>
                         )}
 
-                        <div className="flex-1 flex flex-col lg:flex-row items-center justify-end gap-2">
+                        <div className="flex-1 flex flex-col lg:flex-row items-end justify-end gap-2">
                             <div className="space-y-1">
                                 <Label className="ml-1.5">Loja</Label>
                                 <Select value={lojaId ? String(lojaId) : ""} onValueChange={(v) => setLojaId(v ? Number(v) : undefined)}>
@@ -138,7 +138,7 @@ export default function TabelaResumoVendasDiario() {
                                 </Popover>
                             </div>
 
-                            <div className="flex gap-2">
+                            <div className="flex items-center justify-center gap-2">
                                 <Button onClick={onBuscar} size="sm" disabled={!canSearch} className="cursor-pointer">
                                     <Search className="mr-2 h-4 w-4" /> Buscar
                                 </Button>

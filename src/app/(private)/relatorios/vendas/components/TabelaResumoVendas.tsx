@@ -110,49 +110,49 @@ export default function TabelaResumoVendas() {
         </CardHeader>
 
         <CardContent className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col lg:flex-row items-center justify-between">
             {enabled ? (
-              <div className="flex-1 text-xs text-muted-foreground">
+              <div className="flex-1 flex flex-col justify-start w-full lg:mb-0 mb-2 text-xs text-muted-foreground">
                 <div>LOJA / NOME FANTASIA: <span className="text-foreground">{lojaNome}</span></div>
                 <div>MÊS/ANO: <span className="text-foreground">{String(params?.mes).padStart(2, "0")}/{params?.ano}</span></div>
               </div>
             ) : (
-              <div className="flex-1 text-xs text-muted-foreground">
+              <div className="flex-1 flex flex-col justify-start w-full lg:mb-0 mb-2 text-xs text-muted-foreground">
                 <div>LOJA / NOME FANTASIA: <span className="text-foreground">--</span></div>
                 <div>MÊS/ANO: <span className="text-foreground">--/----</span></div>
               </div>
             )}
 
-            <div className="flex-1 flex flex-col lg:flex-row items-center justify-end gap-2">
-              <div className="space-y-1">
+            <div className="flex-1 flex flex-col md:flex-row w-full items-end justify-end gap-2">
+              <div className="w-full space-y-1">
                 <Label className="ml-1.5">Loja</Label>
                 <Select value={formLojaId ? String(formLojaId) : ""} onValueChange={(v) => setFormLojaId(v ? Number(v) : undefined)}>
-                  <SelectTrigger className="cursor-pointer"><SelectValue placeholder="Selecione a loja" /></SelectTrigger>
+                  <SelectTrigger className="w-full cursor-pointer"><SelectValue placeholder="Selecione a loja" /></SelectTrigger>
                   <SelectContent>
                     {lojas.map((l) => <SelectItem key={l.id} value={String(l.id)}>{l.descricao ?? l.name ?? `Loja ${l.id}`}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1">
+              <div className="w-full space-y-1">
                 <Label className="ml-1.5">Mês</Label>
                 <Select value={formMes ? String(formMes) : ""} onValueChange={(v) => setFormMes(v ? Number(v) : undefined)}>
-                  <SelectTrigger className="cursor-pointer"><SelectValue placeholder="Mês" /></SelectTrigger>
+                  <SelectTrigger className="w-full cursor-pointer"><SelectValue placeholder="Mês" /></SelectTrigger>
                   <SelectContent>
                     {MONTHS.map((m) => <SelectItem key={m.v} value={String(m.v)}>{m.n}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1">
+              <div className="w-full space-y-1">
                 <Label className="ml-1.5">Ano</Label>
                 <Select value={formAno ? String(formAno) : ""} onValueChange={(v) => setFormAno(v ? Number(v) : undefined)}>
-                  <SelectTrigger className="cursor-pointer"><SelectValue placeholder="Ano" /></SelectTrigger>
+                  <SelectTrigger className="w-full cursor-pointer"><SelectValue placeholder="Ano" /></SelectTrigger>
                   <SelectContent>
                     {anos.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex w-full items-center justify-end gap-2">
                 <Button onClick={onBuscar} size="sm" disabled={!formLojaId || !formMes || !formAno} className="cursor-pointer">
                   <Search className="mr-2 h-4 w-4" /> Buscar
                 </Button>
