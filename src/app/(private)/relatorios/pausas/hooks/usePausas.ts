@@ -48,17 +48,21 @@ export function buildDayFilters(date: Date | string) {
   } as const;
 }
 
-export function filterPausasByDay<T extends { auditoria?: { data?: string }; createdAt?: string }>(
-  items: T[],
-  dateOnly: string
-): T[] {
+export function filterPausasByDay<
+  T extends { auditoria?: { data?: string }; createdAt?: string }
+>(items: T[], dateOnly: string): T[] {
   const d = (s?: string) => (s ?? "").slice(0, 10);
   return items.filter((it) => d(it.auditoria?.data ?? it.createdAt) === dateOnly);
 }
 
 /* ---------- helpers p/ ler ids mesmo quando vêm aninhados ---------- */
 function getUsuarioId(p: any): number | undefined {
-  return p?.usuarioId ?? p?.auditoria?.usuarioId ?? p?.auditoria?.usuario?.id ?? p?.usuario?.id;
+  return (
+    p?.usuarioId ??
+    p?.auditoria?.usuarioId ??
+    p?.auditoria?.usuario?.id ??
+    p?.usuario?.id
+  );
 }
 function getLojaId(p: any): number | undefined {
   return p?.lojaId ?? p?.auditoria?.lojaId ?? p?.auditoria?.loja?.id;
@@ -67,7 +71,19 @@ function getMotivoId(p: any): number | undefined {
   return p?.motivoDePausaId ?? p?.motivodepausaId ?? p?.motivodepausa?.id;
 }
 
-export function usePausas(filters: PausasFilters = {}, opts?: { enabled?: boolean }) {
+/* ---------- duração (minutos) = updatedAt - createdAt ---------- */
+function diffMinutes(startISO?: string, endISO?: string): number {
+  if (!startISO || !endISO) return 0;
+  const t1 = new Date(startISO).getTime();
+  const t2 = new Date(endISO).getTime();
+  if (!Number.isFinite(t1) || !Number.isFinite(t2)) return 0;
+  return Math.max(0, Math.round((t2 - t1) / 60000));
+}
+
+export function usePausas(
+  filters: PausasFilters = {},
+  opts?: { enabled?: boolean }
+) {
   const norm = normalize(filters);
 
   return useQuery<PaginatedResponse<Pausa>>({
@@ -80,28 +96,45 @@ export function usePausas(filters: PausasFilters = {}, opts?: { enabled?: boolea
       const res = await pausaAPI.getAll(norm as any);
       const payload = res.data as any;
 
-      const list: any[] =
-        Array.isArray(payload?.pausas)
-          ? payload.pausas
-          : Array.isArray(payload)
+      const list: any[] = Array.isArray(payload?.pausas)
+        ? payload.pausas
+        : Array.isArray(payload)
           ? payload
           : [];
 
-      let items: Pausa[] = list.map((p: any) => ({
-        id: p.id,
-        auditoriaId: p.auditoriaId ?? p.auditoria?.id,
-        usuarioId: getUsuarioId(p),
-        motivoDePausaId: getMotivoId(p) ?? 0,
-        duracao: Number(p.duracao) || 0,
-        observacoes: p.observacoes ?? p.obs ?? p.observacao,
-        auditoria: p.auditoria,
-        motivoDepausa: p.motivodepausa ?? p.motivoDePausa,
-        createdAt: p.createdAt,
-        updatedAt: p.updatedAt,
-      }));
+      let items: Pausa[] = list.map((p: any) => {
+        // duração enviada pelo back (se vier) OU calculada por updatedAt - createdAt
+        const durCalc = diffMinutes(p?.createdAt, p?.updatedAt);
+        const duracao =
+          Number.isFinite(Number(p?.duracao)) && Number(p?.duracao) > 0
+            ? Number(p.duracao)
+            : durCalc;
 
-      // Fallback de filtros locais, caso o back não aplique todos
-      if (norm.lojaId || norm.usuarioId || norm.motivoDePausaId || norm.ano || norm.mes || norm.dia || norm.dateFrom || norm.dateTo) {
+        return {
+          id: p.id,
+          auditoriaId: p.auditoriaId ?? p.auditoria?.id,
+          usuarioId: getUsuarioId(p),
+          motivoDePausaId: getMotivoId(p) ?? 0,
+          duracao,
+          // observação removida (campo não existe)
+          auditoria: p.auditoria,
+          motivoDepausa: p.motivodepausa ?? p.motivoDePausa,
+          createdAt: p.createdAt,
+          updatedAt: p.updatedAt,
+        } as Pausa;
+      });
+
+      // Fallback de filtros locais
+      if (
+        norm.lojaId ||
+        norm.usuarioId ||
+        norm.motivoDePausaId ||
+        norm.ano ||
+        norm.mes ||
+        norm.dia ||
+        norm.dateFrom ||
+        norm.dateTo
+      ) {
         items = items.filter((it) => {
           const dISO = (it as any)?.auditoria?.data ?? (it as any)?.createdAt ?? "";
           const y = dISO ? Number(dISO.slice(0, 4)) : undefined;
@@ -119,7 +152,8 @@ export function usePausas(filters: PausasFilters = {}, opts?: { enabled?: boolea
           if (norm.usuarioId && usuarioId !== norm.usuarioId) return false;
 
           const motivoId = getMotivoId(it);
-          if (norm.motivoDePausaId && motivoId !== norm.motivoDePausaId) return false;
+          if (norm.motivoDePausaId && motivoId !== norm.motivoDePausaId)
+            return false;
 
           const dYMD = dISO.slice(0, 10);
           const fromYM = norm.dateFrom?.slice(0, 10);
@@ -133,7 +167,9 @@ export function usePausas(filters: PausasFilters = {}, opts?: { enabled?: boolea
 
       const total = payload.totalItems ?? payload.total ?? items.length;
       const limit = (payload.limit ?? norm.limit ?? items.length) || 10;
-      const totalPages = payload.totalPages ?? (limit > 0 ? Math.max(1, Math.ceil(total / limit)) : 1);
+      const totalPages =
+        payload.totalPages ??
+        (limit > 0 ? Math.max(1, Math.ceil(total / limit)) : 1);
       const page = payload.currentPage ?? payload.page ?? norm.page ?? 1;
 
       return { data: items, total, totalPages, page, limit };
