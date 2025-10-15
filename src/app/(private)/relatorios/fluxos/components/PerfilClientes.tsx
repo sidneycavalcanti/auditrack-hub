@@ -1,4 +1,4 @@
-// src/app/(private)/relatorios/fluxos/components/PerfilClientes.tsx
+// FILE: src/app/(private)/relatorios/fluxos/components/PerfilClientes.tsx
 "use client";
 
 import * as React from "react";
@@ -33,9 +33,12 @@ type EditFilters = { lojaId?: number; mes?: number; ano?: number };
 
 /* ======================= Helpers de exportação de gráficos ======================= */
 
-/** Copia alguns estilos computados para o elemento clonado (suficiente para Recharts). */
+/** Copia estilos essenciais para cada nó do SVG clonado. */
 function inlineBasicStyles(root: SVGElement) {
-    const PROPS = ["font", "fontFamily", "fontSize", "fontWeight", "fill", "stroke", "strokeWidth", "opacity", "textAnchor"];
+    const PROPS = [
+        "font", "fontFamily", "fontSize", "fontWeight", "fill", "stroke",
+        "strokeWidth", "opacity", "textAnchor", "dominantBaseline"
+    ];
     const all = root.querySelectorAll<SVGElement>("*");
     all.forEach((el) => {
         const cs = window.getComputedStyle(el as Element);
@@ -46,67 +49,63 @@ function inlineBasicStyles(root: SVGElement) {
     });
 }
 
-/** Converte o SVG (Recharts) para PNG (dataURL), preservando proporções e estilos. */
+/** Aguarda o Recharts terminar layout (svg com largura/altura > 0). */
+async function waitForChartReady(container: HTMLElement | null, timeoutMs = 1500) {
+    const start = performance.now();
+    while (container) {
+        const svg = container.querySelector("svg.recharts-surface") as SVGSVGElement | null;
+        const box = svg?.getBoundingClientRect();
+        if (svg && box && box.width > 2 && box.height > 2) return svg;
+        if (performance.now() - start > timeoutMs) return svg ?? null;
+        await new Promise(r => requestAnimationFrame(() => r(null)));
+    }
+    return null;
+}
+
 async function svgNodeToPngDataUrl(svg: SVGSVGElement, targetWidth: number): Promise<string> {
-    // clona e garante width/height/viewBox
-    const clone = svg.cloneNode(true) as SVGSVGElement;
     const rect = svg.getBoundingClientRect();
-    const w = Math.max(1, rect.width || Number(svg.getAttribute("width")) || 800);
-    const h = Math.max(1, rect.height || Number(svg.getAttribute("height")) || 400);
+    const vb = svg.viewBox?.baseVal;
+    const w = vb?.width || rect.width || Number(svg.getAttribute("width")) || 800;
+    const h = vb?.height || rect.height || Number(svg.getAttribute("height")) || 400;
 
+    const clone = svg.cloneNode(true) as SVGSVGElement;
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    clone.setAttribute("width", String(w));
-    clone.setAttribute("height", String(h));
     if (!clone.getAttribute("viewBox")) clone.setAttribute("viewBox", `0 0 ${w} ${h}`);
-
-    // aplica estilos computados (texto/eixos)
     inlineBasicStyles(clone);
 
-    // fundo branco (para tema escuro)
     const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    bg.setAttribute("x", "0");
-    bg.setAttribute("y", "0");
-    bg.setAttribute("width", String(w));
-    bg.setAttribute("height", String(h));
+    bg.setAttribute("x", "0"); bg.setAttribute("y", "0");
+    bg.setAttribute("width", String(w)); bg.setAttribute("height", String(h));
     bg.setAttribute("fill", "#ffffff");
     clone.insertBefore(bg, clone.firstChild);
 
-    // serializa
     const serializer = new XMLSerializer();
     const svgStr = serializer.serializeToString(clone);
-    const svgBlob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(svgBlob);
 
-    try {
-        const img = await new Promise<HTMLImageElement>((resolve) => {
-            const i = new Image();
-            // segurança: permite desenhar no canvas
-            (i as any).crossOrigin = "anonymous";
-            i.onload = () => resolve(i);
-            i.onerror = () => resolve(i);
-            i.src = url;
-        });
+    const ratio = w / h || 2;
+    const width = Math.max(1, Math.round(targetWidth));
+    const height = Math.max(1, Math.round(width / ratio));
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
 
-        const ratio = w / h;
-        const width = targetWidth;
-        const height = Math.max(1, Math.round(width / (ratio || 2)));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    const ctx = canvas.getContext("2d")!;
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, width, height);
 
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d")!;
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, width, height);
-        ctx.drawImage(img, 0, 0, width, height);
-        return canvas.toDataURL("image/png");
-    } finally {
-        URL.revokeObjectURL(url);
-    }
+    // IMPORT DINÂMICO (funciona em qualquer build do canvg 3.x)
+    const mod = await import("canvg");
+    const CanvgCtor = (mod as any).Canvg ?? (mod as any).default?.Canvg ?? (mod as any).default;
+    const v = await CanvgCtor.fromString(ctx, svgStr, { ignoreMouse: true, ignoreAnimation: true });
+
+    v.resize(width, height, "xMidYMid meet");
+    await v.render();
+
+    return canvas.toDataURL("image/png");
 }
 
-function findChartSvg(container: HTMLElement | null): SVGSVGElement | null {
-    return container ? (container.querySelector("svg") as SVGSVGElement | null) : null;
-}
 
 /* =============================================================================== */
 
@@ -116,6 +115,7 @@ export default function PerfilClientes() {
 
     const [edit, setEdit] = React.useState<EditFilters>(DEFAULT);
     const [applied, setApplied] = React.useState<EditFilters>(DEFAULT);
+    const [isExporting, setIsExporting] = React.useState(false);
 
     const [bootApplied, setBootApplied] = React.useState(false);
     React.useEffect(() => {
@@ -153,25 +153,23 @@ export default function PerfilClientes() {
         const percentRow = ["Participação %", `${pct.masculino}%`, `${pct.feminino}%`, `${pct.crianca}%`, `${pct.jovem}%`, `${pct.adulto}%`, `${pct.idoso}%`, "100%"];
 
         const ws = XLSX.utils.aoa_to_sheet([
-            ["Perfil de Clientes (Compradores)"],                                // A1
-            [`Loja: ${metaLoja}    Mês: ${metaMes}    Ano: ${metaAno}`],         // A2
-            [""],                                                                // A3
-            ["", "Gênero", "", "", "Idade", "", "", ""],                         // A4 (agrupadores)
-            ["Dia da Semana", "Masculino", "Feminino", "Criança", "Jovem", "Adulto", "Idoso", "Total"], // A5
+            ["Perfil de Clientes (Compradores)"],
+            [`Loja: ${metaLoja}    Mês: ${metaMes}    Ano: ${metaAno}`],
+            [""],
+            ["", "Gênero", "", "", "Idade", "", "", ""],
+            ["Dia da Semana", "Masculino", "Feminino", "Criança", "Jovem", "Adulto", "Idoso", "Total"],
             ...body,
             totalsRow,
             percentRow,
         ]);
 
-        // merges (título, metadados, “Gênero” e “Idade”)
         ws["!merges"] = [
-            { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }, // A1:H1
-            { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } }, // A2:H2
-            { s: { r: 3, c: 1 }, e: { r: 3, c: 2 } }, // B4:C4  (Gênero)
-            { s: { r: 3, c: 3 }, e: { r: 3, c: 6 } }, // D4:G4  (Idade)
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } },
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } },
+            { s: { r: 3, c: 1 }, e: { r: 3, c: 2 } },
+            { s: { r: 3, c: 3 }, e: { r: 3, c: 6 } },
         ];
 
-        // larguras e freeze panes
         ws["!cols"] = [
             { wch: 16 }, { wch: 11 }, { wch: 11 },
             { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
@@ -179,24 +177,19 @@ export default function PerfilClientes() {
         ];
         (ws as any)["!freeze"] = { xSplit: 1, ySplit: 5 };
 
-        // estilos básicos (se suportado pela sua build do SheetJS)
-        const center = { alignment: { horizontal: "center", vertical: "center" } };
-        const boldCenter = { font: { bold: true }, ...center };
+        const center = { alignment: { horizontal: "center", vertical: "center" } } as any;
+        const boldCenter = { font: { bold: true }, ...center } as any;
 
-        // título centralizado
         const addrTitle = XLSX.utils.encode_cell({ r: 0, c: 0 });
         if (ws[addrTitle]) (ws[addrTitle] as any).s = boldCenter;
 
-        // metadados alinhados à esquerda
         const addrMeta = XLSX.utils.encode_cell({ r: 1, c: 0 });
-        if (ws[addrMeta]) (ws[addrMeta] as any).s = { alignment: { horizontal: "left" } };
+        if (ws[addrMeta]) (ws[addrMeta] as any).s = { alignment: { horizontal: "left" } } as any;
 
-        // linha de agrupadores (A4:H4) – garante “Gênero” centralizado e “Idade” visível
         for (let c = 0; c <= 7; c++) {
             const a = XLSX.utils.encode_cell({ r: 3, c });
             if (ws[a]) (ws[a] as any).s = boldCenter;
         }
-        // cabeçalho detalhado (A5:H5)
         for (let c = 0; c <= 7; c++) {
             const a = XLSX.utils.encode_cell({ r: 4, c });
             if (ws[a]) (ws[a] as any).s = boldCenter;
@@ -207,84 +200,114 @@ export default function PerfilClientes() {
         XLSX.writeFile(wb, "perfil_clientes.xlsx");
     };
 
-    /** PDF com tabela + gráficos lado a lado (na mesma página) */
+    /** PDF com tabela + gráficos (snapshot do container com html2canvas) */
     const exportPDF = async () => {
-        const metaLoja = lojaAtual?.descricao ?? lojaAtual?.name ?? (applied.lojaId ? `Loja ${applied.lojaId}` : "Todas");
-        const metaMes = applied.mes ? meses[applied.mes - 1] : "Todos";
-        const metaAno = applied.ano ?? "Todos";
+        try {
+            setIsExporting(true);
 
-        const doc = new jsPDF({ orientation: "landscape" });
-        doc.setFontSize(14);
-        doc.text("Perfil de Clientes (Compradores)", 14, 14);
-        doc.setFontSize(10);
-        doc.text(`Loja: ${metaLoja}    Mês: ${metaMes}    Ano: ${metaAno}`, 14, 22);
+            await new Promise(r => setTimeout(r, 200));
 
-        autoTable(doc, {
-            startY: 28,
-            head: [
-                [
-                    { content: "Dia da Semana", rowSpan: 2 },
-                    { content: "Gênero", colSpan: 2, styles: { halign: "center" } },
-                    { content: "Idade", colSpan: 4, styles: { halign: "center" } },
-                    { content: "Total", rowSpan: 2 },
+            const metaLoja = lojaAtual?.descricao ?? lojaAtual?.name ?? (applied.lojaId ? `Loja ${applied.lojaId}` : "Todas");
+            const metaMes = applied.mes ? meses[applied.mes - 1] : "Todos";
+            const metaAno = applied.ano ?? "Todos";
+
+            const doc = new jsPDF({ orientation: "landscape" });
+            doc.setFontSize(14);
+            doc.text("Perfil de Clientes (Compradores)", 14, 14);
+            doc.setFontSize(10);
+            doc.text(`Loja: ${metaLoja}    Mês: ${metaMes}    Ano: ${metaAno}`, 14, 22);
+
+            // Tabela
+            autoTable(doc, {
+                startY: 28,
+                head: [
+                    [
+                        { content: "Dia da Semana", rowSpan: 2 },
+                        { content: "Gênero", colSpan: 2, styles: { halign: "center" } },
+                        { content: "Idade", colSpan: 4, styles: { halign: "center" } },
+                        { content: "Total", rowSpan: 2 },
+                    ],
+                    ["Masculino", "Feminino", "Criança", "Jovem", "Adulto", "Idoso"],
                 ],
-                ["Masculino", "Feminino", "Criança", "Jovem", "Adulto", "Idoso"],
-            ],
-            body: [
-                ...rows.map(r => [r.dia, r.masculino, r.feminino, r.crianca, r.jovem, r.adulto, r.idoso, r.total]),
-                ["Total", totals.masculino, totals.feminino, totals.crianca, totals.jovem, totals.adulto, totals.idoso, totals.total],
-                ["Participação %", `${pct.masculino}%`, `${pct.feminino}%`, `${pct.crianca}%`, `${pct.jovem}%`, `${pct.adulto}%`, `${pct.idoso}%`, "100%"],
-            ],
-            theme: "grid",
-            styles: { fontSize: 9 },
-            headStyles: { fillColor: [40, 40, 40] },
-            columnStyles: { 0: { cellWidth: 36 }, 7: { cellWidth: 18, halign: "right" } },
-        });
+                body: [
+                    ...rows.map(r => [r.dia, r.masculino, r.feminino, r.crianca, r.jovem, r.adulto, r.idoso, r.total]),
+                    ["Total", totals.masculino, totals.feminino, totals.crianca, totals.jovem, totals.adulto, totals.idoso, totals.total],
+                    ["Participação %", `${pct.masculino}%`, `${pct.feminino}%`, `${pct.crianca}%`, `${pct.jovem}%`, `${pct.adulto}%`, `${pct.idoso}%`, "100%"],
+                ],
+                theme: "grid",
+                styles: { fontSize: 9 },
+                headStyles: { fillColor: [40, 40, 40] },
+                columnStyles: { 0: { cellWidth: 36 }, 7: { cellWidth: 18, halign: "right" } },
+            });
 
-        // ===== Exporta os gráficos, lado a lado =====
-        const pageW = doc.internal.pageSize.getWidth();
-        const pageH = doc.internal.pageSize.getHeight();
-        const margin = 14;
-        const gap = 10;
-        const colW = Math.floor((pageW - margin * 2 - gap) / 2);
+            const pageW = doc.internal.pageSize.getWidth();
+            const pageH = doc.internal.pageSize.getHeight();
+            const margin = 14;
+            const gap = 10;
+            const colW = Math.floor((pageW - margin * 2 - gap) / 2);
 
-        const tableBottomY = (doc as any).lastAutoTable?.finalY ?? 36;
-        let y = tableBottomY + 8;
+            const tableBottomY = (doc as any).lastAutoTable?.finalY ?? 36;
+            let y = tableBottomY + 12;
 
-        const svgGenero = findChartSvg(generoRef.current);
-        const svgIdade = findChartSvg(idadeRef.current);
+            // Aguarda os SVGs estarem prontos
+            console.log("Aguardando gráficos renderizarem...");
+            const [svgGenero, svgIdade] = await Promise.all([
+                waitForChartReady(generoRef.current),
+                waitForChartReady(idadeRef.current),
+            ]);
 
-        // Se faltar qualquer um, apenas salva o PDF com a tabela
-        if (!svgGenero || !svgIdade) {
+
+
+            if (!svgGenero || !svgIdade) {
+                console.warn("Gráficos não encontrados ou não renderizados completamente");
+                doc.setFontSize(10);
+                doc.text("Nota: Gráficos não puderam ser exportados", margin, y);
+                doc.save("perfil_clientes.pdf");
+                return;
+            }
+
+            console.log("Convertendo SVGs para PNG...");
+            const [pngGenero, pngIdade] = await Promise.all([
+                svgNodeToPngDataUrl(svgGenero, colW * 2),
+                svgNodeToPngDataUrl(svgIdade, colW * 2),
+            ]);
+
+            // Calcula proporções
+            const genProps = (doc as any).getImageProperties(pngGenero);
+            const idaProps = (doc as any).getImageProperties(pngIdade);
+
+            const h1 = Math.round((colW * genProps.height) / genProps.width);
+            const h2 = Math.round((colW * idaProps.height) / idaProps.width);
+            const maxH = Math.max(h1, h2);
+
+            // Verifica se precisa de nova página
+            if (y + maxH > pageH - margin) {
+                doc.addPage();
+                y = margin;
+            }
+
+            // Adiciona títulos dos gráficos
+            doc.setFontSize(9);
+            doc.text("Perfil por Gênero", margin, y);
+            doc.text("Perfil por Idade", margin + colW + gap, y);
+
+            y += 5;
+
+            // Adiciona imagens lado a lado
+            doc.addImage(pngGenero, "PNG", margin, y, colW, h1);
+            doc.addImage(pngIdade, "PNG", margin + colW + gap, y, colW, h2);
+
+            console.log("PDF gerado com sucesso!");
             doc.save("perfil_clientes.pdf");
-            return;
+
+        } catch (error) {
+            console.error("Erro ao exportar PDF:", error);
+            alert("Erro ao exportar PDF. Verifique o console para mais detalhes.");
+        } finally {
+            setIsExporting(false);
         }
-
-        // Converte os dois em PNG (mantendo proporção)
-        const [pngGenero, pngIdade] = await Promise.all([
-            svgNodeToPngDataUrl(svgGenero, colW),
-            svgNodeToPngDataUrl(svgIdade, colW),
-        ]);
-
-        // calcula alturas proporcionais
-        const Gen = (doc as any).getImageProperties(pngGenero);
-        const Ida = (doc as any).getImageProperties(pngIdade);
-        const h1 = Math.round((colW * (Gen?.height || 1)) / (Gen?.width || 1));
-        const h2 = Math.round((colW * (Ida?.height || 1)) / (Ida?.width || 1));
-        const rowH = Math.max(h1, h2);
-
-        // se não couber na mesma página, cria nova
-        if (y + rowH > pageH - margin) {
-            doc.addPage();
-            y = margin;
-        }
-
-        // desenha lado a lado
-        doc.addImage(pngGenero, "PNG", margin, y, colW, h1);
-        doc.addImage(pngIdade, "PNG", margin + colW + gap, y, colW, h2);
-
-        doc.save("perfil_clientes.pdf");
     };
+
 
     return (
         <Card className="bg-transparent">
@@ -432,11 +455,21 @@ export default function PerfilClientes() {
                         <div className="mb-1 text-sm font-medium text-muted-foreground">Perfil de Clientes (compradores) por Gênero</div>
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={data?.chartGenero ?? []}>
-                                <CartesianGrid strokeDasharray="0.5 3" className="opacity-30" />
-                                <XAxis dataKey="name" scale="auto" fontSize={13} />
-                                <YAxis allowDecimals={false} fontSize={10} />
-                                <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontSize: "12px" }} />
-                                <Legend fontSize={10} />
+                                <CartesianGrid stroke="#E5E7EB" strokeDasharray="0.3 3" />
+                                <XAxis
+                                    dataKey="name"
+                                    tick={{ fill: "#374151", fontSize: 12 }}     // texto dos ticks
+                                    axisLine={{ stroke: "#9CA3AF" }}            // linha do eixo
+                                    tickLine={{ stroke: "#9CA3AF" }}            // risquinhos 
+                                />
+                                <YAxis
+                                    allowDecimals={false}
+                                    tick={{ fill: "#374151", fontSize: 10 }}
+                                    axisLine={{ stroke: "#9CA3AF" }}
+                                    tickLine={{ stroke: "#9CA3AF" }}
+                                />
+                                <Tooltip contentStyle={{ backgroundColor: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 6, fontSize: 12 }} />
+                                <Legend wrapperStyle={{ color: "#374151", fontSize: 10 }} />
                                 <Bar dataKey="Feminino" fill={COLORS.feminino} barSize={20} radius={[4, 4, 0, 0]} />
                                 <Bar dataKey="Masculino" fill={COLORS.masculino} barSize={20} radius={[4, 4, 0, 0]} />
                             </BarChart>
@@ -447,11 +480,11 @@ export default function PerfilClientes() {
                         <div className="mb-1 text-sm font-medium text-muted-foreground">Perfil de Clientes (compradores) por Idade</div>
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={data?.chartIdade ?? []}>
-                                <CartesianGrid strokeDasharray="0.5 3" className="opacity-30" />
+                                <CartesianGrid stroke="#E5E7EB" strokeDasharray="0.3 3" />
                                 <XAxis dataKey="name" fontSize={13} />
                                 <YAxis allowDecimals={false} fontSize={10} />
-                                <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontSize: "12px" }} />
-                                <Legend />
+                                <Tooltip contentStyle={{ backgroundColor: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 6, fontSize: 12 }} />
+                                <Legend wrapperStyle={{ color: "#374151", fontSize: 10 }} />
                                 <Bar dataKey="Adulto" fill={COLORS.adulto} radius={[4, 4, 0, 0]} />
                                 <Bar dataKey="Criança" fill={COLORS.crianca} radius={[4, 4, 0, 0]} />
                                 <Bar dataKey="Idoso" fill={COLORS.idoso} radius={[4, 4, 0, 0]} />

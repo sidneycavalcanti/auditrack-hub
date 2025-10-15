@@ -1,4 +1,4 @@
-// src/app/(private)/relatorios/fluxos/page.tsx
+// FILE: src/app/(private)/relatorios/fluxos/page.tsx
 "use client";
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";

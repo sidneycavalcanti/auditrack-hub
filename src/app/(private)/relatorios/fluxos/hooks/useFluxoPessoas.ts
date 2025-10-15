@@ -1,4 +1,4 @@
-// src/app/(private)/relatorios/fluxos/hooks/useFluxoPessoas.ts
+// FILE: src/app/(private)/relatorios/fluxos/hooks/useFluxoPessoas.ts
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
@@ -53,14 +53,12 @@ export function useFluxoPessoas(filters: FluxoFilters = {}, opts?: { enabled?: b
       const res = await fluxoAPI.getAll(norm as any);
       const payload = res.data as any;
 
-      // o backend pode mandar "fluxo", "fluxopessoa" ou "fluxopessoas"
       const listRaw: any[] =
         Array.isArray(payload?.fluxo) ? payload.fluxo :
-        Array.isArray(payload?.fluxopessoa) ? payload.fluxopessoa :
-        Array.isArray(payload?.fluxopessoas) ? payload.fluxopessoas :
-        [];
+          Array.isArray(payload?.fluxopessoa) ? payload.fluxopessoa :
+            Array.isArray(payload?.fluxopessoas) ? payload.fluxopessoas :
+              [];
 
-      // mapeia pro tipo do front
       let items: FluxoPessoa[] = listRaw.map((it: any) => ({
         id: it.id,
         lojaId: it.lojaId ?? it.loja?.id,
@@ -71,10 +69,9 @@ export function useFluxoPessoas(filters: FluxoFilters = {}, opts?: { enabled?: b
         createdAt: it.createdAt,
         updatedAt: it.updatedAt,
         loja: it.loja,
-        auditoria: it.auditoria, // contém data "YYYY-MM-DD"
+        auditoria: it.auditoria,
       }));
 
-      // fallback de filtros locais (caso o backend não aplique)
       if (norm.lojaId || norm.mes || norm.ano || norm.sexo) {
         items = items.filter((r) => {
           const lojaOk = norm.lojaId ? r.lojaId === norm.lojaId : true;
