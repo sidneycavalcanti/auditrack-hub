@@ -43,6 +43,10 @@
   --color-destructive-light: var(--destructive-light);
   --color-destructive-glow: var(--destructive-glow);
 
+  --color-warning: var(--warning);
+  --color-warning-light: var(--warning-light);
+  --color-warning-primary: var(--warning-primary);
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -197,6 +201,7 @@
   /* Warning - Laranja Dark */
   --warning: oklch(80.928% 0.15037 76.549);
   --warning-light: oklch(85.203% 0.12221 79.36);
+  --warning-primary: oklch(98.506% 0.07997 107.812);
   --warning-foreground: oklch(18.889% 0.01455 253.227);
 
   /* Destructive - Vermelho Dark */
@@ -366,3 +371,250 @@
   background-color: #edf2f7;
   /* Cor do fundo da barra */
 }
+
+/* ========= INICIO STYLES PARA IMPRESSÃO DO RELATÓRIO PERFIL DE CLIENTES ========= */
+/* Print Styles - Ocultar elementos desnecessários na impressão */
+@media print {
+
+  /* Ocultar sidebar mobile e desktop */
+  .fixed.left-0,
+  .fixed.inset-0.z-50,
+  /* Ocultar header */
+  header.sticky,
+  /* Ocultar elementos com classe print:hidden */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Remover margem esquerda do conteúdo principal */
+  .lg\:ml-64 {
+    margin-left: 0 !important;
+  }
+
+  /* Ajustar layout para impressão */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* 2) Imprimir SOMENTE o contêiner do relatório */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Garantir que o conteúdo principal ocupe toda a largura */
+  main {
+    margin: 0 !important;
+    padding: 1rem !important;
+    max-width: 100% !important;
+  }
+
+  /* Estilizar tabelas para impressão */
+  table {
+    page-break-inside: auto;
+    border-collapse: collapse;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  /* Garantir que os gráficos fiquem visíveis */
+  .recharts-wrapper {
+    page-break-inside: avoid;
+  }
+
+  /* Adicionar quebra de página antes dos gráficos se necessário */
+  .print-page-break {
+    page-break-before: always;
+  }
+
+  /* Remover sombras e efeitos desnecessários */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Garantir que cards e conteúdo fiquem visíveis */
+  .space-y-6>* {
+    margin-top: 1rem !important;
+  }
+
+  .space-y-4>* {
+    margin-top: 1rem !important;
+  }
+
+  .space-y-3>* {
+    margin-top: 1rem !important;
+  }
+
+  /* Ajustar cores para impressão */
+  .bg-card {
+    background: white !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
+  /* 1) Título só no PDF e esconder elementos de UI */
+  .only-print {
+    display: block !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  #print-root,
+  #print-root * {
+    visibility: visible !important;
+  }
+
+  #print-root {
+    position: absolute !important;
+    inset: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    background: #fff !important;
+  }
+
+  /* Permite que ticks/labels “saiam” sem cortar */
+  #print-root .recharts-wrapper,
+  #print-root svg,
+  #print-root .recharts-surface {
+    overflow: visible !important;
+  }
+
+  /* Evita artefatos (bolinhas pretas) e remove interações no PDF */
+  #print-root .recharts-tooltip-wrapper,
+  #print-root .recharts-default-tooltip,
+  #print-root .recharts-tooltip-cursor,
+  #print-root .recharts-cross {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+
+  /* Opcional: esconder labels acima das barras no PDF (evita recorte e “tremido”) */
+  /* #print-root .recharts-label-list {
+    display: none !important;
+  } */
+
+  /* Garantir que os eixos/ticks fiquem legíveis no papel */
+  #print-root .recharts-cartesian-axis-tick text {
+    fill: #000 !important;
+    font-size: 10px !important;
+  }
+
+  /* Se algum contêiner tiver overflow-hidden na árvore, libere no print */
+  #print-root .avoid-break {
+    overflow: visible !important;
+  }
+
+  /* Se quiser garantir que a legenda fique colada ao rodapé do gráfico no PDF */
+  #print-root .recharts-legend-wrapper {
+    bottom: 5 !important;
+  }
+
+  /* 3) Página, margens e preservação de cores */
+  @page {
+    size: A4;
+    /* paisagem */
+    margin: 2mm 4mm;
+    /* ajuste fino: 10–15mm */
+  }
+
+  html,
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background: #fff !important;
+    color: #000 !important;
+    /* fallback global */
+  }
+
+  /* 4) Tabela com fonte preta e cabeçalho forte */
+  .print-root,
+  .print-root * {
+    color: #000 !important;
+  }
+
+  .print-root table thead tr th {
+    font-weight: 700 !important;
+    color: #000 !important;
+  }
+
+  .print-table thead th {
+    font-weight: 700 !important;
+    color: #000 !important;
+  }
+
+  /* .print-table th,
+  .print-table td {
+    border-color: #e5e7eb !important;
+  } */
+
+  /* 5) Grid e quebras para os gráficos */
+  .print-flex-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .print-grid-2 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  .avoid-break {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* 6) Gráficos contidos e responsivos dentro da página */
+  .chart {
+    /* reduza p/ 230px se quiser mais compacto */
+    padding: 8px !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    max-width: 100% !important;
+    background: #fff !important;
+  }
+
+  .chart .recharts-wrapper,
+  .chart svg,
+  .chart .recharts-surface {
+    width: 100% !important;
+    height: 100% !important;
+    overflow: visible !important;
+  }
+
+  /* 7) Cabeçalho/rodapé de tabela corretos quando quebrar página */
+  table {
+    page-break-inside: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-row-group;
+  }
+
+}
+
+/* === PRINT PATCH — Perfil de Clientes (só a área do relatório) === */
+.only-print {
+  display: none;
+}
+
+.no-print {
+  /* nada em tela */
+}
+
+/* ========= FIM STYLES PARA IMPRESSÃO DO RELATÓRIO PERFIL DE CLIENTES ========= */

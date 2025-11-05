@@ -7,8 +7,8 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Download } from "lucide-react";
+import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, BarProps, Cell } from "recharts";
+import { Download, FileSpreadsheet } from "lucide-react";
 import { useVendasPerfil } from "../hooks/useVendasPerfil";
 import { useLojas } from "@/app/(private)/lojas/hooks/useLojas";
 import type { Loja } from "@/types";
@@ -32,6 +32,76 @@ const COLORS = {
 type EditFilters = { lojaId?: number; mes?: number; ano?: number };
 
 /* ======================= Helpers de exportação de gráficos ======================= */
+
+type CursorClientGenderProps = {
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+};
+
+// #endregion
+const getPath = (x: number, y: number, width: number, height: number) => {
+    return `M${x},${y + height}C${x + width / 3},${y + height} ${x + width / 2},${y + height / 3}
+                ${x + width / 2}, ${y}
+                C${x + width / 2},${y + height / 3} ${x + (2 * width) / 3},${y + height} ${x + width}, ${y + height}
+                Z`;
+};
+
+const TriangleBar = (props: BarProps) => {
+    const { fill, x, y, width, height } = props;
+
+    return <path d={getPath(Number(x), Number(y), Number(width), Number(height))} stroke="none" fill={fill} />;
+};
+
+export const CursorClientGender: React.FC<CursorClientGenderProps> = ({ x = 0, y = 0, width = 0, height = 0 }) => {
+    // largura do highlight
+    const cursorWidth = 55;
+
+    // centraliza o retângulo em relação à banda (width fornecido pelo Recharts)
+    const offsetX = (cursorWidth - width) / 2;
+
+    return (
+        <rect
+            x={x - offsetX}
+            y={y}
+            width={cursorWidth}
+            height={height}
+            fill="var( --primary-light)"
+            opacity={0.12}
+            rx={4}
+
+        />
+    );
+};
+
+type CursorClientAgeProps = {
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+};
+
+export const CursorClientAge: React.FC<CursorClientAgeProps> = ({ x = 0, y = 0, width = 0, height = 0 }) => {
+    // largura do highlight
+    const cursorWidth = 85;
+
+    // centraliza o retângulo em relação à banda (width fornecido pelo Recharts)
+    const offsetX = (cursorWidth - width) / 2;
+
+    return (
+        <rect
+            x={x - offsetX}
+            y={y}
+            width={cursorWidth}
+            height={height}
+            fill="var(--warning-light)"
+            opacity={0.12}
+            rx={4}
+
+        />
+    );
+};
 
 /** Copia estilos essenciais para cada nó do SVG clonado. */
 function inlineBasicStyles(root: SVGElement) {
@@ -142,12 +212,13 @@ export default function PerfilClientes() {
     const generoRef = React.useRef<HTMLDivElement>(null);
     const idadeRef = React.useRef<HTMLDivElement>(null);
 
+    // para XLSX e PDF (metadados)
+    const metaLoja = lojaAtual?.descricao ?? lojaAtual?.name ?? (applied.lojaId ? `Loja ${applied.lojaId}` : "Todas");
+    const metaMes = applied.mes ? meses[applied.mes - 1] : "Todos";
+    const metaAno = applied.ano ?? "Todos";
+
     /** XLSX com título/Metadados + agrupamentos centralizados */
     const exportXLSX = () => {
-        const metaLoja = lojaAtual?.descricao ?? lojaAtual?.name ?? (applied.lojaId ? `Loja ${applied.lojaId}` : "Todas");
-        const metaMes = applied.mes ? meses[applied.mes - 1] : "Todos";
-        const metaAno = applied.ano ?? "Todos";
-
         const body = rows.map(r => [r.dia, r.masculino, r.feminino, r.crianca, r.jovem, r.adulto, r.idoso, r.total]);
         const totalsRow = ["Total", totals.masculino, totals.feminino, totals.crianca, totals.jovem, totals.adulto, totals.idoso, totals.total];
         const percentRow = ["Participação %", `${pct.masculino}%`, `${pct.feminino}%`, `${pct.crianca}%`, `${pct.jovem}%`, `${pct.adulto}%`, `${pct.idoso}%`, "100%"];
@@ -158,9 +229,7 @@ export default function PerfilClientes() {
             [""],
             ["", "Gênero", "", "", "Idade", "", "", ""],
             ["Dia da Semana", "Masculino", "Feminino", "Criança", "Jovem", "Adulto", "Idoso", "Total"],
-            ...body,
-            totalsRow,
-            percentRow,
+            ...body, totalsRow, percentRow,
         ]);
 
         ws["!merges"] = [
@@ -169,12 +238,7 @@ export default function PerfilClientes() {
             { s: { r: 3, c: 1 }, e: { r: 3, c: 2 } },
             { s: { r: 3, c: 3 }, e: { r: 3, c: 6 } },
         ];
-
-        ws["!cols"] = [
-            { wch: 16 }, { wch: 11 }, { wch: 11 },
-            { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
-            { wch: 10 },
-        ];
+        ws["!cols"] = [{ wch: 16 }, { wch: 11 }, { wch: 11 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
         (ws as any)["!freeze"] = { xSplit: 1, ySplit: 5 };
 
         const center = { alignment: { horizontal: "center", vertical: "center" } } as any;
@@ -200,124 +264,26 @@ export default function PerfilClientes() {
         XLSX.writeFile(wb, "perfil_clientes.xlsx");
     };
 
-    /** PDF com tabela + gráficos (snapshot do container com html2canvas) */
-    const exportPDF = async () => {
-        try {
-            setIsExporting(true);
-
-            await new Promise(r => setTimeout(r, 200));
-
-            const metaLoja = lojaAtual?.descricao ?? lojaAtual?.name ?? (applied.lojaId ? `Loja ${applied.lojaId}` : "Todas");
-            const metaMes = applied.mes ? meses[applied.mes - 1] : "Todos";
-            const metaAno = applied.ano ?? "Todos";
-
-            const doc = new jsPDF({ orientation: "landscape" });
-            doc.setFontSize(14);
-            doc.text("Perfil de Clientes (Compradores)", 14, 14);
-            doc.setFontSize(10);
-            doc.text(`Loja: ${metaLoja}    Mês: ${metaMes}    Ano: ${metaAno}`, 14, 22);
-
-            // Tabela
-            autoTable(doc, {
-                startY: 28,
-                head: [
-                    [
-                        { content: "Dia da Semana", rowSpan: 2 },
-                        { content: "Gênero", colSpan: 2, styles: { halign: "center" } },
-                        { content: "Idade", colSpan: 4, styles: { halign: "center" } },
-                        { content: "Total", rowSpan: 2 },
-                    ],
-                    ["Masculino", "Feminino", "Criança", "Jovem", "Adulto", "Idoso"],
-                ],
-                body: [
-                    ...rows.map(r => [r.dia, r.masculino, r.feminino, r.crianca, r.jovem, r.adulto, r.idoso, r.total]),
-                    ["Total", totals.masculino, totals.feminino, totals.crianca, totals.jovem, totals.adulto, totals.idoso, totals.total],
-                    ["Participação %", `${pct.masculino}%`, `${pct.feminino}%`, `${pct.crianca}%`, `${pct.jovem}%`, `${pct.adulto}%`, `${pct.idoso}%`, "100%"],
-                ],
-                theme: "grid",
-                styles: { fontSize: 9 },
-                headStyles: { fillColor: [40, 40, 40] },
-                columnStyles: { 0: { cellWidth: 36 }, 7: { cellWidth: 18, halign: "right" } },
-            });
-
-            const pageW = doc.internal.pageSize.getWidth();
-            const pageH = doc.internal.pageSize.getHeight();
-            const margin = 14;
-            const gap = 10;
-            const colW = Math.floor((pageW - margin * 2 - gap) / 2);
-
-            const tableBottomY = (doc as any).lastAutoTable?.finalY ?? 36;
-            let y = tableBottomY + 12;
-
-            // Aguarda os SVGs estarem prontos
-            console.log("Aguardando gráficos renderizarem...");
-            const [svgGenero, svgIdade] = await Promise.all([
-                waitForChartReady(generoRef.current),
-                waitForChartReady(idadeRef.current),
-            ]);
-
-
-
-            if (!svgGenero || !svgIdade) {
-                console.warn("Gráficos não encontrados ou não renderizados completamente");
-                doc.setFontSize(10);
-                doc.text("Nota: Gráficos não puderam ser exportados", margin, y);
-                doc.save("perfil_clientes.pdf");
-                return;
-            }
-
-            console.log("Convertendo SVGs para PNG...");
-            const [pngGenero, pngIdade] = await Promise.all([
-                svgNodeToPngDataUrl(svgGenero, colW * 2),
-                svgNodeToPngDataUrl(svgIdade, colW * 2),
-            ]);
-
-            // Calcula proporções
-            const genProps = (doc as any).getImageProperties(pngGenero);
-            const idaProps = (doc as any).getImageProperties(pngIdade);
-
-            const h1 = Math.round((colW * genProps.height) / genProps.width);
-            const h2 = Math.round((colW * idaProps.height) / idaProps.width);
-            const maxH = Math.max(h1, h2);
-
-            // Verifica se precisa de nova página
-            if (y + maxH > pageH - margin) {
-                doc.addPage();
-                y = margin;
-            }
-
-            // Adiciona títulos dos gráficos
-            doc.setFontSize(9);
-            doc.text("Perfil por Gênero", margin, y);
-            doc.text("Perfil por Idade", margin + colW + gap, y);
-
-            y += 5;
-
-            // Adiciona imagens lado a lado
-            doc.addImage(pngGenero, "PNG", margin, y, colW, h1);
-            doc.addImage(pngIdade, "PNG", margin + colW + gap, y, colW, h2);
-
-            console.log("PDF gerado com sucesso!");
-            doc.save("perfil_clientes.pdf");
-
-        } catch (error) {
-            console.error("Erro ao exportar PDF:", error);
-            alert("Erro ao exportar PDF. Verifique o console para mais detalhes.");
-        } finally {
-            setIsExporting(false);
-        }
+    // PDF via print() com título dinâmico (vira o nome do arquivo)
+    const exportPDF = () => {
+        const prev = document.title;
+        document.title = `Relatórios de Fluxo — Perfil de Clientes (${metaLoja} • ${metaMes}/${metaAno})`;
+        const restore = () => { document.title = prev; window.removeEventListener("afterprint", restore); };
+        window.addEventListener("afterprint", restore);
+        window.print();
+        // fallback caso afterprint não dispare
+        setTimeout(restore, 1500);
     };
-
 
     return (
         <Card className="bg-transparent">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-center">1. Perfil de Clientes (Compradores)</CardTitle>
+            <CardHeader className="pb-2 print:hidden">
+                <CardTitle className="text-center">Perfil de Clientes (Compradores)</CardTitle>
             </CardHeader>
 
             <CardContent className="space-y-4">
                 {/* Filtros */}
-                <div className="flex flex-wrap items-end justify-between gap-3">
+                <div className="flex flex-wrap items-end justify-between gap-3 print:hidden">
                     <div className="flex flex-wrap items-end gap-3">
                         <div className="space-y-1">
                             <Label className="ml-1.5">Loja</Label>
@@ -382,7 +348,7 @@ export default function PerfilClientes() {
 
                     <div className="flex gap-2">
                         <Button variant="link" size="sm" onClick={exportXLSX} className="cursor-pointer">
-                            <Download /> XLSX
+                            <FileSpreadsheet /> XLSX
                         </Button>
                         <Button variant="link" size="sm" onClick={() => { void exportPDF(); }} className="cursor-pointer">
                             <Download /> PDF
@@ -390,108 +356,177 @@ export default function PerfilClientes() {
                     </div>
                 </div>
 
-                {/* Tabela com cabeçalho agrupado */}
-                <div className="overflow-x-auto rounded-md border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-gradient-card shadow-card text-muted-foreground">
-                                <TableHead className="text-center align-middle border-r" rowSpan={2}>Dia da Semana</TableHead>
-                                <TableHead className="text-center border-r" colSpan={2}>Gênero</TableHead>
-                                <TableHead className="text-center" colSpan={4}>Idade</TableHead>
-                                <TableHead className="text-center align-middle border-l" rowSpan={2}>Total</TableHead>
-                            </TableRow>
-                            <TableRow className="bg-gradient-card shadow-card text-muted-foreground">
-                                <TableHead className="py-1.5 text-center">Masculino</TableHead>
-                                <TableHead className="py-1.5 text-center border-r">Feminino</TableHead>
-                                <TableHead className="py-1.5 text-center">Criança</TableHead>
-                                <TableHead className="py-1.5 text-center">Jovem</TableHead>
-                                <TableHead className="py-1.5 text-center">Adulto</TableHead>
-                                <TableHead className="py-1.5 text-center">Idoso</TableHead>
-                            </TableRow>
-                        </TableHeader>
-
-                        <TableBody>
-                            {rows.map(r => (
-                                <TableRow key={r.dia}>
-                                    <TableCell className="py-1.5 text-left border-r">{r.dia}</TableCell>
-                                    <TableCell className="py-1.5 text-center">{r.masculino}</TableCell>
-                                    <TableCell className="py-1.5 text-center border-r">{r.feminino}</TableCell>
-                                    <TableCell className="py-1.5 text-center">{r.crianca}</TableCell>
-                                    <TableCell className="py-1.5 text-center">{r.jovem}</TableCell>
-                                    <TableCell className="py-1.5 text-center">{r.adulto}</TableCell>
-                                    <TableCell className="py-1.5 text-center border-r">{r.idoso}</TableCell>
-                                    <TableCell className="py-1.5 text-center font-medium">{r.total}</TableCell>
+                {/* ================== ÁREA IMPRIMÍVEL ================== */}
+                <div id="print-root" className="print-root space-y-3 mt-0">
+                    {/* Título exclusivo do PDF */}
+                    <h1 className="w-full text-center only-print text-xl bg-muted/30 font-semibold mb-0">
+                        Relatórios de Fluxo — Perfil de Clientes (Compradores)
+                    </h1>
+                    <div className="only-print text-sm mt-0">
+                        <div className="text-foreground font-semibold">LOJA: <span className="text-foreground font-normal">{metaLoja}</span></div>
+                        <div className="text-foreground font-semibold">MÊS/ANO: <span className="text-foreground font-normal">{metaMes}/{metaAno}</span></div>
+                    </div>
+                    {/* Tabela com cabeçalho agrupado */}
+                    <div className="overflow-x-auto rounded-md print-table border">
+                        <Table className="print-table">
+                            <TableHeader className="print-table">
+                                <TableRow className="bg-muted/20 shadow-card text-muted-foreground">
+                                    <TableHead className="text-center align-middle border-r" rowSpan={2}>Dia da Semana</TableHead>
+                                    <TableHead className="text-center border-r" colSpan={2}>Gênero</TableHead>
+                                    <TableHead className="text-center" colSpan={4}>Idade</TableHead>
+                                    <TableHead className="text-center align-middle border-l" rowSpan={2}>Total</TableHead>
                                 </TableRow>
-                            ))}
+                                <TableRow className="bg-muted/20 shadow-card text-muted-foreground">
+                                    <TableHead className="py-1.5 text-center border-r">Masculino</TableHead>
+                                    <TableHead className="py-1.5 text-center border-r">Feminino</TableHead>
+                                    <TableHead className="py-1.5 text-center">Criança</TableHead>
+                                    <TableHead className="py-1.5 text-center border-r">Jovem</TableHead>
+                                    <TableHead className="py-1.5 text-center">Adulto</TableHead>
+                                    <TableHead className="py-1.5 text-center">Idoso</TableHead>
+                                </TableRow>
+                            </TableHeader>
 
-                            <TableRow className="bg-muted/60 font-semibold">
-                                <TableCell className="py-1.5 border-r">Total</TableCell>
-                                <TableCell className="py-1.5 text-center">{totals.masculino}</TableCell>
-                                <TableCell className="py-1.5 text-center border-r">{totals.feminino}</TableCell>
-                                <TableCell className="py-1.5 text-center">{totals.crianca}</TableCell>
-                                <TableCell className="py-1.5 text-center">{totals.jovem}</TableCell>
-                                <TableCell className="py-1.5 text-center">{totals.adulto}</TableCell>
-                                <TableCell className="py-1.5 text-center border-r">{totals.idoso}</TableCell>
-                                <TableCell className="py-1.5 text-center">{totals.total}</TableCell>
-                            </TableRow>
+                            <TableBody>
+                                {rows.map(r => (
+                                    <TableRow key={r.dia}>
+                                        <TableCell className="py-1.5 text-left border-r">{r.dia}</TableCell>
+                                        <TableCell className="py-1.5 text-center">{r.masculino}</TableCell>
+                                        <TableCell className="py-1.5 text-center border-r">{r.feminino}</TableCell>
+                                        <TableCell className="py-1.5 text-center">{r.crianca}</TableCell>
+                                        <TableCell className="py-1.5 text-center">{r.jovem}</TableCell>
+                                        <TableCell className="py-1.5 text-center">{r.adulto}</TableCell>
+                                        <TableCell className="py-1.5 text-center border-r">{r.idoso}</TableCell>
+                                        <TableCell className="py-1.5 text-center font-medium">{r.total}</TableCell>
+                                    </TableRow>
+                                ))}
 
-                            <TableRow>
-                                <TableCell className="py-1.5 text-muted-foreground border-r">Participação %</TableCell>
-                                <TableCell className="py-1.5 text-center">{pct.masculino}%</TableCell>
-                                <TableCell className="py-1.5 text-center border-r">{pct.feminino}%</TableCell>
-                                <TableCell className="py-1.5 text-center">{pct.crianca}%</TableCell>
-                                <TableCell className="py-1.5 text-center">{pct.jovem}%</TableCell>
-                                <TableCell className="py-1.5 text-center">{pct.adulto}%</TableCell>
-                                <TableCell className="py-1.5 text-center border-r">{pct.idoso}%</TableCell>
-                                <TableCell className="py-1.5 text-center">100%</TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </div>
+                                <TableRow className="bg-muted/20 font-semibold">
+                                    <TableCell className="py-1.5 border-r">Total</TableCell>
+                                    <TableCell className="py-1.5 text-center">{totals.masculino}</TableCell>
+                                    <TableCell className="py-1.5 text-center border-r">{totals.feminino}</TableCell>
+                                    <TableCell className="py-1.5 text-center">{totals.crianca}</TableCell>
+                                    <TableCell className="py-1.5 text-center">{totals.jovem}</TableCell>
+                                    <TableCell className="py-1.5 text-center">{totals.adulto}</TableCell>
+                                    <TableCell className="py-1.5 text-center border-r">{totals.idoso}</TableCell>
+                                    <TableCell className="py-1.5 text-center">{totals.total}</TableCell>
+                                </TableRow>
 
-                {/* Gráficos */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div ref={generoRef} className="h-64 w-full rounded-md border px-3 pt-3 pb-6">
-                        <div className="mb-1 text-sm font-medium text-muted-foreground">Perfil de Clientes (compradores) por Gênero</div>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={data?.chartGenero ?? []}>
-                                <CartesianGrid stroke="#E5E7EB" strokeDasharray="0.3 3" />
-                                <XAxis
-                                    dataKey="name"
-                                    tick={{ fill: "#374151", fontSize: 12 }}     // texto dos ticks
-                                    axisLine={{ stroke: "#9CA3AF" }}            // linha do eixo
-                                    tickLine={{ stroke: "#9CA3AF" }}            // risquinhos 
-                                />
-                                <YAxis
-                                    allowDecimals={false}
-                                    tick={{ fill: "#374151", fontSize: 10 }}
-                                    axisLine={{ stroke: "#9CA3AF" }}
-                                    tickLine={{ stroke: "#9CA3AF" }}
-                                />
-                                <Tooltip contentStyle={{ backgroundColor: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 6, fontSize: 12 }} />
-                                <Legend wrapperStyle={{ color: "#374151", fontSize: 10 }} />
-                                <Bar dataKey="Feminino" fill={COLORS.feminino} barSize={20} radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="Masculino" fill={COLORS.masculino} barSize={20} radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                                <TableRow>
+                                    <TableCell className="py-1.5 text-muted-foreground border-r">Participação %</TableCell>
+                                    <TableCell className="py-1.5 text-center">{pct.masculino}%</TableCell>
+                                    <TableCell className="py-1.5 text-center border-r">{pct.feminino}%</TableCell>
+                                    <TableCell className="py-1.5 text-center">{pct.crianca}%</TableCell>
+                                    <TableCell className="py-1.5 text-center">{pct.jovem}%</TableCell>
+                                    <TableCell className="py-1.5 text-center">{pct.adulto}%</TableCell>
+                                    <TableCell className="py-1.5 text-center border-r">{pct.idoso}%</TableCell>
+                                    <TableCell className="py-1.5 text-center">100%</TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
                     </div>
 
-                    <div ref={idadeRef} className="h-64 w-full rounded-md border px-3 pt-3 pb-6">
-                        <div className="mb-1 text-sm font-medium text-muted-foreground">Perfil de Clientes (compradores) por Idade</div>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={data?.chartIdade ?? []}>
-                                <CartesianGrid stroke="#E5E7EB" strokeDasharray="0.3 3" />
-                                <XAxis dataKey="name" fontSize={13} />
-                                <YAxis allowDecimals={false} fontSize={10} />
-                                <Tooltip contentStyle={{ backgroundColor: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 6, fontSize: 12 }} />
-                                <Legend wrapperStyle={{ color: "#374151", fontSize: 10 }} />
-                                <Bar dataKey="Adulto" fill={COLORS.adulto} radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="Criança" fill={COLORS.crianca} radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="Idoso" fill={COLORS.idoso} radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="Jovem" fill={COLORS.jovem} radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                    {/* Gráficos */}
+                    <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 print-flex-col">
+                        <div ref={generoRef} className="avoid-break h-64 w-full rounded-md border px-3 pt-1 pb-3 overflow-hidden print:overflow-visible print:chart">
+                            <h3 className="mb-1 text-sm font-medium text-muted-foreground">Perfil de Clientes (compradores) por Gênero</h3>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                    data={data?.chartGenero ?? []}
+                                    margin={{ top: 16, right: 24, left: 8, bottom: 18 }}
+                                    barCategoryGap={8}
+                                    maxBarSize={18}
+                                >
+                                    <CartesianGrid className="opacity-50" strokeDasharray="0.3 3" />
+                                    <XAxis
+                                        dataKey="name"
+                                        tick={{ fill: "#374151", fontSize: 10 }}     // texto dos ticks
+                                        axisLine={{ stroke: "#9CA3AF" }}            // linha do eixo
+                                        tickLine={{ stroke: "#9CA3AF" }}            // risquinhos 
+                                    />
+                                    <YAxis
+                                        allowDecimals={false}
+                                        tick={{ fill: "#374151", fontSize: 10 }}
+                                        axisLine={{ stroke: "#9CA3AF" }}
+                                        tickLine={{ stroke: "#9CA3AF" }}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{
+                                            backgroundColor: 'var(--card)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: '0.75rem',
+                                            fontSize: 12
+                                        }}
+                                        cursor={< CursorClientGender />}
+                                    />
+                                    <Legend
+                                        wrapperStyle={{ color: "#374151", fontSize: 10 }}
+                                        verticalAlign="bottom"
+                                        height={20}
+
+                                    />
+                                    <Bar dataKey="Feminino" fill={COLORS.feminino} barSize={14} radius={[4, 4, 0, 0]} label={{ position: 'top', fontSize: '10' }} >
+                                        {(data?.chartGenero ?? []).map((_e, i) => <Cell key={i} fill={COLORS.feminino} />)}
+                                    </Bar>
+                                    <Bar dataKey="Masculino" fill={COLORS.masculino} barSize={14} radius={[4, 4, 0, 0]} label={{ position: 'top', fontSize: '10' }} >
+                                        {(data?.chartGenero ?? []).map((_e, i) => <Cell key={i} fill={COLORS.masculino} />)}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+
+                        <div ref={idadeRef} className="avoid-break h-64 w-full rounded-md border px-3 pt-3 pb-3 overflow-hidden print:overflow-visible print:chart">
+                            <h3 className="mb-1 text-sm font-medium text-muted-foreground">Perfil de Clientes (compradores) por Idade</h3>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                    data={data?.chartIdade ?? []}
+                                    margin={{ top: 10, right: 24, left: 8, bottom: 18 }}
+                                    barCategoryGap={8}
+                                    maxBarSize={18}
+                                >
+                                    <CartesianGrid scale="point" className="opacity-50" strokeDasharray="0.3 3" />
+                                    <XAxis
+                                        dataKey="name"
+                                        tick={{ fill: "#374151", fontSize: 10 }}
+                                        axisLine={{ stroke: "#9CA3AF" }}
+                                        tickLine={{ stroke: "#9CA3AF" }}
+                                    />
+                                    <YAxis
+                                        allowDecimals={false}
+                                        tick={{ fill: "#374151", fontSize: 10 }}
+                                        axisLine={{ stroke: "#9CA3AF" }}
+                                        tickLine={{ stroke: "#9CA3AF" }}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{
+                                            backgroundColor: 'var(--card)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: '0.75rem',
+                                            fontSize: 12
+                                        }}
+                                        cursor={<CursorClientAge />}
+                                    />
+                                    <Legend
+                                        wrapperStyle={{ color: "#374151", fontSize: 10 }}
+                                        verticalAlign="bottom"
+                                        height={20}
+                                    />
+                                    <Bar dataKey="Adulto" fill={COLORS.adulto} barSize={14} radius={[4, 4, 0, 0]} label={{ position: 'top', fontSize: '10' }} >
+                                        {(data?.chartIdade ?? []).map((_e, i) => <Cell key={i} fill={COLORS.adulto} />)}
+                                    </Bar>
+                                    <Bar dataKey="Criança" fill={COLORS.crianca} barSize={14} radius={[4, 4, 0, 0]} label={{ position: 'top', fontSize: '10' }} >
+                                        {(data?.chartIdade ?? []).map((_e, i) => <Cell key={i} fill={COLORS.crianca} />)}
+                                    </Bar>
+                                    <Bar dataKey="Idoso" fill={COLORS.idoso} barSize={14} radius={[4, 4, 0, 0]} label={{ position: 'top', fontSize: '10' }} >
+                                        {(data?.chartIdade ?? []).map((_e, i) => <Cell key={i} fill={COLORS.idoso} />)}
+                                    </Bar>
+                                    <Bar dataKey="Jovem" fill={COLORS.jovem} barSize={14} radius={[4, 4, 0, 0]} label={{ position: 'top', fontSize: '10' }} >
+                                        {(data?.chartIdade ?? []).map((_e, i) => <Cell key={i} fill={COLORS.jovem} />)}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
+                    {/* ================== /ÁREA IMPRIMÍVEL ================== */}
                 </div>
             </CardContent>
         </Card>
