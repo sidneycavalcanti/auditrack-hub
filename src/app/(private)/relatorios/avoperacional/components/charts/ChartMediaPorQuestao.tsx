@@ -33,9 +33,16 @@ export default function ChartMediaPorQuestao({ items }: { items: AvOperacional[]
                             <CartesianGrid stroke={grid} strokeDasharray="3 3" />
                             <XAxis dataKey="name" stroke={muted} tick={{ fontSize: 12 }} />
                             <YAxis domain={[0, 10]} stroke={muted} />
-                            <Tooltip />
+                            <Tooltip
+                                contentStyle={{
+                                    backgroundColor: 'var(--card)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '0.75rem',
+                                    fontSize: 12
+                                }}
+                            />
                             <Legend />
-                            <Bar dataKey="media" name="Média">
+                            <Bar dataKey="media" name="Média" fill="#00ff55" >
                                 {data.map((_, i) => <Cell key={i} fill={palette[i % palette.length]} />)}
                             </Bar>
                         </BarChart>

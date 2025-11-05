@@ -32,7 +32,14 @@ export default function ChartEvolucaoDia({ items }: { items: AvOperacional[] }) 
                             <CartesianGrid stroke={grid} strokeDasharray="3 3" />
                             <XAxis dataKey="data" fontSize={12} stroke={muted} />
                             <YAxis domain={[0, 10]} stroke={muted} />
-                            <Tooltip />
+                            <Tooltip
+                                contentStyle={{
+                                    backgroundColor: 'var(--card)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '0.75rem',
+                                    fontSize: 12
+                                }}
+                            />
                             <Legend />
                             <Line type="monotone" dataKey="media" name="Média" dot={false} stroke={palette[2]} strokeWidth={2.25}
                                 activeDot={{ r: 8, fill: accent }} />

@@ -79,7 +79,7 @@ const LojaFormDialog: React.FC<LojaFormDialogProps> = ({ open, onOpenChange, ini
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="codigo">Código</Label>
+                        <Label htmlFor="codigo">Número</Label>
                         <Input
                             id="codigo"
                             placeholder="Código interno"

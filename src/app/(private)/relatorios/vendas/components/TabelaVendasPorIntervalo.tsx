@@ -19,7 +19,36 @@ import {
     ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
     Area,
     Line,
+    Rectangle,
 } from "recharts";
+
+type CursorProps = {
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+};
+
+export const CustomCursor: React.FC<CursorProps> = ({ x = 0, y = 0, width = 0, height = 0 }) => {
+    // largura do highlight
+    const cursorWidth = 60;
+
+    // centraliza o retângulo em relação à banda (width fornecido pelo Recharts)
+    const offsetX = (cursorWidth - width) / 2;
+
+    return (
+        <rect
+            x={x - offsetX}
+            y={y}
+            width={cursorWidth}
+            height={height}
+            fill="var(--warning-light)"
+            opacity={0.12}
+            rx={4}
+
+        />
+    );
+};
 
 /* ================= helpers ================= */
 
@@ -98,12 +127,16 @@ async function exportXLSX({
     ws.getCell("A2").value = `LOJA: ${lojaNome || "-"}`;
     ws.getCell("A2").font = { name: "Arial", size: 10 };
 
+    ws.mergeCells("A3:J3");
+    ws.getCell("A3").value = `PERÍODO: ${mes}/${ano}` || `PERÍODO: ${"-"}`;
+    ws.getCell("A3").font = { name: "Arial", size: 10 };
+
     // grade
     ws.columns = [
         { header: "HORÁRIO / INT.", key: "label", width: 15 },
         ...DAYS_PT.map((d, i) => ({ header: d, key: `d${i}`, width: 14 })),
         { header: "TOTAIS", key: "tot", width: 14 },
-        { header: "%", key: "pct", width: 8 },
+        { header: "VENDAS POR INTERVALO HORÁRIO", key: "pct", width: 8 },
     ];
 
     // cabeçalho escuro
@@ -170,7 +203,7 @@ async function exportXLSX({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `vendas-intervalo_${pad2(mes)}-${ano}.xlsx`;
+    a.download = `vendas-intervalo_${lojaNome}_${pad2(mes)}-${ano}.xlsx`;
     a.click();
     URL.revokeObjectURL(url);
 }
@@ -229,7 +262,7 @@ async function exportPDF({
         margin: { left: 20, right: 20 },
     });
 
-    doc.save(`vendas-intervalo_${pad2(mes)}-${ano}.pdf`);
+    doc.save(`vendas-intervalo_${lojaNome}_${pad2(mes)}-${ano}.pdf`);
 }
 
 /* ================= componente ================= */
@@ -448,21 +481,26 @@ export default function TabelaVendasPorIntervalo() {
                         <div className="h-64 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
+                                    margin={{
+                                        right: 5,
+                                        left: 5,
+                                    }}
                                     data={chartData}
                                     barSize={50}
                                 >
-                                    <CartesianGrid strokeDasharray="0 3" />
-                                    <XAxis dataKey="hora" scale="point" />
-                                    <YAxis tickFormatter={(v) => `${v.toFixed(1)}%`} />
-                                    <Tooltip 
-                                        formatter={(v: any) => `${Number(v).toFixed(1)}%`} 
+                                    <CartesianGrid className="opacity-50" strokeDasharray="0.3 3" />
+                                    <XAxis dataKey="hora" scale="auto" tick={{ fontSize: 12 }} />
+                                    <YAxis tickFormatter={(v) => `${v.toFixed(1)}%`} tick={{ fontSize: 12 }} />
+                                    <Tooltip
+                                        formatter={(v: any) => `${Number(v).toFixed(1)}%`}
                                         contentStyle={{
                                             backgroundColor: 'var(--card)',
                                             border: '1px solid var(--border)',
                                             borderRadius: '0.75rem',
                                         }}
+                                        cursor={<CustomCursor />}
                                     />
-                                    <Bar dataKey="pct" fill="#FFFFC0" />
+                                    <Bar dataKey="pct" fill="var(--warning-primary)" radius={[6, 6, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>

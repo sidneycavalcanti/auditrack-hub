@@ -135,7 +135,7 @@ export default function LoginPage() {
                     </Card>
 
                     {/* Credenciais de teste */}
-                    <div className="mt-6 p-4 bg-muted/50 rounded-lg border border-border">
+                    {/* <div className="mt-6 p-4 bg-muted/50 rounded-lg border border-border">
                         <p className="text-sm font-medium text-foreground mb-2">
                             Credenciais para teste:
                         </p>
@@ -147,7 +147,7 @@ export default function LoginPage() {
                                 <strong>Senha:</strong> 123
                             </p>
                         </div>
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </PublicRoute>

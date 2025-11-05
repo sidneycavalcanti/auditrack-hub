@@ -20,11 +20,11 @@ const MONTHS = [
     { v: 9, n: "09" }, { v: 10, n: "10" }, { v: 11, n: "11" }, { v: 12, n: "12" },
 ];
 const WEEKS: { v: SemanaIndex, n: string }[] = [
-    { v: 1, n: "1ª semana (1–7)" },
-    { v: 2, n: "2ª semana (8–14)" },
-    { v: 3, n: "3ª semana (15–21)" },
-    { v: 4, n: "4ª semana (22–28)" },
-    { v: 5, n: "5ª semana (29–fim)" },
+    { v: "1", n: "1ª semana (1–7)" },
+    { v: "2", n: "2ª semana (8–14)" },
+    { v: "3", n: "3ª semana (15–21)" },
+    { v: "4", n: "4ª semana (22–28)" },
+    { v: "5", n: "5ª semana (29–fim)" },
 ];
 
 const DAYS_PT = ["DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"];
@@ -136,7 +136,7 @@ export default function TabelaComparativoVendasHora() {
                             <div className="space-y-1">
                                 <Label className="ml-1.5">Semana</Label>
                                 <Select value={semana ? String(semana) : ""} onValueChange={(v) =>
-                                    setSemana(v ? (Number(v) as SemanaIndex) : undefined)
+                                    setSemana(v ? (String(v) as SemanaIndex) : undefined)
                                 }>
                                     <SelectTrigger className="cursor-pointer">
                                         <SelectValue placeholder="Sem." />

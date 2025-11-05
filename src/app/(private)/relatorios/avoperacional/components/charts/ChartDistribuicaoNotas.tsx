@@ -29,7 +29,14 @@ export default function ChartDistribuicaoNotas({ items }: { items: AvOperacional
                             <CartesianGrid stroke={muted} strokeDasharray="3 3" />
                             <XAxis dataKey="nota" fill={violet_600} stroke={muted} fontSize={12} />
                             <YAxis allowDecimals={false} stroke={muted} />
-                            <Tooltip />
+                            <Tooltip
+                                contentStyle={{
+                                    backgroundColor: 'var(--card)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '0.75rem',
+                                    fontSize: 12
+                                }}
+                            />
                             <Legend />
                             <Bar dataKey="qtd" name="Qtd" fill={violet_500} />
                         </BarChart>

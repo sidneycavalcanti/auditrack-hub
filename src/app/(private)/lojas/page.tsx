@@ -223,7 +223,7 @@ export default function LojasPage() {
                                     <div className="flex items-start justify-between">
                                         <div>
                                             <CardTitle className="text-lg">{loja.descricao}</CardTitle>
-                                            <CardDescription>Código: {loja.codigo}</CardDescription>
+                                            <CardDescription>Código: {loja.id}</CardDescription>
                                         </div>
 
                                         <Badge variant={loja.ativa ? "default" : "secondary"}
@@ -240,18 +240,25 @@ export default function LojasPage() {
 
                                 <CardContent className="pt-0">
                                     <div className="space-y-1">
-                                        {loja.luc && (
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <MapPin className="h-4 w-4" />
-                                                LUC: {loja.luc}
-                                            </div>
-                                        )}
+                                        <div className="flex gap-10">
+                                            {loja.luc && (
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <MapPin className="h-4 w-4" />
+                                                    LUC: {loja.luc}
+                                                </div>
+                                            )}
 
-                                        {loja.piso && (
-                                            <div className="text-sm text-muted-foreground">
-                                                Piso: {loja.piso}
-                                            </div>
-                                        )}
+                                            {loja.codigo && (
+                                                <div className="text-sm text-muted-foreground">Nº: {loja.codigo}</div>
+                                            )}
+
+                                            {loja.piso && (
+                                                <div className="text-sm text-muted-foreground">
+                                                    Piso: {loja.piso}
+                                                </div>
+                                            )}
+                                        </div>
+
 
                                         <div className="flex gap-2 pt-2">
                                             <Button

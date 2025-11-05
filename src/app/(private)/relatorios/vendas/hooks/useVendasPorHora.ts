@@ -4,7 +4,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { vendaAPI } from "@/services/api";
 
-export type SemanaIndex = 1 | 2 | 3 | 4 | 5;
+export type SemanaIndex = "1" | "2" | "3" | "4" | "5";
 
 export type VendasHoraRow = {
     intervalo: string;        // "09:00 / 10:00"
@@ -21,8 +21,8 @@ export type VendasHoraPayload = {
 };
 
 export type VendasHoraFilters =
-  | { lojaId?: number; ano?: number; mes?: number; semana?: SemanaIndex }               // semana do mês
-  | { lojaId?: number; dateFrom?: string; dateTo?: string };                            // faixa de datas
+    | { lojaId?: number; ano?: number; mes?: number; semana?: SemanaIndex }               // semana do mês
+    | { lojaId?: number; dateFrom?: string; dateTo?: string };                            // faixa de datas
 
 const EMPTY: VendasHoraPayload = {
     rows: [],

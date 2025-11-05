@@ -15,12 +15,27 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { useResumoDiarioReport, type ResumoRow } from "../hooks/useRelatoriosAPI";
 
+// Converte "YYYY-MM-DD" para Date LOCAL (sem fuso)
+function parseLocalISO(iso?: string): Date | undefined {
+    if (!iso) return;
+    const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return;
+    const y = Number(m[1]), mm = Number(m[2]), dd = Number(m[3]);
+    // Meio-dia evita pegadinha de DST
+    return new Date(y, mm - 1, dd, 12, 0, 0, 0);
+}
+
+const fmtISO_BR = (iso: string) => {
+    const d = parseLocalISO(iso);
+    return d ? fmtBR(d) : "--/--/----";
+};
+
 const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const percent = new Intl.NumberFormat("pt-BR", { style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const pct = (p: number, t: number) => (t > 0 ? p / t : 0);
 
-const fmtBR = (d: Date) => `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
-const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const fmtBR = (d: Date) => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 export default function TabelaResumoVendasDiario() {
     const { data: lojasResp } = useLojas({ limit: 500 });
@@ -74,7 +89,7 @@ export default function TabelaResumoVendasDiario() {
         const hdr = {
             title: "RESUMO DO MAPA DIÁRIO DE VENDAS E FLUXOS",
             loja: `LOJA / NOME FANTASIA: ${lojaNome || "—"}`,
-            data: `DATA: ${fmtBR(new Date(params!.date!))}`,
+            data: `DATA: ${fmtISO_BR(params!.date!)}`,
         };
         const base = `resumo-diario_${params!.date!.replace(/-/g, "")}_loja-${params!.lojaId}`;
         if (exportFmt === "xlsx") {
@@ -98,7 +113,7 @@ export default function TabelaResumoVendasDiario() {
                         {enabled ? (
                             <div className="flex-1 text-xs text-muted-foreground">
                                 <div>LOJA / NOME FANTASIA: <span className="text-foreground">{lojaNome}</span></div>
-                                <div>DATA: <span className="text-foreground">{fmtBR(new Date(params!.date!))}</span></div>
+                                <div>DATA: <span className="text-foreground">{fmtISO_BR(params!.date!)}</span></div>
                             </div>
                         ) : (
                             <div className="flex-1 text-xs text-muted-foreground">
@@ -132,7 +147,11 @@ export default function TabelaResumoVendasDiario() {
                                             mode="single"
                                             selected={dataDia}
                                             captionLayout="dropdown"
-                                            onSelect={(d) => { setDataDia(d ?? undefined); setOpenDate(false); }}
+                                            onSelect={(d) => {
+                                                if (d) d.setHours(12, 0, 0, 0); // evita DST e futuros shifts
+                                                setDataDia(d ?? undefined);
+                                                setOpenDate(false);
+                                            }}
                                         />
                                     </PopoverContent>
                                 </Popover>
@@ -169,55 +188,55 @@ export default function TabelaResumoVendasDiario() {
 
             <div className="overflow-x-auto rounded-md border">
                 <Table>
-                <TableHeader>
-                    <TableRow className="bg-gradient-card shadow-card text-muted-foreground">
-                        <TableHead className="min-w-[220px] text-center py-1.5">ITEM</TableHead>
-                        <TableHead className="py-1.5">GERAL</TableHead>
-                        <TableHead className="py-1.5">MANHÃ</TableHead>
-                        <TableHead className="py-1.5">% MANHÃ</TableHead>
-                        <TableHead className="py-1.5">TARDE</TableHead>
-                        <TableHead className="py-1.5">% TARDE</TableHead>
-                        <TableHead className="py-1.5">NOITE</TableHead>
-                        <TableHead className="py-1.5">% NOITE</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {!enabled && (
-                        <TableRow>
-                            <TableCell colSpan={8} className="text-center text-muted-foreground">
-                                Selecione Loja e Data para carregar.
-                            </TableCell>
+                    <TableHeader>
+                        <TableRow className="bg-gradient-card shadow-card text-muted-foreground">
+                            <TableHead className="min-w-[220px] text-center py-1.5">ITEM</TableHead>
+                            <TableHead className="py-1.5">GERAL</TableHead>
+                            <TableHead className="py-1.5">MANHÃ</TableHead>
+                            <TableHead className="py-1.5">% MANHÃ</TableHead>
+                            <TableHead className="py-1.5">TARDE</TableHead>
+                            <TableHead className="py-1.5">% TARDE</TableHead>
+                            <TableHead className="py-1.5">NOITE</TableHead>
+                            <TableHead className="py-1.5">% NOITE</TableHead>
                         </TableRow>
-                    )}
+                    </TableHeader>
+                    <TableBody>
+                        {!enabled && (
+                            <TableRow>
+                                <TableCell colSpan={8} className="text-center text-muted-foreground">
+                                    Selecione Loja e Data para carregar.
+                                </TableCell>
+                            </TableRow>
+                        )}
 
-                    {enabled && isFetching && (
-                    <TableRow>
-                        <TableCell colSpan={8} className="text-center text-muted-foreground">
-                        <LoadingSpinner size="lg" text="Carregando..." />
-                        </TableCell>
-                    </TableRow>
-                    )}
+                        {enabled && isFetching && (
+                            <TableRow>
+                                <TableCell colSpan={8} className="text-center text-muted-foreground">
+                                    <LoadingSpinner size="lg" text="Carregando..." />
+                                </TableCell>
+                            </TableRow>
+                        )}
 
-                    {enabled && !isFetching && rows.map((r) => {
-                    const base = r.kind === "valor" ? r.data.geral.valor : r.data.geral.qtd;
-                    const vM = r.kind === "valor" ? r.data.manha.valor : r.data.manha.qtd;
-                    const vT = r.kind === "valor" ? r.data.tarde.valor : r.data.tarde.qtd;
-                    const vN = r.kind === "valor" ? r.data.noite.valor : r.data.noite.qtd;
-                    const fmt = (x: number) => (r.kind === "valor" ? currency.format(x) : String(x));
-                    return (
-                        <TableRow key={r.label}>
-                        <TableCell className="py-1 whitespace-nowrap">{r.label}</TableCell>
-                        <TableCell className="py-1">{fmt(base)}</TableCell>
-                        <TableCell className="py-1">{fmt(vM)}</TableCell>
-                        <TableCell className="py-1">{percent.format(pct(vM, base))}</TableCell>
-                        <TableCell className="py-1">{fmt(vT)}</TableCell>
-                        <TableCell className="py-1">{percent.format(pct(vT, base))}</TableCell>
-                        <TableCell className="py-1">{fmt(vN)}</TableCell>
-                        <TableCell className="py-1">{percent.format(pct(vN, base))}</TableCell>
-                        </TableRow>
-                    );
-                    })}
-                </TableBody>
+                        {enabled && !isFetching && rows.map((r) => {
+                            const base = r.kind === "valor" ? r.data.geral.valor : r.data.geral.qtd;
+                            const vM = r.kind === "valor" ? r.data.manha.valor : r.data.manha.qtd;
+                            const vT = r.kind === "valor" ? r.data.tarde.valor : r.data.tarde.qtd;
+                            const vN = r.kind === "valor" ? r.data.noite.valor : r.data.noite.qtd;
+                            const fmt = (x: number) => (r.kind === "valor" ? currency.format(x) : String(x));
+                            return (
+                                <TableRow key={r.label}>
+                                    <TableCell className="py-1 whitespace-nowrap">{r.label}</TableCell>
+                                    <TableCell className="py-1">{fmt(base)}</TableCell>
+                                    <TableCell className="py-1">{fmt(vM)}</TableCell>
+                                    <TableCell className="py-1">{percent.format(pct(vM, base))}</TableCell>
+                                    <TableCell className="py-1">{fmt(vT)}</TableCell>
+                                    <TableCell className="py-1">{percent.format(pct(vT, base))}</TableCell>
+                                    <TableCell className="py-1">{fmt(vN)}</TableCell>
+                                    <TableCell className="py-1">{percent.format(pct(vN, base))}</TableCell>
+                                </TableRow>
+                            );
+                        })}
+                    </TableBody>
                 </Table>
             </div>
         </>
