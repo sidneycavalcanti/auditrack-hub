@@ -129,7 +129,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </div>
 
             {/* Main content */}
-            <div className="h-screen flex flex-col lg:ml-64">
+            <div className="min-h-screen flex flex-col lg:ml-64">
                 {/* Header */}
                 <header className="sticky top-0 z-20 bg-card/95 backdrop-blur border-b border-border shadow-sm">
                     <div className="flex items-center justify-between px-6 py-4">
