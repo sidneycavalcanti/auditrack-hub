@@ -268,9 +268,25 @@ export default function PerfilClientes() {
     const exportPDF = () => {
         const prev = document.title;
         document.title = `Relatórios de Fluxo — Perfil de Clientes (${metaLoja} • ${metaMes}/${metaAno})`;
-        const restore = () => { document.title = prev; window.removeEventListener("afterprint", restore); };
+
+        // Preenche a data/hora (fuso America/Recife)
+        const now = new Date();
+        const dtBr = new Intl.DateTimeFormat("pt-BR", {
+            dateStyle: "short",
+            timeStyle: "short",
+            timeZone: "America/Recife",
+        }).format(now);
+        const genAt = document.getElementById("print-generated-at");
+        if (genAt) genAt.textContent = `Gerado em: ${dtBr}`;
+
+        const restore = () => {
+            document.title = prev;
+            window.removeEventListener("afterprint", restore);
+        };
+
         window.addEventListener("afterprint", restore);
         window.print();
+
         // fallback caso afterprint não dispare
         setTimeout(restore, 1500);
     };
@@ -525,6 +541,23 @@ export default function PerfilClientes() {
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
+
+                        {/* ===== Rodapé somente na impressão ===== */}
+                        <footer className="print-footer only-print">
+                            <div className="footer-left">
+                                <span>Relatórios de Fluxo — Perfil de Clientes</span>
+                                <span className="dot">•</span>
+                                <span>Loja: {metaLoja}</span>
+                                <span className="dot">•</span>
+                                <span>Mês/Ano: {metaMes}/{metaAno}</span>
+                            </div>
+
+                            <div className="footer-right">
+                                <span id="print-generated-at">--/--/---- --:--</span>
+                                <span className="dot">•</span>
+                                <span className="page-number"></span>
+                            </div>
+                        </footer>
                     </div>
                     {/* ================== /ÁREA IMPRIMÍVEL ================== */}
                 </div>

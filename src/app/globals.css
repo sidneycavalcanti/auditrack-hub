@@ -522,9 +522,9 @@
 
   /* 3) Página, margens e preservação de cores */
   @page {
-    size: A4;
+    size: A4 portrait;
     /* paisagem */
-    margin: 2mm 4mm;
+    margin: 5mm 2mm 2mm 2mm;
     /* ajuste fino: 10–15mm */
   }
 
@@ -604,6 +604,42 @@
 
   tfoot {
     display: table-row-group;
+  }
+
+  .print-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    /* layout */
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+
+    /* aparência */
+    padding: 4mm;
+    border-top: 1px solid #e5e7eb;
+    font-size: 10px;
+    line-height: 1.2;
+    background: #fff;
+    /* evita “fantasma” em impressoras zicadas */
+    color: rgba(0, 0, 0, 0.06) !important;
+  }
+
+  #print-root::before {
+    content: "CONFIDENCIAL";
+    position: fixed;
+    inset: 0;
+    display: block;
+    font-size: 72px;
+    font-weight: 700;
+    letter-spacing: 8px;
+    color: rgba(0, 0, 0, 0.06);
+    transform: rotate(-30deg);
+    text-align: center;
+    line-height: 100vh;
+    pointer-events: none;
   }
 
 }
