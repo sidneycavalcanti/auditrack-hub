@@ -1,3 +1,4 @@
+// FILE: src/app/(private)/relatorios/fluxos/components/FluxoPorDia.tsx
 "use client";
 
 import * as React from "react";
@@ -7,13 +8,28 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Label } from "@/components/ui/label";
 import {
     PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
-    BarChart, Bar, XAxis, YAxis, CartesianGrid
+    BarChart, Bar, XAxis, YAxis, CartesianGrid,
+    BarProps
 } from "recharts";
 import { useFluxoPorDia } from "../hooks/useFluxoPorDia";
 import { useLojas } from "@/app/(private)/lojas/hooks/useLojas";
 import type { Loja } from "@/types";
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50", "#8dd1e1", "#a4de6c", "#d0ed57"];
+
+// #endregion
+const getPath = (x: number, y: number, width: number, height: number) => {
+    return `M${x},${y + height}C${x + width / 3},${y + height} ${x + width / 2},${y + height / 3}
+    ${x + width / 2}, ${y}
+    C${x + width / 2},${y + height / 3} ${x + (2 * width) / 3},${y + height} ${x + width}, ${y + height}
+    Z`;
+};
+
+const TriangleBar = (props: BarProps) => {
+    const { fill, x, y, width, height } = props;
+
+    return <path d={getPath(Number(x), Number(y), Number(width), Number(height))} stroke="none" fill={fill} />;
+};
 
 export default function FluxoPorDia() {
     const ALL = "ALL";
@@ -75,9 +91,9 @@ export default function FluxoPorDia() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
                     {/* Tabela */}
-                    <div className="col-span-2 overflow-x-auto rounded-md border">
+                    <div className="col-span-1 lg:col-span-2 overflow-x-auto rounded-md border">
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/60">
@@ -108,10 +124,19 @@ export default function FluxoPorDia() {
                     </div>
 
                     {/* Pizza categorias (distribuição) */}
-                    <div className="col-span-1 rounded-md border h-full w-full">
+                    <div className="lg:col-span-1 rounded-md border h-72 lg:h-full w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
-                                <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={100} label>
+                                <Pie
+                                    data={pieData}
+                                    innerRadius="80%"
+                                    dataKey="value"
+                                    nameKey="name"
+                                    outerRadius="100%"
+                                    cornerRadius="50%"
+                                    paddingAngle={5}
+                                    label
+                                >
                                     {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                 </Pie>
                                 <Tooltip
@@ -136,8 +161,10 @@ export default function FluxoPorDia() {
                         <div className="h-80 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={linhas}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="dia" />
+                                    <CartesianGrid strokeDasharray="0.3 3" className="opacity-50" />
+                                    <XAxis
+                                        dataKey="dia"
+                                    />
                                     <YAxis />
                                     <Tooltip
                                         contentStyle={{
@@ -145,10 +172,11 @@ export default function FluxoPorDia() {
                                             border: '1px solid var(--border)',
                                             borderRadius: 'var(--radius)',
                                         }}
+                                        cursor={{ opacity: '10%' }}
                                     />
                                     <Legend />
                                     {categorias.map((c, i) => (
-                                        <Bar key={c} dataKey={c} name={c} />
+                                        <Bar key={c} fill={COLORS[i % COLORS.length]} dataKey={c} name={c} shape={TriangleBar} label={{ position: 'top', fontSize: '12' }} />
                                     ))}
                                 </BarChart>
                             </ResponsiveContainer>
