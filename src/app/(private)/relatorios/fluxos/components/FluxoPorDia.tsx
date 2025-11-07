@@ -30,8 +30,8 @@ const TriangleBar = (props: BarProps) => {
     const { fill, x, y, width, height } = props;
     const getPath = (x: number, y: number, w: number, h: number) =>
         `M${x},${y + h}C${x + w / 3},${y + h} ${x + w / 2},${y + h / 3}
-     ${x + w / 2}, ${y}
-     C${x + w / 2},${y + h / 3} ${x + (2 * w) / 3},${y + h} ${x + w}, ${y + h} Z`;
+        ${x + w / 2}, ${y}
+        C${x + w / 2},${y + h / 3} ${x + (2 * w) / 3},${y + h} ${x + w}, ${y + h} Z`;
     return <path d={getPath(Number(x), Number(y), Number(width), Number(height))} stroke="none" fill={fill} />;
 };
 
@@ -115,20 +115,29 @@ export default function FluxoPorDia() {
         setTimeout(restore, 1500);
     };
 
-    const ROTATE_DEG = 260; // ex.: 30°, pode ser negativo também
+    const ROTATE_DEG = -60; // ex.: 30°, pode ser negativo também
     const startAngle = 100 + ROTATE_DEG;   // mantém o topo “para cima” com offset
     const endAngle = -270 + ROTATE_DEG; // sentido horário cobrindo 360°
 
     // label custom para as fatias (título com fonte menor)
-    const SliceLabel: React.FC<any> = ({ cx, cy, midAngle, outerRadius, name, value }) => {
+    const SliceLabel: React.FC<any> = ({ cx, cy, midAngle, outerRadius, name, value, fill, payload, }) => {
         const RAD = Math.PI / 180;
-        const r = outerRadius + 20; // distância do texto para fora do arco
+        const r = outerRadius + 10; // distância do texto para fora do arco
         const x = cx + r * Math.cos(-midAngle * RAD);
         const y = cy + r * Math.sin(-midAngle * RAD);
         const anchor = x > cx ? "start" : "end";
-        const percentual = totalGeral ? Math.round((Number(value) / totalGeral) * 100) : 0
+        const percentual = value && totalGeral ? Math.round((Number(value) / totalGeral) * 100) : 0;
+        const color = fill || payload?.fill || '#111'
         return (
-            <text x={x} y={y} fontSize={10} textAnchor={anchor} dominantBaseline="middle" fill="#374151">
+            <text
+                x={x}
+                y={y}
+                fontSize={12}
+                textAnchor={anchor}
+                dominantBaseline="middle"
+                fill={color}
+                style={{ fontWeight: 600 }}
+            >
                 {name}: ( {percentual}% )
             </text>
         );
@@ -237,45 +246,48 @@ export default function FluxoPorDia() {
                     {/* Charts grid */}
                     <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-3 print-flex-col">
                         {/* Pizza */}
-                        <div className="rounded-md border h-72 lg:h-full w-full avoid-break px-3 pt-2 pb-3 overflow-hidden print:overflow-visible print:chart">
+                        <div className="rounded-md border h-72 lg:h-full w-full avoid-break px-3 pt-2 pb-0 overflow-hidden print:overflow-visible print:chart pie-card">
                             <h3 className="mb-1 text-sm font-medium text-muted-foreground">Distribuição por categoria (%)</h3>
-                            <ResponsiveContainer width="100%" height="90%">
-                                <PieChart margin={{ top: 8, right: 8, left: 8, bottom: 24 }}>
-                                    <Pie
-                                        data={pieData}
-                                        dataKey="value"
-                                        nameKey="name"
-                                        innerRadius="80%"
-                                        outerRadius="100%"
-                                        cornerRadius="20%"
-                                        paddingAngle={5}
-                                        label={<SliceLabel />}
-                                        // labelLine={false}
-                                        startAngle={startAngle}
-                                        endAngle={endAngle}
-                                    // label={({ name, value }) => `${name}: ${totalGeral ? Math.round((Number(value) / totalGeral) * 100) : 0}%`}
+                            <div className="pie-wrap">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart margin={{ top: 16, right: 8, left: 8, bottom: 24 }}>
+                                        <Pie
+                                            data={pieData}
+                                            dataKey="value"
+                                            nameKey="name"
+                                            innerRadius="70%"
+                                            outerRadius="95%"
+                                            cornerRadius="20%"
+                                            paddingAngle={5}
+                                            label={<SliceLabel />}
+                                            labelLine={false}
+                                            startAngle={startAngle}
+                                            endAngle={endAngle}
+                                        // label={({ name, value }) => `${name}: ${totalGeral ? Math.round((Number(value) / totalGeral) * 100) : 0}%`}
 
-                                    >
-                                        {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                                        >
+                                            {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
 
-                                        <RLabel
-                                            value={`Total: ${Intl.NumberFormat("pt-BR").format(totalGeral)}`}
-                                            position="center"
-                                            fontSize={12}
-                                            fill="#fff"
+                                            <RLabel
+                                                value={`Total: ${Intl.NumberFormat("pt-BR").format(totalGeral)}`}
+                                                position="center"
+                                                fontSize={20}
+                                                fill="#8884d8"
+                                                fontWeight={700}
+                                            />
+                                        </Pie>
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor: 'var(--card-foreground)',
+                                                border: '1px solid var(--border)',
+                                                borderRadius: '0.75rem',
+                                                fontSize: 10,
+                                            }}
                                         />
-                                    </Pie>
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: 'var(--card-foreground)',
-                                            border: '1px solid var(--border)',
-                                            borderRadius: '0.75rem',
-                                            fontSize: 10,
-                                        }}
-                                    />
-                                    <Legend wrapperStyle={{ fontSize: 10, bottom: 0 }} />
-                                </PieChart>
-                            </ResponsiveContainer>
+                                        {/* <Legend wrapperStyle={{ fontSize: 10, bottom: 0 }} /> */}
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
                         </div>
 
                         {/* Barras */}

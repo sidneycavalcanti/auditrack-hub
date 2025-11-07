@@ -758,6 +758,47 @@
   }
 }
 
+/* Centro absoluto da pizza em tela */
+.pie-card .pie-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(100% - 1.75rem);
+  width: 100%;
+  /* desconta o título */
+}
+
+/* ===== Print refinements para a pizza ===== */
+@media print {
+
+  /* Reserva espaço para o rodapé fixo (mesma lógica do outro relatório) */
+  #print-root-fluxo-dia {
+    padding-bottom: 16mm !important;
+    /* evita vazar na margem inferior */
+  }
+
+  /* Garante centralização e altura segura no PDF */
+  #print-root-fluxo-dia .pie-card .pie-wrap {
+
+    /* altura estável para A4 portrait */
+    margin: 0 auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Mantém o gráfico dentro do container e afasta da borda inferior */
+  #print-root-fluxo-dia .pie-card .recharts-wrapper {
+    margin-bottom: 2mm !important;
+  }
+
+  /* Como temos rodapé fixo, uma margem de página um pouco maior ajuda */
+  @page {
+    size: A4 portrait;
+    margin: 8mm 8mm 16mm 8mm;
+    /* bottom maior p/ rodapé */
+  }
+}
+
 /* Data/hora dinâmica no rodapé (preenchida no momento da impressão) */
 @media print {
   /* será setado via JS antes do print */
