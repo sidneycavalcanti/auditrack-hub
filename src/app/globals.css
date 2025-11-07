@@ -653,4 +653,114 @@
   /* nada em tela */
 }
 
+/* ========= PRINT — Fluxo por Dia ========= */
+@media print {
+
+  /* Imprimir somente o contêiner deste relatório quando estiver nesta página */
+  #print-root-fluxo-dia,
+  #print-root-fluxo-dia * {
+    visibility: visible !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* preserva a técnica já usada */
+  #print-root-fluxo-dia {
+    position: absolute !important;
+    inset: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    background: #fff !important;
+  }
+
+  /* Evitar cortes nos SVGs / tooltips invisíveis no PDF */
+  #print-root-fluxo-dia .recharts-wrapper,
+  #print-root-fluxo-dia svg,
+  #print-root-fluxo-dia .recharts-surface {
+    overflow: visible !important;
+  }
+
+  #print-root-fluxo-dia .recharts-tooltip-wrapper,
+  #print-root-fluxo-dia .recharts-default-tooltip,
+  #print-root-fluxo-dia .recharts-tooltip-cursor,
+  #print-root-fluxo-dia .recharts-cross {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+
+  /* Ticks legíveis no papel */
+  #print-root-fluxo-dia .recharts-cartesian-axis-tick text {
+    fill: #000 !important;
+    font-size: 10px !important;
+  }
+
+  /* Classe auxiliar para gráficos no PDF (mesma filosofia do outro relatório) */
+  .print:chart,
+  .print\:chart {
+    padding: 8px !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    background: #fff !important;
+  }
+}
+
+/* Rodapé — aproveita a mesma estrutura do outro relatório */
+@media print {
+  .print-footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
+    align-items: center;
+    font-size: 10px;
+    padding: 6px 10px;
+    border-top: 1px solid #e5e7eb;
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  .print-footer .footer-left {
+    text-align: left;
+  }
+
+  .print-footer .footer-center {
+    text-align: center;
+  }
+
+  .print-footer .footer-right {
+    text-align: right;
+  }
+
+  /* Página X de Y */
+  @page {
+    size: A4 portrait;
+    margin: 8mm 8mm 14mm 8mm;
+  }
+
+  /* espaço pro rodapé */
+  html {
+    counter-reset: page;
+  }
+
+  .pageNumber::after {
+    content: counter(page);
+  }
+
+  .totalPages::after {
+    content: counter(pages);
+  }
+}
+
+/* Data/hora dinâmica no rodapé (preenchida no momento da impressão) */
+@media print {
+  /* será setado via JS antes do print */
+}
+
 /* ========= FIM STYLES PARA IMPRESSÃO DO RELATÓRIO PERFIL DE CLIENTES ========= */
