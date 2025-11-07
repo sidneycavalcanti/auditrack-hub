@@ -758,44 +758,63 @@
   }
 }
 
-/* Centro absoluto da pizza em tela */
+/* Em tela (sem print) – mantém seu comportamento atual */
 .pie-card .pie-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* desconta ~1.75rem do título */
   height: calc(100% - 1.75rem);
   width: 100%;
-  /* desconta o título */
 }
 
-/* ===== Print refinements para a pizza ===== */
+.pie-card .pie-wrap .pie-box {
+  width: 100%;
+  height: 100%;
+}
+
+/* ===== Só no PRINT ===== */
 @media print {
 
-  /* Reserva espaço para o rodapé fixo (mesma lógica do outro relatório) */
+  /* reserva espaço pro rodapé fixo */
   #print-root-fluxo-dia {
     padding-bottom: 16mm !important;
-    /* evita vazar na margem inferior */
   }
 
-  /* Garante centralização e altura segura no PDF */
+  /* a pizza agora tem uma “caixa” quadrada e altura estável */
   #print-root-fluxo-dia .pie-card .pie-wrap {
-
-    /* altura estável para A4 portrait */
-    margin: 0 auto !important;
+    display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    margin: 0 auto !important;
   }
 
-  /* Mantém o gráfico dentro do container e afasta da borda inferior */
+  /* altura estável e quadrada no A4 portrait */
+  #print-root-fluxo-dia .pie-card .pie-wrap .pie-box {
+    width: 100% !important;
+    /* deixa um respiro embaixo pro rodapé; ajuste conforme desejar */
+    max-width: 170mm !important;
+    /* evita “sujar” as margens laterais */
+    aspect-ratio: 1 / 1 !important;
+    /* altura mínima boa p/ leitura; pode ajustar entre 75–95mm */
+    min-height: 85mm !important;
+  }
+
+  /* evita desvios de posicionamento do SVG */
   #print-root-fluxo-dia .pie-card .recharts-wrapper {
-    margin-bottom: 2mm !important;
+    margin: 0 auto !important;
+    /* ajuda a manter centralizado mesmo sem altura herdada */
+    display: block !important;
   }
 
-  /* Como temos rodapé fixo, uma margem de página um pouco maior ajuda */
+  /* leve respiro para não “encostar” no limite inferior do card */
+  #print-root-fluxo-dia .pie-card {
+    padding-bottom: 6mm !important;
+  }
+
+  /* margem de página um pouco maior embaixo por conta do rodapé fixo */
   @page {
-    size: A4 portrait;
     margin: 8mm 8mm 16mm 8mm;
-    /* bottom maior p/ rodapé */
   }
 }
 
