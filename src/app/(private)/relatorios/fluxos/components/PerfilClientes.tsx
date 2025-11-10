@@ -12,6 +12,7 @@ import { Download, FileSpreadsheet } from "lucide-react";
 import { useVendasPerfil } from "../hooks/useVendasPerfil";
 import { useLojas } from "@/app/(private)/lojas/hooks/useLojas";
 import type { Loja } from "@/types";
+import "@/app/styles/relatorios_pdf/fluxo-perfil-clientes.css";
 
 // export libs
 import * as XLSX from "xlsx";
@@ -104,77 +105,77 @@ export const CursorClientAge: React.FC<CursorClientAgeProps> = ({ x = 0, y = 0, 
 };
 
 /** Copia estilos essenciais para cada nó do SVG clonado. */
-function inlineBasicStyles(root: SVGElement) {
-    const PROPS = [
-        "font", "fontFamily", "fontSize", "fontWeight", "fill", "stroke",
-        "strokeWidth", "opacity", "textAnchor", "dominantBaseline"
-    ];
-    const all = root.querySelectorAll<SVGElement>("*");
-    all.forEach((el) => {
-        const cs = window.getComputedStyle(el as Element);
-        for (const p of PROPS) {
-            const v = (cs as any)[p];
-            if (v) (el as any).style[p] = v;
-        }
-    });
-}
+// function inlineBasicStyles(root: SVGElement) {
+//     const PROPS = [
+//         "font", "fontFamily", "fontSize", "fontWeight", "fill", "stroke",
+//         "strokeWidth", "opacity", "textAnchor", "dominantBaseline"
+//     ];
+//     const all = root.querySelectorAll<SVGElement>("*");
+//     all.forEach((el) => {
+//         const cs = window.getComputedStyle(el as Element);
+//         for (const p of PROPS) {
+//             const v = (cs as any)[p];
+//             if (v) (el as any).style[p] = v;
+//         }
+//     });
+// }
 
 /** Aguarda o Recharts terminar layout (svg com largura/altura > 0). */
-async function waitForChartReady(container: HTMLElement | null, timeoutMs = 1500) {
-    const start = performance.now();
-    while (container) {
-        const svg = container.querySelector("svg.recharts-surface") as SVGSVGElement | null;
-        const box = svg?.getBoundingClientRect();
-        if (svg && box && box.width > 2 && box.height > 2) return svg;
-        if (performance.now() - start > timeoutMs) return svg ?? null;
-        await new Promise(r => requestAnimationFrame(() => r(null)));
-    }
-    return null;
-}
+// async function waitForChartReady(container: HTMLElement | null, timeoutMs = 1500) {
+//     const start = performance.now();
+//     while (container) {
+//         const svg = container.querySelector("svg.recharts-surface") as SVGSVGElement | null;
+//         const box = svg?.getBoundingClientRect();
+//         if (svg && box && box.width > 2 && box.height > 2) return svg;
+//         if (performance.now() - start > timeoutMs) return svg ?? null;
+//         await new Promise(r => requestAnimationFrame(() => r(null)));
+//     }
+//     return null;
+// }
 
-async function svgNodeToPngDataUrl(svg: SVGSVGElement, targetWidth: number): Promise<string> {
-    const rect = svg.getBoundingClientRect();
-    const vb = svg.viewBox?.baseVal;
-    const w = vb?.width || rect.width || Number(svg.getAttribute("width")) || 800;
-    const h = vb?.height || rect.height || Number(svg.getAttribute("height")) || 400;
+// async function svgNodeToPngDataUrl(svg: SVGSVGElement, targetWidth: number): Promise<string> {
+//     const rect = svg.getBoundingClientRect();
+//     const vb = svg.viewBox?.baseVal;
+//     const w = vb?.width || rect.width || Number(svg.getAttribute("width")) || 800;
+//     const h = vb?.height || rect.height || Number(svg.getAttribute("height")) || 400;
 
-    const clone = svg.cloneNode(true) as SVGSVGElement;
-    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    if (!clone.getAttribute("viewBox")) clone.setAttribute("viewBox", `0 0 ${w} ${h}`);
-    inlineBasicStyles(clone);
+//     const clone = svg.cloneNode(true) as SVGSVGElement;
+//     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+//     if (!clone.getAttribute("viewBox")) clone.setAttribute("viewBox", `0 0 ${w} ${h}`);
+//     inlineBasicStyles(clone);
 
-    const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    bg.setAttribute("x", "0"); bg.setAttribute("y", "0");
-    bg.setAttribute("width", String(w)); bg.setAttribute("height", String(h));
-    bg.setAttribute("fill", "#ffffff");
-    clone.insertBefore(bg, clone.firstChild);
+//     const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+//     bg.setAttribute("x", "0"); bg.setAttribute("y", "0");
+//     bg.setAttribute("width", String(w)); bg.setAttribute("height", String(h));
+//     bg.setAttribute("fill", "#ffffff");
+//     clone.insertBefore(bg, clone.firstChild);
 
-    const serializer = new XMLSerializer();
-    const svgStr = serializer.serializeToString(clone);
+//     const serializer = new XMLSerializer();
+//     const svgStr = serializer.serializeToString(clone);
 
-    const ratio = w / h || 2;
-    const width = Math.max(1, Math.round(targetWidth));
-    const height = Math.max(1, Math.round(width / ratio));
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
+//     const ratio = w / h || 2;
+//     const width = Math.max(1, Math.round(targetWidth));
+//     const height = Math.max(1, Math.round(width / ratio));
+//     const dpr = Math.min(2, window.devicePixelRatio || 1);
 
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(width * dpr);
-    canvas.height = Math.round(height * dpr);
-    const ctx = canvas.getContext("2d")!;
-    ctx.scale(dpr, dpr);
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, width, height);
+//     const canvas = document.createElement("canvas");
+//     canvas.width = Math.round(width * dpr);
+//     canvas.height = Math.round(height * dpr);
+//     const ctx = canvas.getContext("2d")!;
+//     ctx.scale(dpr, dpr);
+//     ctx.fillStyle = "#fff";
+//     ctx.fillRect(0, 0, width, height);
 
-    // IMPORT DINÂMICO (funciona em qualquer build do canvg 3.x)
-    const mod = await import("canvg");
-    const CanvgCtor = (mod as any).Canvg ?? (mod as any).default?.Canvg ?? (mod as any).default;
-    const v = await CanvgCtor.fromString(ctx, svgStr, { ignoreMouse: true, ignoreAnimation: true });
+//     // IMPORT DINÂMICO (funciona em qualquer build do canvg 3.x)
+//     const mod = await import("canvg");
+//     const CanvgCtor = (mod as any).Canvg ?? (mod as any).default?.Canvg ?? (mod as any).default;
+//     const v = await CanvgCtor.fromString(ctx, svgStr, { ignoreMouse: true, ignoreAnimation: true });
 
-    v.resize(width, height, "xMidYMid meet");
-    await v.render();
+//     v.resize(width, height, "xMidYMid meet");
+//     await v.render();
 
-    return canvas.toDataURL("image/png");
-}
+//     return canvas.toDataURL("image/png");
+// }
 
 
 /* =============================================================================== */
@@ -266,24 +267,19 @@ export default function PerfilClientes() {
 
     // PDF via print() com título dinâmico (vira o nome do arquivo)
     const exportPDF = () => {
-        const prev = document.title;
-        document.title = `Relatórios de Fluxo — Perfil de Clientes (${metaLoja} • ${metaMes}/${metaAno})`;
+
 
         // Preenche a data/hora (fuso America/Recife)
-        const now = new Date();
-        const dtBr = new Intl.DateTimeFormat("pt-BR", {
-            dateStyle: "short",
-            timeStyle: "short",
-            timeZone: "America/Recife",
-        }).format(now);
-        const genAt = document.getElementById("print-generated-at");
-        if (genAt) genAt.textContent = `Gerado em: ${dtBr}`;
+        const dt = new Date();
+        const el = document.querySelector<HTMLSpanElement>("#print-root .print-datetime");
+        if (el) {
+            const f = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
+            el.textContent = f.format(dt);
+        }
 
-        const restore = () => {
-            document.title = prev;
-            window.removeEventListener("afterprint", restore);
-        };
-
+        const prev = document.title;
+        document.title = `Relatórios de Fluxo — Perfil de Clientes (${metaLoja} • ${metaMes}/${metaAno})`;
+        const restore = () => { document.title = prev; window.removeEventListener("afterprint", restore); };
         window.addEventListener("afterprint", restore);
         window.print();
 
@@ -373,7 +369,7 @@ export default function PerfilClientes() {
                 </div>
 
                 {/* ================== ÁREA IMPRIMÍVEL ================== */}
-                <div id="print-root" className="print-root space-y-3 mt-0">
+                <div id="print-root" className="print-root space-y-3">
                     {/* Título exclusivo do PDF */}
                     <h1 className="w-full text-center only-print text-xl bg-muted/30 font-semibold mb-0">
                         Relatórios de Fluxo — Perfil de Clientes (Compradores)
@@ -385,65 +381,65 @@ export default function PerfilClientes() {
                     {/* Tabela com cabeçalho agrupado */}
                     <div className="overflow-x-auto rounded-md print-table border">
                         <Table className="print-table">
-                            <TableHeader className="print-table">
+                            <TableHeader className="">
                                 <TableRow className="bg-muted/20 shadow-card text-muted-foreground">
-                                    <TableHead className="text-center align-middle border-r" rowSpan={2}>Dia da Semana</TableHead>
-                                    <TableHead className="text-center border-r" colSpan={2}>Gênero</TableHead>
-                                    <TableHead className="text-center" colSpan={4}>Idade</TableHead>
-                                    <TableHead className="text-center align-middle border-l" rowSpan={2}>Total</TableHead>
+                                    <TableHead className="py-1.5 text-center align-middle border-r" rowSpan={2}>Dia da Semana</TableHead>
+                                    <TableHead className="py-1.5 text-center border-r" colSpan={2}>Gênero</TableHead>
+                                    <TableHead className="py-1.5 text-center" colSpan={4}>Idade</TableHead>
+                                    <TableHead className="py-1.5 text-center align-middle border-l" rowSpan={2}>Total</TableHead>
                                 </TableRow>
                                 <TableRow className="bg-muted/20 shadow-card text-muted-foreground">
-                                    <TableHead className="py-1.5 text-center border-r">Masculino</TableHead>
-                                    <TableHead className="py-1.5 text-center border-r">Feminino</TableHead>
-                                    <TableHead className="py-1.5 text-center">Criança</TableHead>
-                                    <TableHead className="py-1.5 text-center border-r">Jovem</TableHead>
-                                    <TableHead className="py-1.5 text-center">Adulto</TableHead>
-                                    <TableHead className="py-1.5 text-center">Idoso</TableHead>
+                                    <TableHead className="py-1 text-center border-r">Masculino</TableHead>
+                                    <TableHead className="py-1 text-center border-r">Feminino</TableHead>
+                                    <TableHead className="py-1 text-center">Criança</TableHead>
+                                    <TableHead className="py-1 text-center border-r">Jovem</TableHead>
+                                    <TableHead className="py-1 text-center">Adulto</TableHead>
+                                    <TableHead className="py-1 text-center">Idoso</TableHead>
                                 </TableRow>
                             </TableHeader>
 
                             <TableBody>
                                 {rows.map(r => (
                                     <TableRow key={r.dia}>
-                                        <TableCell className="py-1.5 text-left border-r">{r.dia}</TableCell>
-                                        <TableCell className="py-1.5 text-center">{r.masculino}</TableCell>
-                                        <TableCell className="py-1.5 text-center border-r">{r.feminino}</TableCell>
-                                        <TableCell className="py-1.5 text-center">{r.crianca}</TableCell>
-                                        <TableCell className="py-1.5 text-center">{r.jovem}</TableCell>
-                                        <TableCell className="py-1.5 text-center">{r.adulto}</TableCell>
-                                        <TableCell className="py-1.5 text-center border-r">{r.idoso}</TableCell>
-                                        <TableCell className="py-1.5 text-center font-medium">{r.total}</TableCell>
+                                        <TableCell className="py-1 text-left border-r">{r.dia}</TableCell>
+                                        <TableCell className="py-1 text-center">{r.masculino}</TableCell>
+                                        <TableCell className="py-1 text-center border-r">{r.feminino}</TableCell>
+                                        <TableCell className="py-1 text-center">{r.crianca}</TableCell>
+                                        <TableCell className="py-1 text-center">{r.jovem}</TableCell>
+                                        <TableCell className="py-1 text-center">{r.adulto}</TableCell>
+                                        <TableCell className="py-1 text-center border-r">{r.idoso}</TableCell>
+                                        <TableCell className="py-1 text-center font-medium">{r.total}</TableCell>
                                     </TableRow>
                                 ))}
 
                                 <TableRow className="bg-muted/20 font-semibold">
-                                    <TableCell className="py-1.5 border-r">Total</TableCell>
-                                    <TableCell className="py-1.5 text-center">{totals.masculino}</TableCell>
-                                    <TableCell className="py-1.5 text-center border-r">{totals.feminino}</TableCell>
-                                    <TableCell className="py-1.5 text-center">{totals.crianca}</TableCell>
-                                    <TableCell className="py-1.5 text-center">{totals.jovem}</TableCell>
-                                    <TableCell className="py-1.5 text-center">{totals.adulto}</TableCell>
-                                    <TableCell className="py-1.5 text-center border-r">{totals.idoso}</TableCell>
-                                    <TableCell className="py-1.5 text-center">{totals.total}</TableCell>
+                                    <TableCell className="py-1 border-r">Total</TableCell>
+                                    <TableCell className="py-1 text-center">{totals.masculino}</TableCell>
+                                    <TableCell className="py-1 text-center border-r">{totals.feminino}</TableCell>
+                                    <TableCell className="py-1 text-center">{totals.crianca}</TableCell>
+                                    <TableCell className="py-1 text-center">{totals.jovem}</TableCell>
+                                    <TableCell className="py-1 text-center">{totals.adulto}</TableCell>
+                                    <TableCell className="py-1 text-center border-r">{totals.idoso}</TableCell>
+                                    <TableCell className="py-1 text-center">{totals.total}</TableCell>
                                 </TableRow>
 
                                 <TableRow>
-                                    <TableCell className="py-1.5 text-muted-foreground border-r">Participação %</TableCell>
-                                    <TableCell className="py-1.5 text-center">{pct.masculino}%</TableCell>
-                                    <TableCell className="py-1.5 text-center border-r">{pct.feminino}%</TableCell>
-                                    <TableCell className="py-1.5 text-center">{pct.crianca}%</TableCell>
-                                    <TableCell className="py-1.5 text-center">{pct.jovem}%</TableCell>
-                                    <TableCell className="py-1.5 text-center">{pct.adulto}%</TableCell>
-                                    <TableCell className="py-1.5 text-center border-r">{pct.idoso}%</TableCell>
-                                    <TableCell className="py-1.5 text-center">100%</TableCell>
+                                    <TableCell className="py-1 text-muted-foreground border-r">Participação %</TableCell>
+                                    <TableCell className="py-1 text-center">{pct.masculino}%</TableCell>
+                                    <TableCell className="py-1 text-center border-r">{pct.feminino}%</TableCell>
+                                    <TableCell className="py-1 text-center">{pct.crianca}%</TableCell>
+                                    <TableCell className="py-1 text-center">{pct.jovem}%</TableCell>
+                                    <TableCell className="py-1 text-center">{pct.adulto}%</TableCell>
+                                    <TableCell className="py-1 text-center border-r">{pct.idoso}%</TableCell>
+                                    <TableCell className="py-1 text-center">100%</TableCell>
                                 </TableRow>
                             </TableBody>
                         </Table>
                     </div>
 
                     {/* Gráficos */}
-                    <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 print-flex-col">
-                        <div ref={generoRef} className="avoid-break h-64 w-full rounded-md border px-3 pt-1 pb-3 overflow-hidden print:overflow-visible print:chart">
+                    <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-3 print-flex-col">
+                        <div ref={generoRef} className=" h-64 w-full rounded-md border px-3 pt-1 pb-3 overflow-hidden print:overflow-visible print:chart">
                             <h3 className="mb-1 text-sm font-medium text-muted-foreground">Perfil de Clientes (compradores) por Gênero</h3>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
@@ -490,7 +486,7 @@ export default function PerfilClientes() {
                             </ResponsiveContainer>
                         </div>
 
-                        <div ref={idadeRef} className="avoid-break h-64 w-full rounded-md border px-3 pt-3 pb-3 overflow-hidden print:overflow-visible print:chart">
+                        <div ref={idadeRef} className=" h-64 w-full rounded-md border px-3 pt-3 pb-3 overflow-hidden print:overflow-visible print:chart">
                             <h3 className="mb-1 text-sm font-medium text-muted-foreground">Perfil de Clientes (compradores) por Idade</h3>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
@@ -543,20 +539,11 @@ export default function PerfilClientes() {
                         </div>
 
                         {/* ===== Rodapé somente na impressão ===== */}
-                        <footer className="print-footer only-print">
-                            <div className="footer-left">
-                                <span>Relatórios de Fluxo — Perfil de Clientes</span>
-                                <span className="dot">•</span>
-                                <span>Loja: {metaLoja}</span>
-                                <span className="dot">•</span>
-                                <span>Mês/Ano: {metaMes}/{metaAno}</span>
-                            </div>
-
-                            <div className="footer-right">
-                                <span id="print-generated-at">--/--/---- --:--</span>
-                                <span className="dot">•</span>
-                                <span className="page-number"></span>
-                            </div>
+                        <footer className="print-footer footer-only-print">
+                            <div className="footer-left">Relatórios de Fluxo — Perfil de Clientes</div>
+                            <div className="footer-center">Loja: {metaLoja} • {metaMes}/{metaAno}</div>
+                            <div className="footer-right">Gerado em: <span className="print-datetime"></span></div>
+                            <div className="footer-right">Página <span className="pageNumber"></span>/<span className="totalPages"></span></div>
                         </footer>
                     </div>
                     {/* ================== /ÁREA IMPRIMÍVEL ================== */}

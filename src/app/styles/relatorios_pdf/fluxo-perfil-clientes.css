@@ -1,0 +1,151 @@
+/* ========= INICIO STYLES PARA IMPRESSÃO DO RELATÓRIO PERFIL DE CLIENTES ========= */
+/* Print Styles - Ocultar elementos desnecessários na impressão */
+@media print {
+
+    #print-root,
+    #print-root * {
+        visibility: visible !important;
+    }
+
+    #print-root {
+        position: absolute !important;
+        inset: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        background: #fff !important;
+    }
+
+    /* Permite que ticks/labels “saiam” sem cortar */
+    #print-root .recharts-wrapper,
+    #print-root svg,
+    #print-root .recharts-surface {
+        overflow: visible !important;
+    }
+
+    /* Evita artefatos (bolinhas pretas) e remove interações no PDF */
+    #print-root .recharts-tooltip-wrapper,
+    #print-root .recharts-default-tooltip,
+    #print-root .recharts-tooltip-cursor,
+    #print-root .recharts-cross {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+    }
+
+    /* Opcional: esconder labels acima das barras no PDF (evita recorte e “tremido”) */
+    /* #print-root .recharts-label-list {
+    display: none !important;
+  } */
+
+    /* Garantir que os eixos/ticks fiquem legíveis no papel */
+    #print-root .recharts-cartesian-axis-tick text {
+        fill: #000 !important;
+        font-size: 10px !important;
+    }
+
+    /* Se algum contêiner tiver overflow-hidden na árvore, libere no print */
+    #print-root .avoid-break {
+        overflow: visible !important;
+    }
+
+    /* Se quiser garantir que a legenda fique colada ao rodapé do gráfico no PDF */
+    #print-root .recharts-legend-wrapper {
+        bottom: 5 !important;
+    }
+
+    /* 4) Tabela com fonte preta e cabeçalho forte */
+    .print-root,
+    .print-root * {
+        color: #000 !important;
+    }
+
+    /* .print-root table thead tr th {
+        font-weight: 700 !important;
+        color: #000 !important;
+    } */
+
+    /* .print-table thead th {
+        font-weight: 700 !important;
+        color: #000 !important;
+    } */
+
+    /* .print-table th,
+    .print-table td {
+    border-color: #e5e7eb !important;
+  } */
+
+    /* 5) Grid e quebras para os gráficos */
+    .print-flex-col {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .print-grid-2 {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+    }
+
+    /* .avoid-break {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    } */
+
+    /* 6) Gráficos contidos e responsivos dentro da página */
+    .chart {
+        /* reduza p/ 230px se quiser mais compacto */
+        padding: 8px !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        max-width: 100% !important;
+        background: #fff !important;
+    }
+
+    .chart .recharts-wrapper,
+    .chart svg,
+    .chart .recharts-surface {
+        width: 100% !important;
+        height: 100% !important;
+        overflow: visible !important;
+    }
+
+    /* 7) Cabeçalho/rodapé de tabela corretos quando quebrar página */
+    /* table {
+        page-break-inside: auto;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    tfoot {
+        display: table-row-group;
+    } */
+
+
+
+    #print-root::before {
+        content: "DOCUMENTO INTERNO";
+        position: fixed;
+        inset: 0;
+        display: block;
+        font-size: 54px;
+        font-weight: 700;
+        letter-spacing: 8px;
+        color: rgba(0, 0, 0, 0.06);
+        transform: rotate(-30deg);
+        text-align: center;
+        line-height: 100vh;
+        pointer-events: none;
+    }
+
+}
+
+@media print {
+
+    /* reserva espaço pro rodapé fixo */
+    #print-root {
+        padding-bottom: 2mm !important;
+    }
+}

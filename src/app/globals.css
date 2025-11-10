@@ -372,9 +372,32 @@
   /* Cor do fundo da barra */
 }
 
-/* ========= INICIO STYLES PARA IMPRESSÃO DO RELATÓRIO PERFIL DE CLIENTES ========= */
-/* Print Styles - Ocultar elementos desnecessários na impressão */
+/* === PRINT PATCH — Perfil de Clientes (só a área do relatório) === */
+.only-print {
+  display: none;
+}
+
+.footer-only-print {
+  display: none;
+}
+
+.no-print {
+  /* nada em tela */
+}
+
+
+
+/* Data/hora dinâmica no rodapé (preenchida no momento da impressão) */
 @media print {
+
+  /* Classe auxiliar para gráficos no PDF (mesma filosofia do outro relatório) */
+  .print:chart,
+  .print\:chart {
+    padding: 8px !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    background: #fff !important;
+  }
 
   /* Ocultar sidebar mobile e desktop */
   .fixed.left-0,
@@ -464,67 +487,19 @@
     display: block !important;
   }
 
+  .footer-only-print {
+    display: grid !important;
+  }
+
   .no-print {
     display: none !important;
-  }
-
-  #print-root,
-  #print-root * {
-    visibility: visible !important;
-  }
-
-  #print-root {
-    position: absolute !important;
-    inset: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    background: #fff !important;
-  }
-
-  /* Permite que ticks/labels “saiam” sem cortar */
-  #print-root .recharts-wrapper,
-  #print-root svg,
-  #print-root .recharts-surface {
-    overflow: visible !important;
-  }
-
-  /* Evita artefatos (bolinhas pretas) e remove interações no PDF */
-  #print-root .recharts-tooltip-wrapper,
-  #print-root .recharts-default-tooltip,
-  #print-root .recharts-tooltip-cursor,
-  #print-root .recharts-cross {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-  }
-
-  /* Opcional: esconder labels acima das barras no PDF (evita recorte e “tremido”) */
-  /* #print-root .recharts-label-list {
-    display: none !important;
-  } */
-
-  /* Garantir que os eixos/ticks fiquem legíveis no papel */
-  #print-root .recharts-cartesian-axis-tick text {
-    fill: #000 !important;
-    font-size: 10px !important;
-  }
-
-  /* Se algum contêiner tiver overflow-hidden na árvore, libere no print */
-  #print-root .avoid-break {
-    overflow: visible !important;
-  }
-
-  /* Se quiser garantir que a legenda fique colada ao rodapé do gráfico no PDF */
-  #print-root .recharts-legend-wrapper {
-    bottom: 5 !important;
   }
 
   /* 3) Página, margens e preservação de cores */
   @page {
     size: A4 portrait;
-    /* paisagem */
-    margin: 5mm 2mm 2mm 2mm;
+    /* retrato */
+    margin: 5mm 2mm 3mm 2mm;
     /* ajuste fino: 10–15mm */
   }
 
@@ -537,175 +512,6 @@
     /* fallback global */
   }
 
-  /* 4) Tabela com fonte preta e cabeçalho forte */
-  .print-root,
-  .print-root * {
-    color: #000 !important;
-  }
-
-  .print-root table thead tr th {
-    font-weight: 700 !important;
-    color: #000 !important;
-  }
-
-  .print-table thead th {
-    font-weight: 700 !important;
-    color: #000 !important;
-  }
-
-  /* .print-table th,
-  .print-table td {
-    border-color: #e5e7eb !important;
-  } */
-
-  /* 5) Grid e quebras para os gráficos */
-  .print-flex-col {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .print-grid-2 {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 10px !important;
-  }
-
-  .avoid-break {
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-  }
-
-  /* 6) Gráficos contidos e responsivos dentro da página */
-  .chart {
-    /* reduza p/ 230px se quiser mais compacto */
-    padding: 8px !important;
-    border: 1px solid #e5e7eb !important;
-    border-radius: 8px !important;
-    max-width: 100% !important;
-    background: #fff !important;
-  }
-
-  .chart .recharts-wrapper,
-  .chart svg,
-  .chart .recharts-surface {
-    width: 100% !important;
-    height: 100% !important;
-    overflow: visible !important;
-  }
-
-  /* 7) Cabeçalho/rodapé de tabela corretos quando quebrar página */
-  table {
-    page-break-inside: auto;
-  }
-
-  thead {
-    display: table-header-group;
-  }
-
-  tfoot {
-    display: table-row-group;
-  }
-
-  .print-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-
-    /* layout */
-    display: flex !important;
-    align-items: center;
-    justify-content: space-between;
-
-    /* aparência */
-    padding: 4mm;
-    border-top: 1px solid #e5e7eb;
-    font-size: 10px;
-    line-height: 1.2;
-    background: #fff;
-    /* evita “fantasma” em impressoras zicadas */
-    color: rgba(0, 0, 0, 0.06) !important;
-  }
-
-  #print-root::before {
-    content: "CONFIDENCIAL";
-    position: fixed;
-    inset: 0;
-    display: block;
-    font-size: 72px;
-    font-weight: 700;
-    letter-spacing: 8px;
-    color: rgba(0, 0, 0, 0.06);
-    transform: rotate(-30deg);
-    text-align: center;
-    line-height: 100vh;
-    pointer-events: none;
-  }
-
-}
-
-/* === PRINT PATCH — Perfil de Clientes (só a área do relatório) === */
-.only-print {
-  display: none;
-}
-
-.no-print {
-  /* nada em tela */
-}
-
-/* ========= PRINT — Fluxo por Dia ========= */
-@media print {
-
-  /* Imprimir somente o contêiner deste relatório quando estiver nesta página */
-  #print-root-fluxo-dia,
-  #print-root-fluxo-dia * {
-    visibility: visible !important;
-  }
-
-  body * {
-    visibility: hidden !important;
-  }
-
-  /* preserva a técnica já usada */
-  #print-root-fluxo-dia {
-    position: absolute !important;
-    inset: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    background: #fff !important;
-  }
-
-  /* Evitar cortes nos SVGs / tooltips invisíveis no PDF */
-  #print-root-fluxo-dia .recharts-wrapper,
-  #print-root-fluxo-dia svg,
-  #print-root-fluxo-dia .recharts-surface {
-    overflow: visible !important;
-  }
-
-  #print-root-fluxo-dia .recharts-tooltip-wrapper,
-  #print-root-fluxo-dia .recharts-default-tooltip,
-  #print-root-fluxo-dia .recharts-tooltip-cursor,
-  #print-root-fluxo-dia .recharts-cross {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-  }
-
-  /* Ticks legíveis no papel */
-  #print-root-fluxo-dia .recharts-cartesian-axis-tick text {
-    fill: #000 !important;
-    font-size: 10px !important;
-  }
-
-  /* Classe auxiliar para gráficos no PDF (mesma filosofia do outro relatório) */
-  .print:chart,
-  .print\:chart {
-    padding: 8px !important;
-    border: 1px solid #e5e7eb !important;
-    border-radius: 8px !important;
-    background: #fff !important;
-  }
 }
 
 /* Rodapé — aproveita a mesma estrutura do outro relatório */
@@ -716,9 +522,9 @@
     right: 0;
     bottom: 0;
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 8px;
+    grid-template-columns: auto auto auto auto;
     align-items: center;
+    gap: 8px;
     font-size: 10px;
     padding: 6px 10px;
     border-top: 1px solid #e5e7eb;
@@ -738,12 +544,6 @@
     text-align: right;
   }
 
-  /* Página X de Y */
-  @page {
-    size: A4 portrait;
-    margin: 8mm 8mm 14mm 8mm;
-  }
-
   /* espaço pro rodapé */
   html {
     counter-reset: page;
@@ -756,71 +556,6 @@
   .totalPages::after {
     content: counter(pages);
   }
-}
-
-/* Em tela (sem print) – mantém seu comportamento atual */
-.pie-card .pie-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* desconta ~1.75rem do título */
-  height: calc(100% - 1.75rem);
-  width: 100%;
-}
-
-.pie-card .pie-wrap .pie-box {
-  width: 100%;
-  height: 100%;
-}
-
-/* ===== Só no PRINT ===== */
-@media print {
-
-  /* reserva espaço pro rodapé fixo */
-  #print-root-fluxo-dia {
-    padding-bottom: 16mm !important;
-  }
-
-  /* a pizza agora tem uma “caixa” quadrada e altura estável */
-  #print-root-fluxo-dia .pie-card .pie-wrap {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    margin: 0 auto !important;
-  }
-
-  /* altura estável e quadrada no A4 portrait */
-  #print-root-fluxo-dia .pie-card .pie-wrap .pie-box {
-    width: 100% !important;
-    /* deixa um respiro embaixo pro rodapé; ajuste conforme desejar */
-    max-width: 170mm !important;
-    /* evita “sujar” as margens laterais */
-    aspect-ratio: 1 / 1 !important;
-    /* altura mínima boa p/ leitura; pode ajustar entre 75–95mm */
-    min-height: 85mm !important;
-  }
-
-  /* evita desvios de posicionamento do SVG */
-  #print-root-fluxo-dia .pie-card .recharts-wrapper {
-    margin: 0 auto !important;
-    /* ajuda a manter centralizado mesmo sem altura herdada */
-    display: block !important;
-  }
-
-  /* leve respiro para não “encostar” no limite inferior do card */
-  #print-root-fluxo-dia .pie-card {
-    padding-bottom: 6mm !important;
-  }
-
-  /* margem de página um pouco maior embaixo por conta do rodapé fixo */
-  @page {
-    margin: 8mm 8mm 16mm 8mm;
-  }
-}
-
-/* Data/hora dinâmica no rodapé (preenchida no momento da impressão) */
-@media print {
-  /* será setado via JS antes do print */
 }
 
 /* ========= FIM STYLES PARA IMPRESSÃO DO RELATÓRIO PERFIL DE CLIENTES ========= */

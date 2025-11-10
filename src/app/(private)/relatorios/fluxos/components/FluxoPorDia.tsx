@@ -18,6 +18,7 @@ import type { Loja } from "@/types";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Download, FileSpreadsheet } from "lucide-react";
+import "@/app/styles/relatorios_pdf/fluxo-por-dia.css";
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50", "#8dd1e1", "#a4de6c", "#d0ed57"];
 const COLORSPERCENT = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d", "#ffc658"];
@@ -147,7 +148,7 @@ export default function FluxoPorDia() {
 
     return (
         <Card className="bg-transparent">
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-2 print:hidden">
                 <CardTitle className="text-center">Fluxo de Pessoas por Dia da Semana</CardTitle>
             </CardHeader>
 
@@ -204,7 +205,7 @@ export default function FluxoPorDia() {
                 </div>
 
                 {/* ================== ÁREA IMPRIMÍVEL ================== */}
-                <div id="print-root-fluxo-dia" className="print-root space-y-3">
+                <div id="print-root-fluxo-dia" className="print-root-fluxo-dia space-y-3">
                     {/* Cabeçalho exclusivo do PDF */}
                     <h1 className="w-full text-center only-print text-xl bg-muted/30 font-semibold mb-0">
                         Relatórios de Fluxo — Fluxo por Dia da Semana
@@ -296,7 +297,7 @@ export default function FluxoPorDia() {
                         </div>
 
                         {/* Barras */}
-                        <div className="col-span-1 lg:col-span-2 avoid-break rounded-md border px-3 pt-2 pb-3 overflow-hidden print:overflow-visible print:chart">
+                        <div className="col-span-1 lg:col-span-2 avoid-break rounded-md border px-3 pt-1 pb-3 overflow-hidden print:overflow-visible print:chart">
                             <h3 className="mb-1 text-sm font-medium text-muted-foreground">Por dia x categorias</h3>
                             <div className="h-80 w-full">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -336,10 +337,11 @@ export default function FluxoPorDia() {
                     </div>
 
                     {/* Rodapé ONLY PRINT */}
-                    <footer className="only-print print-footer">
+                    <footer className="print-footer footer-only-print">
                         <div className="footer-left">Relatórios de Fluxo — Fluxo por Dia</div>
                         <div className="footer-center">Loja: {metaLoja} • {metaMes}/{metaAno}</div>
-                        <div className="footer-right">Gerado em: <span className="print-datetime"></span> • Página <span className="pageNumber"></span>/<span className="totalPages"></span></div>
+                        <div className="footer-right">Gerado em: <span className="print-datetime"></span></div>
+                        <div className="footer-right">Página: <span className="pageNumber"></span>/<span className="totalPages"></span></div>
                     </footer>
                 </div>
                 {/* ================== /ÁREA IMPRIMÍVEL ================== */}
