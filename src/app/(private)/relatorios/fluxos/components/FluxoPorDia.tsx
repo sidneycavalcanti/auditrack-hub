@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Download, FileSpreadsheet } from "lucide-react";
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50", "#8dd1e1", "#a4de6c", "#d0ed57"];
+const COLORSPERCENT = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d", "#ffc658"];
 
 
 
@@ -128,7 +129,7 @@ export default function FluxoPorDia() {
         const y = cy + r * Math.sin(-midAngle * RAD);
         const anchor = x > cx ? "start" : "end";
         const percentual = value && totalGeral ? Math.round((Number(value) / totalGeral) * 100) : 0;
-        const color = COLORS[index % COLORS.length]
+        const color = COLORSPERCENT[index % COLORSPERCENT.length]
         return (
             <text
                 x={x}
@@ -257,9 +258,9 @@ export default function FluxoPorDia() {
                                                 data={pieData}
                                                 dataKey="value"
                                                 nameKey="name"
-                                                innerRadius="70%"
-                                                outerRadius="95%"
-                                                cornerRadius="20%"
+                                                innerRadius="65%"
+                                                outerRadius="75%"
+                                                cornerRadius="50%"
                                                 paddingAngle={5}
                                                 startAngle={startAngle}
                                                 endAngle={endAngle}
@@ -269,13 +270,13 @@ export default function FluxoPorDia() {
                                                 cy="50%"
 
                                             >
-                                                {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                                                {pieData.map((_, i) => <Cell key={i} fill={COLORSPERCENT[i % COLORSPERCENT.length]} />)}
 
                                                 <RLabel
                                                     value={`Total: ${Intl.NumberFormat("pt-BR").format(totalGeral)}`}
                                                     position="center"
                                                     fontSize={20}
-                                                    fill="#8884d8"
+                                                    fill="#0088FE90"
                                                     fontWeight={700}
                                                 />
                                             </Pie>
