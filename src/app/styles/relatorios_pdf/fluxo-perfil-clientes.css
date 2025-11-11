@@ -1,3 +1,5 @@
+/* src/app/styles/relatorios_pdf/fluxos-perfil-clientes.css */
+
 /* ========= INICIO STYLES PARA IMPRESSÃO DO RELATÓRIO PERFIL DE CLIENTES ========= */
 /* Print Styles - Ocultar elementos desnecessários na impressão */
 @media print {
@@ -35,8 +37,8 @@
 
     /* Opcional: esconder labels acima das barras no PDF (evita recorte e “tremido”) */
     /* #print-root .recharts-label-list {
-    display: none !important;
-  } */
+        display: none !important;
+    } */
 
     /* Garantir que os eixos/ticks fiquem legíveis no papel */
     #print-root .recharts-cartesian-axis-tick text {

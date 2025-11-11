@@ -439,7 +439,7 @@ export default function PerfilClientes() {
 
                     {/* Gráficos */}
                     <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-3 print-flex-col">
-                        <div ref={generoRef} className=" h-64 w-full rounded-md border px-3 pt-1 pb-3 overflow-hidden print:overflow-visible print:chart">
+                        <div ref={generoRef} className="avoid-break h-64 w-full avoid-break rounded-md border px-3 pt-1 pb-3 overflow-hidden print:overflow-visible print:chart">
                             <h3 className="mb-1 text-sm font-medium text-muted-foreground">Perfil de Clientes (compradores) por Gênero</h3>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
@@ -486,7 +486,7 @@ export default function PerfilClientes() {
                             </ResponsiveContainer>
                         </div>
 
-                        <div ref={idadeRef} className=" h-64 w-full rounded-md border px-3 pt-3 pb-3 overflow-hidden print:overflow-visible print:chart">
+                        <div ref={idadeRef} className="avoid-break h-64 w-full rounded-md border px-3 pt-3 pb-3 overflow-hidden print:overflow-visible print:chart">
                             <h3 className="mb-1 text-sm font-medium text-muted-foreground">Perfil de Clientes (compradores) por Idade</h3>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
