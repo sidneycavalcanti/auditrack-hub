@@ -1,0 +1,78 @@
+/* src/app/styles/relatorios_pdf/fluxo-por-semana.css */
+
+/* ============================
+    CSS ESPECÍFICO — Fluxo por Semana
+    (não vaza para outros relatórios)
+   ============================ */
+
+/* Em tela: utilitários locais se precisar
+#fluxo-por-semana { }
+*/
+
+/* ====== Print isolado deste relatório ====== */
+
+@media print {
+
+    /* Imprimir SOMENTE este contêiner e seus filhos */
+    #print-root-fluxo-semana,
+    #print-root-fluxo-semana * {
+        visibility: visible !important;
+    }
+
+    body * {
+        visibility: hidden !important;
+    }
+
+    #print-root-fluxo-semana {
+        position: absolute !important;
+        inset: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        background: #fff !important;
+    }
+
+    /* Evitar cortes nos SVGs / tooltips invisíveis no PDF */
+    #print-root-fluxo-semana .recharts-wrapper,
+    #print-root-fluxo-semana svg,
+    #print-root-fluxo-semana .recharts-surface {
+        overflow: visible !important;
+    }
+
+    #print-root-fluxo-semana .recharts-tooltip-wrapper,
+    #print-root-fluxo-semana .recharts-default-tooltip,
+    #print-root-fluxo-semana .recharts-tooltip-cursor,
+    #print-root-fluxo-semana .recharts-cross {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+    }
+
+    /* Ticks legíveis no papel */
+    #print-root-fluxo-semana .recharts-cartesian-axis-tick text {
+        fill: #000 !important;
+        font-size: 10px !important;
+    }
+
+    #print-root-fluxo-semana .print-border-radius-0 {
+        border-radius: 0 !important;
+    }
+
+    .print-root-fluxo-semana,
+    .print-root-fluxo-semana * {
+        color: #000 !important;
+    }
+
+    /* Classe auxiliar para gráficos no PDF (mesma filosofia dos demais relatórios) */
+    .print\:chart {
+        padding: 8px !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        background: #fff !important;
+    }
+
+    /* reserva espaço pro rodapé fixo */
+    #print-root-fluxo-semana {
+        padding-bottom: 2mm !important;
+    }
+}

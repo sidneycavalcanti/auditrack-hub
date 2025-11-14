@@ -18,6 +18,12 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
 
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
 
@@ -75,8 +81,9 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   /* fontes (caso use next/font) */
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
 }
 
 /* =========================================
@@ -90,6 +97,14 @@
 
   --card: oklch(from hsl(0 0% 100%) l c h);
   --card-foreground: oklch(from hsl(215 25% 15%) l c h);
+
+  --chart-1: oklch(0.65 0.22 36.85);
+  --chart-2: oklch(0.60 0.11 184.15);
+  --chart-3: oklch(0.40 0.07 227.18);
+  --chart-4: oklch(0.83 0.17 81.03);
+  --chart-5: oklch(0.77 0.17 65.36);
+  --chart-6: oklch(0.64 0.222 41.116);
+  --chart-7: oklch(0.52 0.15 305.32);
 
   --popover: oklch(from hsl(0 0% 100%) l c h);
   --popover-foreground: oklch(from hsl(215 25% 15%) l c h);
@@ -147,6 +162,11 @@
   --shadow-success: 0 4px 12px -2px oklch(from hsl(142 76% 36% / 0.25) l c h / 0.25);
   --shadow-hover: 0 8px 25px -4px oklch(from hsl(215 25% 15% / 0.15) l c h / 0.15);
 
+  --font-sans: 'Geist', 'Geist Fallback', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-serif: "Geist", "Geist Fallback", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+
   /* Demais tokens */
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -170,6 +190,14 @@
 
   --card: oklch(20.77% 0.01775 259.748);
   --card-foreground: oklch(96.115% 0.00011 271.152);
+
+  --chart-1: oklch(0.49 0.24 264.40);
+  --chart-2: oklch(0.70 0.16 160.43);
+  --chart-3: oklch(0.77 0.17 65.36);
+  --chart-4: oklch(0.62 0.26 305.32);
+  --chart-5: oklch(0.64 0.25 16.51);
+  --chart-6: oklch(0.646 0.222 41.116);
+  --chart-7: oklch(0.40 0.07 227.18);
 
   --popover: oklch(20.77% 0.01775 259.748);
   --popover-foreground: oklch(96.115% 0.00011 271.152);
@@ -372,7 +400,7 @@
   /* Cor do fundo da barra */
 }
 
-/* === PRINT PATCH — Perfil de Clientes (só a área do relatório) === */
+/* ========= INÍCIO STYLES GLOBAL PARA IMPRESSÃO DO RELATÓRIO ========= */
 .only-print {
   display: none;
 }
@@ -397,6 +425,18 @@
     border: 1px solid #e5e7eb !important;
     border-radius: 8px !important;
     background: #fff !important;
+  }
+
+  .print-box-border {
+    border: 1px solid #b0b0b1 !important;
+  }
+
+  .print-chart-box-border-bottom {
+    border-bottom: 1px solid #e5e7eb !important;
+  }
+
+  .print-chart-box-border-top {
+    border-top: 1px solid #e5e7eb !important;
   }
 
   /* Ocultar sidebar mobile e desktop */
@@ -512,6 +552,32 @@
     /* fallback global */
   }
 
+  /* 5) Grid e quebras para os gráficos */
+  .print-flex-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .print-flex-1 {
+    flex: 1;
+  }
+
+  .print-grid-col-1 {
+    display: grid !important;
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+    grid-gap: 10px !important;
+  }
+
+  .print-col-span-1 {
+    grid-column: span 1 / span 1 !important;
+  }
+
+  .print-grid-2 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
 }
 
 /* Rodapé — aproveita a mesma estrutura do outro relatório */
@@ -557,6 +623,7 @@
   .totalPages::after {
     content: counter(pages);
   }
+
 }
 
-/* ========= FIM STYLES PARA IMPRESSÃO DO RELATÓRIO PERFIL DE CLIENTES ========= */
+/* ========= FIM STYLES GLOBAL PARA IMPRESSÃO DO RELATÓRIO ========= */
