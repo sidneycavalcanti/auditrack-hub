@@ -79,7 +79,7 @@ export default function RelatorioAuditoria({ data }: Props) {
                             <div className="aud-icons-row">
                                 <Image src="/auditoria/transparentes/icone-genero.png" alt="Por gênero" width={180} height={80} />
                             </div>
-                            <ResponsiveContainer width="100%" height={220}>
+                            {/* <ResponsiveContainer width="100%" height={220}>
                                 <PieChart>
                                     <Pie data={pizzaGenero(data.perfilFrequentador)} dataKey="value" innerRadius={52} outerRadius={84}>
                                         {pizzaGenero(data.perfilFrequentador).map((_, i) => (
@@ -90,7 +90,7 @@ export default function RelatorioAuditoria({ data }: Props) {
                                     <Legend />
                                     <Tooltip />
                                 </PieChart>
-                            </ResponsiveContainer>
+                            </ResponsiveContainer> */}
                         </CardContent>
                     </Card>
 
@@ -102,7 +102,7 @@ export default function RelatorioAuditoria({ data }: Props) {
                             <div className="aud-icons-row">
                                 <Image src="/auditoria/transparentes/icone-turnos.png" alt="Por turno" width={260} height={82} />
                             </div>
-                            <ResponsiveContainer width="100%" height={220}>
+                            {/* <ResponsiveContainer width="100%" height={220}>
                                 <BarChart data={[
                                     { nome: "Manhã", valor: data.perfilFrequentador.turnos.manha },
                                     { nome: "Tarde", valor: data.perfilFrequentador.turnos.tarde },
@@ -114,7 +114,7 @@ export default function RelatorioAuditoria({ data }: Props) {
                                     <Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} />
                                     <Bar dataKey="valor" radius={6} fill={C(1)} />
                                 </BarChart>
-                            </ResponsiveContainer>
+                            </ResponsiveContainer> */}
                         </CardContent>
                     </Card>
 
