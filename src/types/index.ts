@@ -49,6 +49,7 @@ export interface Loja {
     luc?: string;
     piso?: string;
     ativa?: boolean;
+    situacao?: boolean; // Propriedade adicional vinda do backend
     createdAt?: string;
     updatedAt?: string;
 }

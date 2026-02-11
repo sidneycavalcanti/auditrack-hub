@@ -63,12 +63,37 @@ export default function LojasPage() {
         limit: pageSize,
     });
 
+
+
+
+   
+
+    const { data: respAtivas } = useLojas({
+        search: searchTerm,
+        situacao: 1,
+        page: 1,
+        limit: 1,
+    });
+
+   const { data: respInativas } = useLojas({
+        search: searchTerm,
+        situacao: 0,   // 0 = inativa
+        page: 1,
+        limit: 1,
+    });
+
     const deleteMutation = useDeleteLoja();
 
     const paginatedData = response as PaginatedResponse<Loja> | undefined;
     const lojas = paginatedData?.data ?? [];
     const totalItems = paginatedData?.total ?? 0;
     const totalPages = paginatedData?.totalPages ?? 0;
+
+    // Lojas totalAtivas 
+   const totalAtivas = (respAtivas as PaginatedResponse<Loja> | undefined)?.total ?? 0;
+    // Lojas totalInativas
+   const totalInativas =
+    (respInativas as PaginatedResponse<Loja> | undefined)?.total ?? 0;
 
     const handleEdit = (loja: Loja) => {
         setSelectedLoja(loja);
@@ -377,7 +402,7 @@ export default function LojasPage() {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-foreground">
-                                    {lojas.filter((l) => l.ativa).length}
+                                    {totalAtivas}
                                 </p>
                                 <p className="text-sm text-muted-foreground">Lojas Ativas</p>
                             </div>
@@ -393,7 +418,7 @@ export default function LojasPage() {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-foreground">
-                                    {lojas.filter((l) => !l.ativa).length}
+                                  {totalInativas}
                                 </p>
                                 <p className="text-sm text-muted-foreground">Lojas Inativas</p>
                             </div>
