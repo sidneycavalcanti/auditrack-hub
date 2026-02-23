@@ -72,6 +72,7 @@ const NAV_ITEMS: NavItem[] = [
     { name: "Rel. Pausas", href: "/relatorios/pausas", icon: FileText, section: "RELATÓRIOS" },
     { name: "Rel. Av. Oper.", href: "/relatorios/avoperacional", icon: ArchiveRestore, section: "RELATÓRIOS" },
     { name: "Rel. Auditoria", href: "/relatorios/auditoria-loja", icon: ArchiveRestore, section: "RELATÓRIOS" },
+    { name: "Rel. Auditoria copy", href: "/relatorios/auditoria-loja-copy", icon: ArchiveRestore, section: "RELATÓRIOS" },
     // administração
     { name: "Usuários", href: "/usuarios", icon: Users, section: "ADMINISTRAÇÃO" },
 ];

@@ -460,11 +460,11 @@
     color: black !important;
   }
 
-  /* 2) Imprimir SOMENTE o contêiner do relatório */
+  /* 2) Imprimir SOMENTE o contêiner do relatório 
   body * {
     visibility: hidden !important;
   }
-
+*/
   /* Garantir que o conteúdo principal ocupe toda a largura */
   main {
     margin: 0 !important;
@@ -622,6 +622,95 @@
 
   .totalPages::after {
     content: counter(pages);
+  }
+
+}
+
+@media print {
+
+  header,
+  nav,
+  aside,
+  button,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  #print-root-auditoria {
+    width: 100% !important;
+  }
+
+  .recharts-wrapper {
+    page-break-inside: avoid !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+}
+
+@media print {
+
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Evita quebrar gráfico no meio */
+  section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Reduz tamanho dos gráficos no PDF */
+  .print-chart {
+    height: 300px !important;
+  }
+
+}
+
+@media print {
+
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  .print-hidden {
+    display: none !important;
+  }
+
+  .a4-page {
+    width: 100%;
+    min-height: 100vh;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .no-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-chart {
+    height: 280px !important;
   }
 
 }
