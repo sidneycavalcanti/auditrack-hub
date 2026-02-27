@@ -1,72 +1,58 @@
-export type AudReportData = {
-  meta: {
-    loja: string
-    muc: string
-    mes: string
-    ano: number
-  }
+// types/auditoria.ts
 
-  fluxoPorGrupo: {
-    name: string
-    value: number
-  }[]
+export type PieItem = { name: string; value: number };
 
-  fluxoPorDiaSemana: {
-    dia: string
-    vendasRealizadas: number
-    acompanhantes: number
-    vendasPerdidasIdentificadas: number
-    possiveisVendasPerdidas: number
-    outros: number
-    trocas: number
-  }[]
+export type FluxoDiaRow = {
+  dia: string;
+  vendas: number;
+  acompanhante: number;
+  especulador: number;
+  outros: number;
+};
 
-  perdasPorGrupo: {
-    name: string
-    value: number
-  }[]
-
-  perdasPorDiaSemana: {
-    dia: string
-    preco: number
-    faltaMercadoria: number
-    modeloCorTamanho: number
-    formaPagamento: number
-    atendimento: number
-    outros: number
-  }[]
-
-  perfilPorIdade: {
+export type IdadeRow = {
   dia: string;
   crianca: number;
   adulto: number;
   idoso: number;
-}[];
+};
 
-fluxoPorSemanaMes: {
+export type SemanaIdadeRow = {
   semana: string;
   crianca: number;
   adulto: number;
   idoso: number;
-}[];
+};
 
-compradoresPorGenero: {
-  dia: string;
-  feminino: number;
-  masculino: number;
-}[];
+// ✅ série dinâmica (sexo/gênero, motivos etc.)
+export type DynamicSeriesRow = {
+  label: string; // "Segunda-feira", "Terça-feira" ...
+  [key: string]: string | number;
+};
 
-  clientesCompraramVsNao: {
-    compraram: number
-    naoCompraram: number
-    total: number
-  }
+export type AudReportData = {
+  meta: {
+    loja: string;
+    muc: string;
+    mes: string;
+    ano: number;
+  };
 
-  conversaoGeral: {
-    totalFluxo: number
-    totalVendas: number
-    aproveitamento: number
-  }
+  // ===== FLUXO (fixo 4 categorias)
+  fluxoPorGrupo: PieItem[];
+  fluxoPorDiaSemana: FluxoDiaRow[];
 
-  ticketMedioGeral: number
-}
+  // ===== PERFIL
+  compradoresPorSexo: DynamicSeriesRow[]; // label + keys dinâmicas
+  perfilPorIdade: IdadeRow[];
+  fluxoPorSemanaMes: SemanaIdadeRow[];
+
+  // ===== PERDAS (dinâmico)
+  perdasPorMotivo: PieItem[];              // pizza dinâmica por motivo
+  perdasPorDiaSemana: DynamicSeriesRow[];  // label + motivos dinâmicos
+
+  // KPIs
+  clientesCompraramVsNao: { compraram: number; naoCompraram: number; total: number };
+  conversaoGeral: { totalFluxo: number; totalVendas: number; aproveitamento: number };
+  ticketMedioGeral: number;
+};

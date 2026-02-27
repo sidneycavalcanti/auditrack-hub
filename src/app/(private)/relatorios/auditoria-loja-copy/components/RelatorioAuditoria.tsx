@@ -25,31 +25,43 @@ import {
 
 import type { AudReportData } from "../types/auditoria";
 
-const COLORS = [
-  "#5B5F97",
-  "#9C2F6F",
-  "#7A7A7A",
-  "#6C63FF",
-  "#F26B6B",
-  "#2E8B57",
-];
+const COLORS = ["#5B5F97","#9C2F6F","#7A7A7A","#6C63FF","#F26B6B","#2E8B57","#FFB703","#219EBC","#8E44AD","#16A085"];
 
-type Props = {
-  data: AudReportData;
-};
+type Props = { data: AudReportData };
+
+function getDynamicKeys(rows: Array<Record<string, any>>, ignore: string[] = ["label"]) {
+  const keys = new Set<string>();
+  for (const r of rows) {
+    Object.keys(r).forEach((k) => {
+      if (!ignore.includes(k)) keys.add(k);
+    });
+  }
+  return Array.from(keys);
+}
+
+function prettyLabelFromKey(key: string) {
+  // se você quiser mapear key -> label original, dá pra carregar um dicionário.
+  // por enquanto fica legível.
+  return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export default function RelatorioAuditoria({ data }: Props) {
   const { meta } = data;
 
-  const exportPDF = () => {
-    setTimeout(() => {
-      window.print();
-    }, 300);
-  };
+  const exportPDF = () => setTimeout(() => window.print(), 300);
+
+  const sexoKeys = React.useMemo(
+    () => getDynamicKeys(data.compradoresPorSexo, ["label"]),
+    [data.compradoresPorSexo]
+  );
+
+  const perdasKeys = React.useMemo(
+    () => getDynamicKeys(data.perdasPorDiaSemana, ["label"]),
+    [data.perdasPorDiaSemana]
+  );
 
   return (
     <Card className="bg-transparent print:shadow-none">
-      {/* HEADER NÃO APARECE NO PDF */}
       <CardHeader className="print:hidden">
         <div className="flex items-center justify-between">
           <CardTitle>Relatório de Auditoria</CardTitle>
@@ -61,34 +73,33 @@ export default function RelatorioAuditoria({ data }: Props) {
       </CardHeader>
 
       <CardContent className="space-y-14">
-
         {/* ================= PERFIL FREQUENTADOR ================= */}
         <SectionBand title="PERFIL FREQUENTADOR" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-1 gap-10">
-
-          <ChartWrapper title="Perfil de Clientes (Compradores) por Gênero">
-            <BarChart data={data.compradoresPorGenero}>
+          {/* SEXO/GÊNERO dinâmico */}
+          <ChartWrapper title="Compradores por Sexo/Gênero (dinâmico)">
+            <BarChart data={data.compradoresPorSexo}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="dia" />
+              <XAxis dataKey="label" />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="masculino" name="Masculino" fill="#5B5F97" />
-              <Bar dataKey="feminino" name="Feminino" fill="#9C2F6F" />
+              {sexoKeys.map((k, idx) => (
+                <Bar key={k} dataKey={k} name={prettyLabelFromKey(k)} fill={COLORS[idx % COLORS.length]} />
+              ))}
             </BarChart>
           </ChartWrapper>
 
-          <ChartWrapper title="Fluxo de Pessoas por Grupo">
+          {/* Fluxo por grupo fixo */}
+          <ChartWrapper title="Fluxo de Pessoas por Grupo (fixo)">
             <PieChart>
               <Pie
                 data={data.fluxoPorGrupo}
                 dataKey="value"
                 nameKey="name"
                 outerRadius={130}
-                label={({ percent }) =>
-                  `${(percent * 100).toFixed(1)}%`
-                }
+                label={({ percent }) => `${((percent as number) * 100).toFixed(1)}%`}
               >
                 {data.fluxoPorGrupo.map((_, index) => (
                   <Cell key={index} fill={COLORS[index % COLORS.length]} />
@@ -99,19 +110,22 @@ export default function RelatorioAuditoria({ data }: Props) {
             </PieChart>
           </ChartWrapper>
 
-          <ChartWrapper title="Fluxo por Dia da Semana">
+          {/* Fluxo por dia semana fixo (4) */}
+          <ChartWrapper title="Fluxo por Dia da Semana (no mês)">
             <BarChart data={data.fluxoPorDiaSemana}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="dia" />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="vendasRealizadas" name="Vendas" fill="#5B5F97" />
-              <Bar dataKey="acompanhantes" name="Acompanhantes" fill="#9C2F6F" />
-              <Bar dataKey="outros" name="Outros" fill="#F26B6B" />
+              <Bar dataKey="vendas" name="Vendas" fill={COLORS[0]} />
+              <Bar dataKey="acompanhante" name="Acompanhante" fill={COLORS[1]} />
+              <Bar dataKey="especulador" name="Especulador" fill={COLORS[2]} />
+              <Bar dataKey="outros" name="Outros" fill={COLORS[3]} />
             </BarChart>
           </ChartWrapper>
 
+          {/* Idade por semana */}
           <ChartWrapper title="Perfil por Idade - Semana do Mês">
             <BarChart data={data.fluxoPorSemanaMes}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -119,31 +133,28 @@ export default function RelatorioAuditoria({ data }: Props) {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="crianca" name="Criança" fill="#6C63FF" />
-              <Bar dataKey="adulto" name="Adulto" fill="#5B5F97" />
-              <Bar dataKey="idoso" name="Idoso" fill="#2E8B57" />
+              <Bar dataKey="crianca" name="Criança" fill={COLORS[3]} />
+              <Bar dataKey="adulto" name="Adulto" fill={COLORS[0]} />
+              <Bar dataKey="idoso" name="Idoso" fill={COLORS[5]} />
             </BarChart>
           </ChartWrapper>
-
         </div>
 
         {/* ================= VENDAS PERDIDAS ================= */}
         <SectionBand title="VENDAS PERDIDAS" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-1 gap-10">
-
-          <ChartWrapper title="Vendas Perdidas por Grupo">
+          {/* Pizza dinâmica */}
+          <ChartWrapper title="Vendas Perdidas por Motivo (dinâmico)">
             <PieChart>
               <Pie
-                data={data.perdasPorGrupo}
+                data={data.perdasPorMotivo}
                 dataKey="value"
                 nameKey="name"
                 outerRadius={140}
-                label={({ percent }) =>
-                  `${(percent * 100).toFixed(1)}%`
-                }
+                label={({ percent }) => `${((percent as number) * 100).toFixed(1)}%`}
               >
-                {data.perdasPorGrupo.map((_, index) => (
+                {data.perdasPorMotivo.map((_, index) => (
                   <Cell key={index} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -152,44 +163,29 @@ export default function RelatorioAuditoria({ data }: Props) {
             </PieChart>
           </ChartWrapper>
 
-          <ChartWrapper title="Vendas Perdidas por Dia da Semana">
+          {/* Barras dinâmicas por dia da semana */}
+          <ChartWrapper title="Vendas Perdidas por Dia da Semana (dinâmico)">
             <BarChart data={data.perdasPorDiaSemana}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="dia" />
+              <XAxis dataKey="label" />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="preco" name="Preço" fill="#5B5F97" />
-              <Bar dataKey="faltaMercadoria" name="Falta Mercadoria" fill="#9C2F6F" />
-              <Bar dataKey="modeloCorTamanho" name="Modelo/Cor/Tam" fill="#7A7A7A" />
-              <Bar dataKey="formaPagamento" name="Pagamento" fill="#6C63FF" />
-              <Bar dataKey="atendimento" name="Atendimento" fill="#2E8B57" />
-              <Bar dataKey="outros" name="Outros" fill="#F26B6B" />
+              {perdasKeys.map((k, idx) => (
+                <Bar key={k} dataKey={k} name={prettyLabelFromKey(k)} fill={COLORS[idx % COLORS.length]} />
+              ))}
             </BarChart>
           </ChartWrapper>
-
         </div>
-
       </CardContent>
     </Card>
   );
 }
 
-/* ================= WRAPPER FIXO PARA GRÁFICOS ================= */
-
-function ChartWrapper({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function ChartWrapper({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h3 className="text-center font-semibold mb-4">
-        {title}
-      </h3>
-
+      <h3 className="text-center font-semibold mb-4">{title}</h3>
       <div className="w-full h-[380px] print-chart">
         <ResponsiveContainer width="100%" height="100%">
           {children}
@@ -198,8 +194,6 @@ function ChartWrapper({
     </section>
   );
 }
-
-/* ================= FAIXA DE SEÇÃO ================= */
 
 function SectionBand({ title }: { title: string }) {
   return (

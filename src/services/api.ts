@@ -33,8 +33,7 @@ const API_BASE_URL =
     "https://back-auditoria.onrender.com";
 
 // Instância principal do Axios (isomórfica)
-const api: AxiosInstance = axios.create({
-    baseURL: API_BASE_URL,
+export const api: AxiosInstance = axios.create({    baseURL: API_BASE_URL,
     timeout: 30000,
     headers: { "Content-Type": "application/json" },
 });
@@ -319,6 +318,10 @@ export const anotacaoAPI = {
     create: (data: any) => api.post("/anotacao", data),
     update: (id: number, data: any) => api.put(`/anotacao/${id}`, data),
     delete: (id: number) => api.delete(`/anotacao/${id}`),
+};
+
+export const fluxoPessoaAPI = {
+  getAll: (filters?: Record<string, any>) => api.get("/fluxopessoa", { params: filters }),
 };
 
 /* ============================
