@@ -223,6 +223,8 @@ export const relatorioAPI = {
         ano?: number;
     }) =>
         api.get("/relatorio/dashboard", { params }),
+    mensal: (params: { lojaId: number; mes: number; ano: number }) =>
+        api.get("/relatorio/mensal", { params }),
 };
 export const fluxoAPI = {
     getAll: (filters?: Record<string, any>) => 

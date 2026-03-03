@@ -4,7 +4,6 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSelectedLayoutSegments } from "next/navigation";
 import {
     LayoutDashboard,
     Store,
@@ -72,7 +71,7 @@ const NAV_ITEMS: NavItem[] = [
     { name: "Rel. Pausas", href: "/relatorios/pausas", icon: FileText, section: "RELATÓRIOS" },
     { name: "Rel. Av. Oper.", href: "/relatorios/avoperacional", icon: ArchiveRestore, section: "RELATÓRIOS" },
     { name: "Rel. Auditoria", href: "/relatorios/auditoria-loja", icon: ArchiveRestore, section: "RELATÓRIOS" },
-    { name: "Rel. Auditoria copy", href: "/relatorios/auditoria-loja-copy", icon: ArchiveRestore, section: "RELATÓRIOS" },
+   
     // administração
     { name: "Usuários", href: "/usuarios", icon: Users, section: "ADMINISTRAÇÃO" },
 ];
@@ -155,7 +154,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                         <div className="flex items-center gap-4">
                             <div className="hidden sm:block text-right">
                                 <p className="text-sm font-medium text-foreground">{user?.name}</p>
-                                <p className="text-xs text-muted-foreground">{(user as any)?.categoria}</p>
+                                <p className="text-xs text-muted-foreground">{user?.categoria}</p>
                             </div>
 
                             <Button
@@ -178,9 +177,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     );
 };
 
+interface User {
+    name: string;
+    categoria?: string;
+}
+
 interface SidebarContentProps {
     items: NavItem[];                 // único array
-    user: any;
+    user: User | null;
     signOut: () => void;
     isActive: (href: string) => boolean;
     onClose?: () => void;
@@ -313,7 +317,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ items, user, signOut, i
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{user?.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{(user as any)?.categoria}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user?.categoria}</p>
                     </div>
                 </div>
 

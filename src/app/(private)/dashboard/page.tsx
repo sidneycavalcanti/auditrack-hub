@@ -30,6 +30,7 @@ import {
   PieChart as RePieChart,
   Pie,
   Cell,
+  type PieLabelRenderProps,
 } from "recharts";
 
 import LojaFormDialog from "../lojas/components/LojaFormDialog";
@@ -62,16 +63,6 @@ type DashboardPayload = {
   };
 };
 
-type PieLabelProps = {
-  cx: number;
-  cy: number;
-  midAngle: number;
-  innerRadius: number;
-  outerRadius: number;
-  percent: number;
-  payload?: { name?: string };
-};
-
 const PIE_COLORS = ["#2563eb", "#16a34a", "#dc2626", "#f59e0b", "#9333ea", "#0f766e"];
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
   value: i + 1,
@@ -80,14 +71,26 @@ const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
 
 const RADIAN = Math.PI / 180;
 
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, payload }: PieLabelProps) => {
+const renderCustomizedLabel = (props: PieLabelRenderProps) => {
+  const { cx, cy, midAngle, innerRadius, outerRadius, percent, payload } = props as PieLabelRenderProps & {
+    midAngle?: number;
+    innerRadius?: number;
+    outerRadius?: number;
+    percent?: number;
+    payload?: { name?: string };
+  };
+
+  if (typeof cx !== "number" || typeof cy !== "number" || typeof midAngle !== "number" || typeof innerRadius !== "number" || typeof outerRadius !== "number") {
+    return null;
+  }
+
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
   return (
     <text x={x} y={y} fill="white" textAnchor={x > cx ? "start" : "end"} dominantBaseline="central">
-      {`${payload?.name ?? ""} ${(percent * 100).toFixed(0)}%`}
+      {`${payload?.name ?? ""} ${((percent ?? 0) * 100).toFixed(0)}%`}
     </text>
   );
 };
