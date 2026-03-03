@@ -214,6 +214,16 @@ export const vendaAPI = {
     },
 };
 
+
+export const relatorioAPI = {
+    dashboard: (params: {
+        scope: "mes" | "ano";
+        lojaId?: number;
+        mes?: number;
+        ano?: number;
+    }) =>
+        api.get("/relatorio/dashboard", { params }),
+};
 export const fluxoAPI = {
     getAll: (filters?: Record<string, any>) => 
         api.get("/fluxo", { params: filters }),
