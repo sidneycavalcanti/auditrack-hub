@@ -32,7 +32,8 @@ async function getLogoBase64() {
 export default async function exportResumoMensalPDF(
   dataRows: Row[],
   filename: string,
-  header: Header
+  header: Header,
+  canvas?: HTMLCanvasElement
 ) {
   const { default: jsPDF } = await import("jspdf");
   const autoTableMod = await import("jspdf-autotable");
@@ -55,27 +56,38 @@ export default async function exportResumoMensalPDF(
   doc.text(header.loja, 20, 80);
   doc.text(header.periodo, 20, 96);
 
-  const head = [["ITEM", "GERAL", "MANHÃ", "% MANHÃ", "TARDE", "% TARDE", "NOITE", "% NOITE"]];
-  const body = dataRows.map((r) => [
-    r.ITEM,
-    r.GERAL,
-    (r as any)["MANHÃ"],
-    (r as any)["% MANHÃ"],
-    r.TARDE,
-    (r as any)["% TARDE"],
-    r.NOITE,
-    (r as any)["% NOITE"],
-  ]);
+  if (canvas) {
+    // Add the captured table image
+    const imgData = canvas.toDataURL("image/png");
+    const imgWidth = canvas.width / 2; // since scale=2
+    const imgHeight = canvas.height / 2;
+    const pdfWidth = doc.internal.pageSize.getWidth() - 40; // margin
+    const pdfHeight = (imgHeight * pdfWidth) / imgWidth;
+    doc.addImage(imgData, "PNG", 20, 112, pdfWidth, pdfHeight);
+  } else {
+    // Fallback to table generation
+    const head = [["ITEM", "GERAL", "MANHÃ", "% MANHÃ", "TARDE", "% TARDE", "NOITE", "% NOITE"]];
+    const body = dataRows.map((r) => [
+      r.ITEM,
+      r.GERAL,
+      (r as any)["MANHÃ"],
+      (r as any)["% MANHÃ"],
+      r.TARDE,
+      (r as any)["% TARDE"],
+      r.NOITE,
+      (r as any)["% NOITE"],
+    ]);
 
-  autoTable(doc, {
-    head,
-    body,
-    startY: 112,
-    styles: { fontSize: 9, cellPadding: 3, overflow: "linebreak" },
-    headStyles: { fillColor: [33, 33, 33], textColor: 255 },
-    columnStyles: { 0: { cellWidth: 250 } },
-    margin: { left: 20, right: 20 },
-  });
+    autoTable(doc, {
+      head,
+      body,
+      startY: 112,
+      styles: { fontSize: 9, cellPadding: 3, overflow: "linebreak" },
+      headStyles: { fillColor: [33, 33, 33], textColor: 255 },
+      columnStyles: { 0: { cellWidth: 250 } },
+      margin: { left: 20, right: 20 },
+    });
+  }
 
   doc.save(filename);
 }

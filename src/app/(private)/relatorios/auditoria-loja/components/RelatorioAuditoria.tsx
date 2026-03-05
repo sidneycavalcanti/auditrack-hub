@@ -146,127 +146,22 @@ function normalizeFaixa(value?: string): "crianca" | "jovem" | "adulto" | "idoso
 export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }: Props) {
   const totalVendidoMes = n(data.totalVendidoMes);
   const [exportingXlsx, setExportingXlsx] = React.useState(false);
-  const [printChartImages, setPrintChartImages] = React.useState<Record<string, string>>({});
-
-  const chartIds = React.useMemo(
-    () => [
-      "chart-perfil-genero",
-      "chart-perfil-idade",
-      "chart-fluxo-grupo",
-      "chart-fluxo-dia",
-      "chart-fluxo-semana",
-      "chart-perdas-grupo",
-      "chart-perdas-dia",
-      "chart-aproveitamento",
-    ],
-    [],
-  );
-
-  const captureCharts = React.useCallback(async () => {
-    const html2canvas = (await import("html2canvas")).default;
-    const chartImages: Record<string, string> = {};
-
-    const hasEnoughVisualVariation = (canvas: HTMLCanvasElement) => {
-      try {
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return false;
-        const { width, height } = canvas;
-        if (width < 50 || height < 50) return false;
-        const img = ctx.getImageData(0, 0, width, height).data;
-        let changes = 0;
-        let prevR = img[0] ?? 0;
-        let prevG = img[1] ?? 0;
-        let prevB = img[2] ?? 0;
-        const step = Math.max(4, Math.floor((width * height) / 15000) * 4);
-        for (let i = 4; i < img.length; i += step) {
-          const r = img[i] ?? 0;
-          const g = img[i + 1] ?? 0;
-          const b = img[i + 2] ?? 0;
-          if (Math.abs(r - prevR) + Math.abs(g - prevG) + Math.abs(b - prevB) > 24) {
-            changes += 1;
-          }
-          prevR = r;
-          prevG = g;
-          prevB = b;
-        }
-        return changes > 45;
-      } catch {
-        return true;
-      }
-    };
-    if (typeof document !== "undefined" && "fonts" in document) {
-      try {
-        await (document as Document & { fonts?: { ready: Promise<void> } }).fonts?.ready;
-      } catch {
-        // ignore
-      }
-    }
-    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
-    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
-
-    for (const chartId of chartIds) {
-      const card = document.getElementById(chartId);
-      if (!card) continue;
-      const chartArea = (card.querySelector(".recharts-wrapper") as HTMLElement | null) ?? card;
-
-      let captured = false;
-      for (let attempt = 0; attempt < 3 && !captured; attempt += 1) {
-        try {
-          await new Promise((resolve) => setTimeout(resolve, attempt * 120));
-          let canvas = await html2canvas(chartArea, {
-            backgroundColor: "#ffffff",
-            scale: 2,
-            useCORS: true,
-            foreignObjectRendering: true,
-            logging: false,
-          });
-          if (!hasEnoughVisualVariation(canvas)) {
-            canvas = await html2canvas(card, {
-              backgroundColor: "#ffffff",
-              scale: 2,
-              useCORS: true,
-              foreignObjectRendering: true,
-              logging: false,
-            });
-          }
-          if (canvas.width >= 40 && canvas.height >= 40 && hasEnoughVisualVariation(canvas)) {
-            chartImages[chartId] = canvas.toDataURL("image/png");
-            captured = true;
-          }
-        } catch (error) {
-          if (attempt === 2) {
-            console.warn(`[relatorio-auditoria] Falha ao capturar grafico ${chartId}`, error);
-          }
-        }
-      }
-    }
-    console.info(`[relatorio-auditoria] Graficos capturados: ${Object.keys(chartImages).length}/${chartIds.length}`);
-
-    return chartImages;
-  }, [chartIds]);
-
-  const exportPDF = async () => {
-    const chartImages = await captureCharts();
-    setPrintChartImages(chartImages);
-
+  const exportPDF = () => {
     const prev = document.title;
     document.title = `Relatorio Auditoria - ${lojaNome || `Loja ${data.lojaId}`} - ${data.mes}/${data.ano}`;
     const restore = () => {
       document.title = prev;
-      setPrintChartImages({});
       window.removeEventListener("afterprint", restore);
     };
     window.addEventListener("afterprint", restore);
-    await new Promise((resolve) => setTimeout(resolve, 120));
     window.print();
-    setTimeout(restore, 1200);
+    setTimeout(restore, 1500);
   };
 
   const exportXLSX = async () => {
     setExportingXlsx(true);
     try {
-      const chartImages = await captureCharts();
-      await exportRelatorioAuditoriaXLSX({ data, lojaNome, chartImages });
+      await exportRelatorioAuditoriaXLSX({ data, lojaNome });
     } finally {
       setExportingXlsx(false);
     }
@@ -497,14 +392,16 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
       </CardHeader>
 
       <CardContent id="print-root-auditoria" className="space-y-6">
+        <div className="only-print aud-print-title">
+          Auditoria - {lojaNome || `Loja ${data.lojaId}`} - {monthNamePt(data.mes)}/{data.ano}
+        </div>
         <SectionBand title="1. Perfil de Clientes (Compradores)" />
         <TableSectionPerfil perfil={perfilCompradores} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 grid-print-2">
           <ChartCard
             title="Perfil de clientes (compradores) por genero"
             chartId="chart-perfil-genero"
-            printImage={printChartImages["chart-perfil-genero"]}
           >
             <BarChart data={perfilCompradores.generoChart}>
               <CartesianGrid vertical={false} />
@@ -521,7 +418,6 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
           <ChartCard
             title="Perfil de clientes (compradores) por idade"
             chartId="chart-perfil-idade"
-            printImage={printChartImages["chart-perfil-idade"]}
           >
             <BarChart data={perfilCompradores.idadeChart}>
               <CartesianGrid vertical={false} />
@@ -540,11 +436,10 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
         <SectionBand title="2. Fluxo de Pessoas por Dia da Semana" />
         <TableSectionFluxoDia data={data} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 grid-print-2">
           <ChartCard
             title="Fluxo de pessoas por grupo"
             chartId="chart-fluxo-grupo"
-            printImage={printChartImages["chart-fluxo-grupo"]}
           >
             <PieChart>
               <Pie data={fluxoGrupoPie} dataKey="value" nameKey="name" outerRadius={100} label isAnimationActive={false}>
@@ -560,7 +455,6 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
           <ChartCard
             title="Fluxo de grupo de pessoas por dia da semana"
             chartId="chart-fluxo-dia"
-            printImage={printChartImages["chart-fluxo-dia"]}
           >
             <BarChart data={fluxoDiaChart}>
               <CartesianGrid vertical={false} />
@@ -583,7 +477,6 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
         <ChartCard
           title="Fluxo de pessoas por semana"
           chartId="chart-fluxo-semana"
-          printImage={printChartImages["chart-fluxo-semana"]}
         >
           <BarChart data={fluxoSemanaChart}>
             <CartesianGrid vertical={false} />
@@ -599,11 +492,10 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
 
         <SectionBand title="4. Vendas Perdidas" />
         <TableSectionPerdas data={data} />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 grid-print-2">
           <ChartCard
             title="Vendas perdidas por grupo"
             chartId="chart-perdas-grupo"
-            printImage={printChartImages["chart-perdas-grupo"]}
           >
             <PieChart>
               <Pie data={perdasPie} dataKey="value" nameKey="name" outerRadius={100} label isAnimationActive={false}>
@@ -618,7 +510,6 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
           <ChartCard
             title="Vendas perdidas por dia da semana"
             chartId="chart-perdas-dia"
-            printImage={printChartImages["chart-perdas-dia"]}
           >
             <BarChart data={perdasDiaChart}>
               <CartesianGrid vertical={false} />
@@ -641,7 +532,6 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
         <ChartCard
           title="Fluxo de pessoas x vendas realizadas"
           chartId="chart-aproveitamento"
-          printImage={printChartImages["chart-aproveitamento"]}
         >
           <BarChart data={aproveitamentoChart}>
             <CartesianGrid vertical={false} />
@@ -670,30 +560,22 @@ function ChartCard({
   title,
   children,
   chartId,
-  printImage,
 }: {
   title: string;
   children: React.ReactNode;
   chartId?: string;
-  printImage?: string;
 }) {
   return (
     <Card className="chart-box" id={chartId}>
       <CardHeader className="pb-1">
         <CardTitle className="text-sm">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="h-[320px]">
-        <div className={printImage ? "only-screen with-print-image h-full" : "only-screen h-full"}>
+      <CardContent className="chart-card-content h-[340px]">
+        <div className="chart-capture-area h-full w-full">
           <ResponsiveContainer width="100%" height="100%">
             {children}
           </ResponsiveContainer>
         </div>
-        {printImage ? (
-          <div className="only-print h-full w-full">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={printImage} alt={title} className="print-chart-image" />
-          </div>
-        ) : null}
       </CardContent>
     </Card>
   );
@@ -717,7 +599,7 @@ function TableSectionPerfil({
   };
 }) {
   return (
-    <div className="overflow-x-auto border rounded-md">
+    <div className="aud-table-wrap overflow-x-auto border rounded-md">
       <Table>
         <TableHeader>
           <TableRow>
@@ -777,7 +659,7 @@ function TableSectionPerfil({
 
 function TableSectionFluxoDia({ data }: { data: RelatorioMensalData }) {
   return (
-    <div className="overflow-x-auto border rounded-md">
+    <div className="aud-table-wrap overflow-x-auto border rounded-md">
       <Table>
         <TableHeader>
           <TableRow>
@@ -837,7 +719,7 @@ function TableSectionFluxoDia({ data }: { data: RelatorioMensalData }) {
 
 function TableSectionFluxoSemana({ data }: { data: RelatorioMensalData }) {
   return (
-    <div className="overflow-x-auto border rounded-md">
+    <div className="aud-table-wrap overflow-x-auto border rounded-md">
       <Table>
         <TableHeader>
           <TableRow>
@@ -897,7 +779,7 @@ function TableSectionFluxoSemana({ data }: { data: RelatorioMensalData }) {
 
 function TableSectionPerdas({ data }: { data: RelatorioMensalData }) {
   return (
-    <div className="overflow-x-auto border rounded-md">
+    <div className="aud-table-wrap overflow-x-auto border rounded-md">
       <Table>
         <TableHeader>
           <TableRow>
@@ -957,7 +839,7 @@ function TableSectionPerdas({ data }: { data: RelatorioMensalData }) {
 
 function TableSectionAproveitamento({ data }: { data: RelatorioMensalData }) {
   return (
-    <div className="overflow-x-auto border rounded-md">
+    <div className="aud-table-wrap overflow-x-auto border rounded-md">
       <Table>
         <TableHeader>
           <TableRow>

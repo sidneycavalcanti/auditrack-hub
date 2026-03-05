@@ -65,6 +65,7 @@ export default function TabelaResumoVendasDiario() {
     // export (reaproveite suas funções, aqui omitimos por brevidade)
     const [exportFmt, setExportFmt] = React.useState<"" | "xlsx" | "pdf">("");
     const canExport = enabled && !isFetching && rows.length > 0 && !!exportFmt;
+    const tableRef = React.useRef<HTMLDivElement>(null);
 
     async function handleExport() {
         if (!canExport) return;
@@ -96,8 +97,19 @@ export default function TabelaResumoVendasDiario() {
             const { default: exporter } = await import("./_exporters/exportResumoDiarioXLSX");
             await exporter(printableRows, `${base}.xlsx`, hdr);
         } else if (exportFmt === "pdf") {
-            const { default: exporter } = await import("./_exporters/exportResumoDiarioPDF");
-            await exporter(printableRows, `${base}.pdf`, hdr);
+            if (tableRef.current) {
+                const html2canvas = await import("html2canvas");
+                const canvas = await html2canvas.default(tableRef.current, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: "#ffffff",
+                });
+                const { default: exporter } = await import("./_exporters/exportResumoDiarioPDF");
+                await exporter(printableRows, `${base}.pdf`, hdr, canvas);
+            } else {
+                const { default: exporter } = await import("./_exporters/exportResumoDiarioPDF");
+                await exporter(printableRows, `${base}.pdf`, hdr);
+            }
         }
     }
 
@@ -186,7 +198,7 @@ export default function TabelaResumoVendasDiario() {
                 </CardContent>
             </Card>
 
-            <div className="overflow-x-auto rounded-md border">
+            <div className="overflow-x-auto rounded-md border" ref={tableRef}>
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-gradient-card shadow-card text-muted-foreground">
