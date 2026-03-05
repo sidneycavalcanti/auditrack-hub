@@ -21,6 +21,7 @@ import { useLojas } from "@/app/(private)/lojas/hooks/useLojas";
 import { useAvaliacoesOperacional, useUpdateAvOperacional } from "../hooks/useAvOperacional";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import LojaFilterCombobox from "../../components/LojaFilterCombobox";
 
 type AvOperacionalTableProps = {
     items: AvOperacional[];
@@ -183,22 +184,14 @@ export default function AvOperacionalTable({ items }: AvOperacionalTableProps) {
                                     </div>
                                     {/* Loja */}
                                     <div className="flex-2 gap-0.5">
-                                        <Select
-                                            value={lojaId ? String(lojaId) : ALL}
-                                            onValueChange={(v) => setLojaId(v === ALL ? undefined : Number(v))}
-                                        >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Selecionar Loja" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value={ALL}>Selecionar Loja</SelectItem>
-                                                {lojas.map((l) => (
-                                                    <SelectItem key={l.id} value={String(l.id)}>
-                                                        {l.descricao ?? l.name ?? `Loja ${l.id}`}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <LojaFilterCombobox
+                                            lojas={lojas}
+                                            value={lojaId}
+                                            onValueChange={setLojaId}
+                                            placeholder="Selecionar Loja"
+                                            allLabel="Selecionar Loja"
+                                            widthClassName="w-full"
+                                        />
                                     </div>
 
 

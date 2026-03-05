@@ -127,7 +127,7 @@ export default function RelatorioAuditoriaSearch() {
               <div className="flex items-center gap-2">
                 <Popover open={openLoja} onOpenChange={setOpenLoja}>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" aria-expanded={openLoja} className="w-full justify-between">
+                    <Button variant="outline" role="combobox" aria-expanded={openLoja} className="w-full justify-between cursor-pointer">
                       {(lojaSelecionada?.descricao ?? lojaNome) || "Selecione a loja..."}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
@@ -173,7 +173,7 @@ export default function RelatorioAuditoriaSearch() {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="shrink-0"
+                  className="shrink-0 cursor-pointer"
                   onClick={clearLoja}
                   disabled={!lojaId && !search}
                   title="Limpar loja selecionada"
@@ -218,7 +218,7 @@ export default function RelatorioAuditoriaSearch() {
           </div>
 
           <div className="mt-4 flex items-center gap-3">
-            <Button onClick={handleGerar} disabled={!lojaId || q.isFetching}>
+            <Button onClick={handleGerar} disabled={!lojaId || q.isFetching} className="cursor-pointer">
               Gerar relatorio
             </Button>
             {lojasQuery.isLoading && <span className="text-sm text-muted-foreground">Carregando lojas...</span>}

@@ -12,6 +12,7 @@ import { useLojas } from "@/app/(private)/lojas/hooks/useLojas";
 import type { Loja } from "@/types";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useResumoMensalReport, type ResumoRow } from "../hooks/useRelatoriosAPI";
+import LojaFilterCombobox from "../../components/LojaFilterCombobox";
 
 const MONTHS = [
   { v: 1, n: "01" }, { v: 2, n: "02" }, { v: 3, n: "03" }, { v: 4, n: "04" },
@@ -138,12 +139,13 @@ export default function TabelaResumoVendas() {
             <div className="flex-1 flex flex-col md:flex-row w-full items-end justify-end gap-2">
               <div className="w-full space-y-1">
                 <Label className="ml-1.5">Loja</Label>
-                <Select value={formLojaId ? String(formLojaId) : ""} onValueChange={(v) => setFormLojaId(v ? Number(v) : undefined)}>
-                  <SelectTrigger className="w-full cursor-pointer"><SelectValue placeholder="Selecione a loja" /></SelectTrigger>
-                  <SelectContent>
-                    {lojas.map((l) => <SelectItem key={l.id} value={String(l.id)}>{l.descricao ?? l.name ?? `Loja ${l.id}`}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <LojaFilterCombobox
+                  lojas={lojas}
+                  value={formLojaId}
+                  onValueChange={setFormLojaId}
+                  placeholder="Selecione a loja"
+                  widthClassName="w-full"
+                />
               </div>
               <div className="w-full space-y-1">
                 <Label className="ml-1.5">Mês</Label>

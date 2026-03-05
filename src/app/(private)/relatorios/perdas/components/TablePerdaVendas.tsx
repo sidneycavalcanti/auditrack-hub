@@ -26,6 +26,7 @@ import { usePerdaVendas } from "../hooks/usePerdaVendas";
 import { useLojas } from "@/app/(private)/lojas/hooks/useLojas";
 import type { Loja } from "@/types";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import LojaFilterCombobox from "../../components/LojaFilterCombobox";
 
 /* ------------- helpers ------------- */
 
@@ -300,21 +301,13 @@ export default function TablePerdaVendas() {
                         <div className="flex-1 flex flex-col lg:flex-row items-end justify-end gap-2">
                             <div className="space-y-1">
                                 <Label className="ml-1.5">Loja</Label>
-                                <Select
-                                    value={lojaId ? String(lojaId) : ""}
-                                    onValueChange={(v) => setLojaId(v ? Number(v) : undefined)}
-                                >
-                                    <SelectTrigger className="cursor-pointer w-[220px]">
-                                        <SelectValue placeholder="Selecione a loja" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {lojas.map((l) => (
-                                            <SelectItem key={l.id} value={String(l.id)}>
-                                                {l.descricao ?? l.name ?? `Loja ${l.id}`}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <LojaFilterCombobox
+                                    lojas={lojas}
+                                    value={lojaId}
+                                    onValueChange={setLojaId}
+                                    placeholder="Selecione a loja"
+                                    widthClassName="w-[220px]"
+                                />
                             </div>
 
                             <div className="space-y-1">

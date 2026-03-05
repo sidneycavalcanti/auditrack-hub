@@ -20,6 +20,7 @@ import type { Loja } from "@/types";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import "@/app/styles/relatorios_pdf/fluxo-por-semana.css";
+import LojaFilterCombobox from "../../components/LojaFilterCombobox";
 
 const DOW = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
 const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -131,15 +132,13 @@ export default function FluxoPorSemana() {
                     <div className="flex flex-wrap items-end gap-3">
                         <div className="space-y-1">
                             <Label className="ml-1.5">Loja</Label>
-                            <Select value={lojaId ? String(lojaId) : undefined} onValueChange={(v) => setLojaId(v === ALL ? undefined : Number(v))}>
-                                <SelectTrigger className="w-[220px]"><SelectValue placeholder="Todas as lojas" /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value={ALL}>Todas</SelectItem>
-                                    {lojas.map(l => (
-                                        <SelectItem key={l.id} value={String(l.id)}>{l.descricao ?? l.name ?? `Loja ${l.id}`}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <LojaFilterCombobox
+                                lojas={lojas}
+                                value={lojaId}
+                                onValueChange={setLojaId}
+                                allLabel="Todas"
+                                placeholder="Todas as lojas"
+                            />
                         </div>
                         <div className="space-y-1">
                             <Label className="ml-1.5">Mês</Label>

@@ -28,6 +28,7 @@ import { useLojas } from "@/app/(private)/lojas/hooks/useLojas";
 import { useUsuarios } from "@/app/(private)/usuarios/hooks/useUsuarios";
 import type { Loja, User } from "@/types";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import LojaFilterCombobox from "../../components/LojaFilterCombobox";
 
 /* ================= helpers ================= */
 
@@ -422,21 +423,13 @@ export default function TablePausas() {
 
                 <div className="flex flex-col justify-end col-span-1 w-auto space-y-1">
                   <Label className="ml-1.5">Loja</Label>
-                  <Select
-                    value={lojaId ? String(lojaId) : ""}
-                    onValueChange={(v) => setLojaId(v ? Number(v) : undefined)}
-                  >
-                    <SelectTrigger className="cursor-pointer w-full">
-                      <SelectValue placeholder="Selecione a loja" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {lojas.map((l) => (
-                        <SelectItem key={l.id} value={String(l.id)}>
-                          {l.descricao ?? l.name ?? `Loja ${l.id}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <LojaFilterCombobox
+                    lojas={lojas}
+                    value={lojaId}
+                    onValueChange={setLojaId}
+                    placeholder="Selecione a loja"
+                    widthClassName="w-full"
+                  />
                 </div>
 
                 <div className="flex flex-col justify-end col-span-1 w-auto space-y-1">

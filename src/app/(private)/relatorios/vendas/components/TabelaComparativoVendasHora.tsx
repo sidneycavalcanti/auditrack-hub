@@ -13,6 +13,7 @@ import { useLojas } from "@/app/(private)/lojas/hooks/useLojas";
 import { useVendasPorHora, type SemanaIndex } from "../hooks/useVendasPorHora";
 import type { Loja } from "@/types";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import LojaFilterCombobox from "../../components/LojaFilterCombobox";
 
 const MONTHS = [
     { v: 1, n: "01" }, { v: 2, n: "02" }, { v: 3, n: "03" }, { v: 4, n: "04" },
@@ -93,18 +94,12 @@ export default function TabelaComparativoVendasHora() {
                         <div className="flex-1 flex flex-col lg:flex-row items-end justify-end gap-2">
                             <div className="space-y-1">
                                 <Label className="ml-1.5">Loja</Label>
-                                <Select value={lojaId ? String(lojaId) : ""} onValueChange={v => setLojaId(v ? Number(v) : undefined)}>
-                                    <SelectTrigger className="cursor-pointer">
-                                        <SelectValue placeholder="Selecione a loja" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {lojas.map(l =>
-                                            <SelectItem key={l.id} value={String(l.id)}>
-                                                {l.descricao ?? l.name ?? `Loja ${l.id}`}
-                                            </SelectItem>
-                                        )}
-                                    </SelectContent>
-                                </Select>
+                                <LojaFilterCombobox
+                                    lojas={lojas}
+                                    value={lojaId}
+                                    onValueChange={setLojaId}
+                                    placeholder="Selecione a loja"
+                                />
                             </div>
 
                             <div className="space-y-1">

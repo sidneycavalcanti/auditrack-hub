@@ -377,10 +377,10 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
         <div className="flex items-center justify-between gap-3">
           <CardTitle>Relatorio de Auditoria</CardTitle>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={exportXLSX} disabled={exportingXlsx}>
+            <Button size="sm" variant="outline" onClick={exportXLSX} disabled={exportingXlsx} className="cursor-pointer">
               {exportingXlsx ? "Exportando XLSX..." : "Exportar XLSX"}
             </Button>
-            <Button size="sm" onClick={exportPDF}>
+            <Button size="sm" onClick={exportPDF} className="cursor-pointer">
               Exportar PDF
             </Button>
           </div>

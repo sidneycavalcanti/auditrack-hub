@@ -13,6 +13,7 @@ import { useLojas } from "@/app/(private)/lojas/hooks/useLojas";
 import { useVendas } from "@/app/(private)/relatorios/vendas/hooks/useVendas";
 import type { Loja } from "@/types";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import LojaFilterCombobox from "../../components/LojaFilterCombobox";
 
 // (opcional) gráfico — precisa de recharts instalado
 import {
@@ -343,18 +344,12 @@ export default function TabelaVendasPorIntervalo() {
                         <div className="flex-1 flex flex-col lg:flex-row items-end justify-end gap-2">
                             <div className="space-y-1">
                                 <Label className="ml-1.5">Loja</Label>
-                                <Select value={formLojaId ? String(formLojaId) : ""} onValueChange={(v) => setFormLojaId(v ? Number(v) : undefined)}>
-                                    <SelectTrigger className="cursor-pointer">
-                                        <SelectValue placeholder="Selecione a loja" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {lojas.map((l) => (
-                                            <SelectItem key={l.id} value={String(l.id)}>
-                                                {l.descricao ?? l.name ?? `Loja ${l.id}`}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <LojaFilterCombobox
+                                    lojas={lojas}
+                                    value={formLojaId}
+                                    onValueChange={setFormLojaId}
+                                    placeholder="Selecione a loja"
+                                />
                             </div>
 
                             <div className="space-y-1">

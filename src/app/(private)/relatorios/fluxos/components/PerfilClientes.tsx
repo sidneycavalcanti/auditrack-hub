@@ -13,6 +13,7 @@ import { useVendasPerfil } from "../hooks/useVendasPerfil";
 import { useLojas } from "@/app/(private)/lojas/hooks/useLojas";
 import type { Loja } from "@/types";
 import "@/app/styles/relatorios_pdf/fluxo-perfil-clientes.css";
+import LojaFilterCombobox from "../../components/LojaFilterCombobox";
 
 // export libs
 import * as XLSX from "xlsx";
@@ -225,21 +226,13 @@ export default function PerfilClientes() {
                     <div className="flex flex-wrap items-end gap-3">
                         <div className="space-y-1">
                             <Label className="ml-1.5">Loja</Label>
-                            <Select
-                                value={edit.lojaId !== undefined ? String(edit.lojaId) : "all"}
-                                onValueChange={(v) => setEdit(s => ({ ...s, lojaId: v === "all" ? undefined : Number(v) }))}>
-                                <SelectTrigger className="w-[220px] cursor-pointer">
-                                    <SelectValue placeholder="Todas as lojas" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Todas</SelectItem>
-                                    {lojas.map(l => (
-                                        <SelectItem key={l.id} value={String(l.id)}>
-                                            {l.descricao ?? l.name ?? `Loja ${l.id}`}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <LojaFilterCombobox
+                                lojas={lojas}
+                                value={edit.lojaId}
+                                onValueChange={(value) => setEdit((s) => ({ ...s, lojaId: value }))}
+                                allLabel="Todas"
+                                placeholder="Todas as lojas"
+                            />
                         </div>
 
                         <div className="space-y-1">

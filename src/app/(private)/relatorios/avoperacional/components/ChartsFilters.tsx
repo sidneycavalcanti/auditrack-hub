@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FunnelX } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { AvOperacional } from "@/types";
+import type { AvOperacional, Loja } from "@/types";
 import type { AvOperacionalFilters } from "../hooks/useAvOperacional";
 import { cn } from "@/lib/utils";
+import LojaFilterCombobox from "../../components/LojaFilterCombobox";
 
 const ALL = "all";
 
@@ -37,14 +38,14 @@ export default function AvOpChartsFilters({ items, value, onChange, onClear, cla
         return [...s].sort((a, b) => b - a);
     }, [items]);
 
-    const lojas = React.useMemo(() => {
+    const lojas = React.useMemo<Loja[]>(() => {
         const map = new Map<number, string>();
         for (const it of items) {
             const id = it.auditoria?.loja?.id;
             const name = it.auditoria?.loja?.name ?? (it.auditoria?.loja as any)?.descricao;
             if (id) map.set(id, name ?? `Loja ${id}`);
         }
-        return [...map.entries()].map(([id, name]) => ({ id, name }));
+        return [...map.entries()].map(([id, name]) => ({ id, name, descricao: name } as Loja));
     }, [items]);
 
     const auditores = React.useMemo(() => {
@@ -123,18 +124,14 @@ export default function AvOpChartsFilters({ items, value, onChange, onClear, cla
                     {/* Loja */}
                     <div className="lg:flex-2 space-y-1">
                         <Label className="ml-1.5">Loja</Label>
-                        <Select
-                            value={value.lojaId ? String(value.lojaId) : ALL}
-                            onValueChange={(v) => onChange({ lojaId: v === ALL ? undefined : Number(v) })}
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Todas" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value={ALL}>Todas</SelectItem>
-                                {lojas.map((l) => <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
+                        <LojaFilterCombobox
+                            lojas={lojas}
+                            value={value.lojaId}
+                            onValueChange={(nextValue) => onChange({ lojaId: nextValue })}
+                            placeholder="Todas"
+                            allLabel="Todas"
+                            widthClassName="w-full"
+                        />
                     </div>
 
                     {/* Auditor */}

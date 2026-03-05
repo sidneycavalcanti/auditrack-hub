@@ -19,6 +19,7 @@ import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Download, FileSpreadsheet } from "lucide-react";
 import "@/app/styles/relatorios_pdf/fluxo-por-dia.css";
+import LojaFilterCombobox from "../../components/LojaFilterCombobox";
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50", "#8dd1e1", "#a4de6c", "#d0ed57"];
 const COLORSPERCENT = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d", "#ffc658"];
@@ -158,15 +159,13 @@ export default function FluxoPorDia() {
                     <div className="flex flex-wrap items-end gap-3">
                         <div className="space-y-1">
                             <Label className="ml-1.5">Loja</Label>
-                            <Select value={lojaId ? String(lojaId) : undefined} onValueChange={(v) => setLojaId(v === ALL ? undefined : Number(v))}>
-                                <SelectTrigger className="w-[220px]"><SelectValue placeholder="Todas as lojas" /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value={ALL}>Todas</SelectItem>
-                                    {lojas.map(l => (
-                                        <SelectItem key={l.id} value={String(l.id)}>{l.descricao ?? l.name ?? `Loja ${l.id}`}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <LojaFilterCombobox
+                                lojas={lojas}
+                                value={lojaId}
+                                onValueChange={setLojaId}
+                                allLabel="Todas"
+                                placeholder="Todas as lojas"
+                            />
                         </div>
                         <div className="space-y-1">
                             <Label className="ml-1.5">Mês</Label>

@@ -14,6 +14,7 @@ import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { useResumoDiarioReport, type ResumoRow } from "../hooks/useRelatoriosAPI";
+import LojaFilterCombobox from "../../components/LojaFilterCombobox";
 
 // Converte "YYYY-MM-DD" para Date LOCAL (sem fuso)
 function parseLocalISO(iso?: string): Date | undefined {
@@ -137,12 +138,13 @@ export default function TabelaResumoVendasDiario() {
                         <div className="flex-1 flex flex-col lg:flex-row items-end justify-end gap-2">
                             <div className="space-y-1">
                                 <Label className="ml-1.5">Loja</Label>
-                                <Select value={lojaId ? String(lojaId) : ""} onValueChange={(v) => setLojaId(v ? Number(v) : undefined)}>
-                                    <SelectTrigger className="cursor-pointer"><SelectValue placeholder="Selecione a loja" /></SelectTrigger>
-                                    <SelectContent>
-                                        {lojas.map((l) => <SelectItem key={l.id} value={String(l.id)}>{l.descricao ?? l.name ?? `Loja ${l.id}`}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <LojaFilterCombobox
+                                    lojas={lojas}
+                                    value={lojaId}
+                                    onValueChange={setLojaId}
+                                    placeholder="Selecione a loja"
+                                    widthClassName="w-[180px]"
+                                />
                             </div>
 
                             <div className="space-y-1">
