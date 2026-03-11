@@ -225,7 +225,7 @@ async function exportFallbackClient({ data, lojaNome, fileName }: ExportArgs & {
 export default async function exportRelatorioAuditoriaXLSX({ data, lojaNome }: ExportArgs) {
   const fileName =
     `RelatorioAuditoria_${data.ano}${String(data.mes).padStart(2, "0")}.xlsx`;
-  const allowFallback = process.env.NEXT_PUBLIC_XLSX_ENABLE_FALLBACK === "1";
+  const allowFallback = process.env.NEXT_PUBLIC_XLSX_DISABLE_FALLBACK !== "1";
 
   try {
     const response = await fetch("/api/relatorios/auditoria-loja/xlsx-native", {
@@ -252,7 +252,7 @@ export default async function exportRelatorioAuditoriaXLSX({ data, lojaNome }: E
     const reason = error instanceof Error ? error.message : "Falha desconhecida.";
     throw new Error(
       `Exportacao XLSX nativa indisponivel no servidor. ${reason} ` +
-      `Para manter resultado identico entre local e Render, configure PYTHON_BIN e instale requirements do script nativo.`,
+      `No Render, confirme Build Command 'npm run build:render' e env 'PYTHON_BIN=python3'.`,
     );
   }
 }
