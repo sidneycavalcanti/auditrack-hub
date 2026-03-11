@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/layouts/providers";
 
 export const metadata: Metadata = {
-  title: "Sistema de Auditoria - Gestão Completa",
+  title: "Sistema de Auditoria",
   description:
-    "Sistema completo para gestão de auditorias de lojas - Controle de agendamentos, relatórios e indicadores de performance",
+    "Sistema completo para gestao de auditorias de lojas - Controle de agendamentos, relatorios e indicadores de performance",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/apple-icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -24,3 +28,4 @@ export default function RootLayout({
     </html>
   );
 }
+

@@ -61,6 +61,26 @@
   border: 1px solid var(--border);
 }
 
+.chart-card-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-capture-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-capture-area .recharts-responsive-container,
+.chart-capture-area .recharts-wrapper,
+.chart-capture-area .recharts-surface {
+  float: none !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
 .only-print {
   display: none;
 }
@@ -202,9 +222,20 @@
   }
 
   #print-root-auditoria .chart-capture-area {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     height: 100% !important;
     min-height: 260px !important;
     padding-bottom: 12px !important;
+  }
+
+  #print-root-auditoria .chart-capture-area .recharts-responsive-container,
+  #print-root-auditoria .chart-capture-area .recharts-wrapper,
+  #print-root-auditoria .chart-capture-area .recharts-surface {
+    float: none !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
 
   #print-root-auditoria .recharts-legend-wrapper {

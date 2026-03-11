@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import {
     LayoutDashboard,
     Store,
-    Calendar,
     Users,
     PersonStanding,
     Tag,
@@ -43,11 +42,6 @@ type NavItem = {
     href: string;
     icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
     section: SectionId;
-};
-
-type NavSection = {
-    label: string;
-    items: NavItem[];
 };
 
 // ✅ um único array com a propriedade `section`

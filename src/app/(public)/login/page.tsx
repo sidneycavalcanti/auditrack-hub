@@ -4,7 +4,7 @@
 import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Route } from "next"; // <- importa o tipo Route
-import { ClipboardCheck, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import PublicRoute from "@/components/layouts/PublicRoute";
 import { Button } from "@/components/ui/button";
@@ -55,12 +55,12 @@ export default function LoginPage() {
                 <div className="w-full max-w-md">
                     <Card className="bg-gradient-card shadow-hover border-0">
                         <CardHeader className="text-center pb-8">
-                            <div className="mx-auto w-16 h-16  rounded-xl flex items-center justify-center mb-4 shadow-primary">
+                            <div className="mx-auto w-20 h-20 rounded-xl flex items-center justify-center mb-4">
                                 {/* <img src="/logo.png" className="flex-1 w-full max-h-full" alt="Logo" /> */}
                                 <Image
-                                    src="/logo.png"
-                                    width={64}
-                                    height={64}
+                                    src="/icon.png"
+                                    width={72}
+                                    height={72}
                                     alt="Logo"
                                 />
                             </div>
