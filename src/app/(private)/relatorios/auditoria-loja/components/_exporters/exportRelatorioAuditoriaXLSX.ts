@@ -173,6 +173,8 @@ async function exportFallbackClient({ data, lojaNome, fileName }: ExportArgs & {
 export default async function exportRelatorioAuditoriaXLSX({ data, lojaNome }: ExportArgs) {
   const fileName =
     `RelatorioAuditoria_${data.ano}${String(data.mes).padStart(2, "0")}.xlsx`;
+  const allowFallback =
+    process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_XLSX_FALLBACK === "1";
 
   try {
     const response = await fetch("/api/relatorios/auditoria-loja/xlsx-native", {
@@ -190,7 +192,16 @@ export default async function exportRelatorioAuditoriaXLSX({ data, lojaNome }: E
     const serverFileName =
       getFileNameFromDisposition(response.headers.get("content-disposition")) || fileName;
     downloadBlob(blob, serverFileName);
-  } catch {
-    await exportFallbackClient({ data, lojaNome, fileName });
+  } catch (error) {
+    if (allowFallback) {
+      await exportFallbackClient({ data, lojaNome, fileName });
+      return;
+    }
+
+    const reason = error instanceof Error ? error.message : "Falha desconhecida.";
+    throw new Error(
+      `Exportacao XLSX nativa indisponivel no servidor. ${reason} ` +
+      `No Render, confirme Build Command 'npm ci && npm run build:render' e env 'PYTHON_BIN=python3'.`
+    );
   }
 }
