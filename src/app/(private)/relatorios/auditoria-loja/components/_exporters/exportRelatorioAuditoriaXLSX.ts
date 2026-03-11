@@ -173,8 +173,7 @@ async function exportFallbackClient({ data, lojaNome, fileName }: ExportArgs & {
 export default async function exportRelatorioAuditoriaXLSX({ data, lojaNome }: ExportArgs) {
   const fileName =
     `RelatorioAuditoria_${data.ano}${String(data.mes).padStart(2, "0")}.xlsx`;
-  const allowFallback =
-    process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_XLSX_FALLBACK === "1";
+  const allowFallback = process.env.NEXT_PUBLIC_XLSX_DISABLE_FALLBACK !== "1";
 
   try {
     const response = await fetch("/api/relatorios/auditoria-loja/xlsx-native", {
