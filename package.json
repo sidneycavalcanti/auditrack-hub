@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:render": "python3 -m pip install --user -r scripts/requirements.txt && next build",
     "start": "next start",
     "lint": "eslint",
     "images:alpha": "tsx scripts/remove-white-bg.ts"

@@ -112,9 +112,17 @@ Aplicacao: `http://localhost:3000`
 No `package.json`:
 - `npm run dev`: sobe ambiente de desenvolvimento
 - `npm run build`: gera build de producao
+- `npm run build:render`: build de producao com instalacao de dependencias Python para XLSX nativo
 - `npm run start`: inicia build em producao
 - `npm run lint`: executa eslint
 - `npm run images:alpha`: processa imagens (`scripts/remove-white-bg.ts`)
+
+### Deploy no Render (XLSX nativo igual ao local)
+- Build Command: `npm ci && npm run build:render`
+- Start Command: `npm run start`
+- Variavel de ambiente: `PYTHON_BIN=python3`
+
+Obs.: o `build:render` instala `XlsxWriter` a partir de `scripts/requirements.txt`, necessario para o exportador Python do relatorio de auditoria.
 
 ## 8. Padroes de desenvolvimento
 ### Organizacao

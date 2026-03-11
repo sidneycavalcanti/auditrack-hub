@@ -19,26 +19,42 @@ function safeName(value: string) {
 }
 
 function runPython(scriptPath: string, inputPath: string, outputPath: string) {
-  return new Promise<void>((resolve, reject) => {
-    const pythonBin = process.env.PYTHON_BIN || "python";
-    const proc = spawn(pythonBin, [scriptPath, inputPath, outputPath], {
-      stdio: ["ignore", "pipe", "pipe"],
+  const preferred = process.env.PYTHON_BIN?.trim();
+  const bins = preferred ? [preferred] : ["python3", "python"];
+
+  const tryRun = (index: number): Promise<void> =>
+    new Promise<void>((resolve, reject) => {
+      const pythonBin = bins[index];
+      const proc = spawn(pythonBin, [scriptPath, inputPath, outputPath], {
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+
+      let stderr = "";
+      proc.stderr.on("data", (chunk) => {
+        stderr += String(chunk);
+      });
+
+      proc.on("error", (err: NodeJS.ErrnoException) => {
+        if (err.code === "ENOENT" && index < bins.length - 1) {
+          tryRun(index + 1).then(resolve).catch(reject);
+          return;
+        }
+        reject(new Error(`Python nao encontrado (${pythonBin}). Configure PYTHON_BIN ou instale python3.`));
+      });
+
+      proc.on("close", (code) => {
+        if (code === 0) {
+          resolve();
+          return;
+        }
+        const hint = stderr.includes("No module named") && stderr.toLowerCase().includes("xlsxwriter")
+          ? " Dependencia ausente: instale XlsxWriter (python -m pip install -r scripts/requirements.txt)."
+          : "";
+        reject(new Error((stderr || `Falha ao gerar XLSX (codigo ${code ?? "desconhecido"}).`) + hint));
+      });
     });
 
-    let stderr = "";
-    proc.stderr.on("data", (chunk) => {
-      stderr += String(chunk);
-    });
-
-    proc.on("error", reject);
-    proc.on("close", (code) => {
-      if (code === 0) {
-        resolve();
-        return;
-      }
-      reject(new Error(stderr || `Falha ao gerar XLSX (codigo ${code ?? "desconhecido"}).`));
-    });
-  });
+  return tryRun(0);
 }
 
 export async function POST(req: Request) {

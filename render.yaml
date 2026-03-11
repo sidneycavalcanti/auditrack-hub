@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: auditrack-hub
+    env: node
+    plan: free
+    autoDeploy: true
+    buildCommand: npm ci && npm run build:render
+    startCommand: npm run start
+    envVars:
+      - key: PYTHON_BIN
+        value: python3
