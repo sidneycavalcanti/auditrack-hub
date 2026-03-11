@@ -14,6 +14,22 @@ type Payload = {
   };
 };
 
+function stableJson(value: unknown): string {
+  const sort = (input: unknown): unknown => {
+    if (Array.isArray(input)) return input.map(sort);
+    if (input && typeof input === "object") {
+      return Object.keys(input as Record<string, unknown>)
+        .sort()
+        .reduce<Record<string, unknown>>((acc, key) => {
+          acc[key] = sort((input as Record<string, unknown>)[key]);
+          return acc;
+        }, {});
+    }
+    return input;
+  };
+  return JSON.stringify(sort(value));
+}
+
 function safeName(value: string) {
   return value.replace(/[^\w\- ]/g, "").trim().replace(/\s+/g, "_");
 }
@@ -27,6 +43,12 @@ function runPython(scriptPath: string, inputPath: string, outputPath: string) {
       const pythonBin = bins[index];
       const proc = spawn(pythonBin, [scriptPath, inputPath, outputPath], {
         stdio: ["ignore", "pipe", "pipe"],
+        env: {
+          ...process.env,
+          TZ: process.env.XLSX_EXPORT_TZ || process.env.TZ || "America/Sao_Paulo",
+          LC_ALL: process.env.XLSX_EXPORT_LOCALE || process.env.LC_ALL || "C.UTF-8",
+          LANG: process.env.XLSX_EXPORT_LOCALE || process.env.LANG || "C.UTF-8",
+        },
       });
 
       let stderr = "";
@@ -73,7 +95,7 @@ export async function POST(req: Request) {
 
   try {
     await mkdir(scriptDir, { recursive: true });
-    await writeFile(inputPath, JSON.stringify(payload), "utf8");
+    await writeFile(inputPath, stableJson(payload), "utf8");
     await runPython(scriptPath, inputPath, outputPath);
     const buffer = await readFile(outputPath);
     const baseName = safeName(payload.lojaNome || `loja_${data.lojaId ?? "0"}`) || "Loja";

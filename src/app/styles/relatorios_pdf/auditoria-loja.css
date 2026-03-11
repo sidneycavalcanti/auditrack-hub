@@ -59,18 +59,34 @@
 
 .chart-box {
   border: 1px solid var(--border);
+  border-radius: 14px;
+  background: transparent;
+  box-shadow: none;
 }
 
 .chart-card-content {
   display: flex;
   align-items: center;
   justify-content: center;
+  height: clamp(250px, 34vw, 340px);
+  min-height: 250px;
+  padding: 2px 6px 10px;
 }
 
 .chart-capture-area {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 240px;
+}
+
+.chart-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: inherit;
 }
 
 .chart-capture-area .recharts-responsive-container,
@@ -91,6 +107,28 @@
 
 .aud-table-wrap {
   overflow-x: auto;
+}
+
+@media (max-width: 1280px) {
+  .chart-card-content {
+    height: clamp(230px, 36vw, 310px);
+    min-height: 230px;
+  }
+
+  .chart-capture-area {
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 900px) {
+  .chart-card-content {
+    height: clamp(210px, 46vw, 280px);
+    min-height: 210px;
+  }
+
+  .chart-capture-area {
+    min-height: 200px;
+  }
 }
 
 @media print {
@@ -206,6 +244,7 @@
     border: 1px solid #d1d5db !important;
     border-radius: 8px !important;
     background: #fff !important;
+    box-shadow: none !important;
     position: relative !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
@@ -214,11 +253,12 @@
   }
 
   #print-root-auditoria .chart-box .recharts-responsive-container {
-    min-height: 260px !important;
+    min-height: 220px !important;
   }
 
   #print-root-auditoria .chart-card-content {
-    height: 330px !important;
+    height: clamp(220px, 34vw, 300px) !important;
+    min-height: 220px !important;
   }
 
   #print-root-auditoria .chart-capture-area {
@@ -226,7 +266,7 @@
     align-items: center !important;
     justify-content: center !important;
     height: 100% !important;
-    min-height: 260px !important;
+    min-height: 210px !important;
     padding-bottom: 12px !important;
   }
 
@@ -240,6 +280,22 @@
 
   #print-root-auditoria .recharts-legend-wrapper {
     bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+  }
+
+  #print-root-auditoria .recharts-default-legend {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 4px 10px !important;
+    font-size: 9px !important;
+    line-height: 1.15 !important;
+  }
+
+  #print-root-auditoria .recharts-legend-item {
+    margin-right: 0 !important;
   }
 
   #print-root-auditoria .grid-print-2,
@@ -247,7 +303,7 @@
   .grid-print-2,
   .grid-print-3 {
     display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
     gap: 10px !important;
     margin-bottom: 16px !important;
     break-inside: avoid !important;

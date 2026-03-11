@@ -1,4 +1,4 @@
-import type { DiaSemana, RelatorioMensalData } from "../../types/auditoria";
+﻿import type { DiaSemana, RelatorioMensalData } from "../../types/auditoria";
 
 type PerfilExport = {
   rowsByDay: Record<
@@ -38,19 +38,30 @@ type ExportArgs = {
   lojaNome?: string;
   chartImages?: Record<string, string | undefined>;
   perfil: PerfilExport;
+  orientation?: "portrait" | "landscape";
 };
 
-const DIAS: DiaSemana[] = [
+const n = (v: unknown) => Number(v ?? 0);
+
+const DIAS_SAFE: DiaSemana[] = [
   "Segunda-feira",
-  "TerÃ§a-feira",
+  "Ter\u00e7a-feira",
   "Quarta-feira",
   "Quinta-feira",
   "Sexta-feira",
-  "SÃ¡bado",
+  "S\u00e1bado",
   "Domingo",
 ];
 
-const n = (v: unknown) => Number(v ?? 0);
+const EMPTY_PERFIL_ROW = {
+  masculino: 0,
+  feminino: 0,
+  crianca: 0,
+  jovem: 0,
+  adulto: 0,
+  idoso: 0,
+  total: 0,
+};
 
 function monthNamePt(mes: number) {
   const meses = [
@@ -137,14 +148,20 @@ async function normalizeChartImage(img: string): Promise<string> {
   });
 }
 
-export default async function exportRelatorioAuditoriaPDF({ data, lojaNome, chartImages = {}, perfil }: ExportArgs) {
+export default async function exportRelatorioAuditoriaPDF({
+  data,
+  lojaNome,
+  chartImages = {},
+  perfil,
+  orientation = "landscape",
+}: ExportArgs) {
   const { default: jsPDF } = await import("jspdf");
   const autoTableMod = await import("jspdf-autotable");
   const autoTable = (autoTableMod as unknown as { default?: unknown; autoTable?: unknown }).default
     ? (autoTableMod as unknown as { default: (...args: unknown[]) => void }).default
     : (autoTableMod as unknown as { autoTable: (...args: unknown[]) => void }).autoTable;
 
-  const doc = new jsPDF({ orientation: "l", unit: "pt", format: "a4" });
+  const doc = new jsPDF({ orientation: orientation === "portrait" ? "p" : "l", unit: "pt", format: "a4" });
   const logoBase64 = await loadImageBase64("/auditoria/logo-plaza.png");
 
   const margin = 20;
@@ -248,8 +265,8 @@ export default async function exportRelatorioAuditoriaPDF({ data, lojaNome, char
   addTable(
     ["Dia da semana", "Masculino", "Feminino", "Crianca", "Jovem", "Adulto", "Idoso", "Total"],
     [
-      ...DIAS.map((dia) => {
-        const row = perfil.rowsByDay[dia];
+      ...DIAS_SAFE.map((dia) => {
+        const row = perfil.rowsByDay[dia] ?? EMPTY_PERFIL_ROW;
         return [dia, n(row.masculino), n(row.feminino), n(row.crianca), n(row.jovem), n(row.adulto), n(row.idoso), n(row.total)];
       }),
       [
@@ -297,7 +314,7 @@ export default async function exportRelatorioAuditoriaPDF({ data, lojaNome, char
       "Total",
     ],
     [
-      ...DIAS.map((dia) => {
+      ...DIAS_SAFE.map((dia) => {
         const row = data.fluxoPessoasPorDiaSemana.rows[dia];
         return [
           dia,
@@ -332,7 +349,7 @@ export default async function exportRelatorioAuditoriaPDF({ data, lojaNome, char
   addTable(
     ["Dia da semana", "1a semana", "2a semana", "3a semana", "4a semana", "5a semana", "6a semana", "Total"],
     [
-      ...DIAS.map((dia) => {
+      ...DIAS_SAFE.map((dia) => {
         const row = data.fluxoPessoasPorSemana.rows[dia];
         return [dia, n(row?.w1), n(row?.w2), n(row?.w3), n(row?.w4), n(row?.w5), n(row?.w6), n(row?.total)];
       }),
@@ -355,7 +372,7 @@ export default async function exportRelatorioAuditoriaPDF({ data, lojaNome, char
   addTable(
     ["Dia da semana", "Preco", "Falta de mercadoria", "Mod/cor/tamanho", "Forma de pagamento", "Atendimento", "Outros", "Total"],
     [
-      ...DIAS.map((dia) => {
+      ...DIAS_SAFE.map((dia) => {
         const row = data.vendasPerdidasPorDiaSemana.rows[dia];
         return [
           dia,
@@ -390,7 +407,7 @@ export default async function exportRelatorioAuditoriaPDF({ data, lojaNome, char
   addTable(
     ["Dia da semana", "Fluxo de pessoas", "Numero de vendas", "Aproveitamento %"],
     [
-      ...DIAS.map((dia) => {
+      ...DIAS_SAFE.map((dia) => {
         const row = data.aproveitamentoVendas.rows[dia];
         return [dia, n(row?.fluxoPessoas), n(row?.numeroVendas), `${n(row?.aproveitamento).toFixed(2)}%`];
       }),
@@ -406,6 +423,9 @@ export default async function exportRelatorioAuditoriaPDF({ data, lojaNome, char
   await addCharts([{ key: "chart-aproveitamento", title: "Fluxo x vendas realizadas" }]);
 
   const safeStore = safeFilePart(lojaLabel) || "Loja";
-  const fileName = `RelatorioAuditoria_${data.ano}${String(data.mes).padStart(2, "0")}_${safeStore}.pdf`;
+  const modeLabel = orientation === "portrait" ? "RETRATO" : "PAISAGEM";
+  const fileName = `RelatorioAuditoria_${data.ano}${String(data.mes).padStart(2, "0")}_${safeStore}_${modeLabel}.pdf`;
   doc.save(fileName);
 }
+
+

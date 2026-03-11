@@ -1,4 +1,4 @@
-import type { RelatorioMensalData } from "../../types/auditoria";
+﻿import type { RelatorioMensalData } from "../../types/auditoria";
 import type { DiaSemana } from "../../types/auditoria";
 
 type ExportArgs = {
@@ -18,6 +18,22 @@ const DIAS: DiaSemana[] = [
 
 function n(value: number | undefined | null) {
   return Number(value ?? 0);
+}
+
+function normalizeKey(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .trim();
+}
+
+function getByDia<T>(rows: Record<string, T> | undefined, dia: DiaSemana): T | undefined {
+  if (!rows) return undefined;
+  if (rows[dia]) return rows[dia];
+  const target = normalizeKey(dia);
+  const foundKey = Object.keys(rows).find((k) => normalizeKey(k) === target);
+  return foundKey ? rows[foundKey] : undefined;
 }
 
 function getFileNameFromDisposition(disposition: string | null): string | null {
@@ -51,7 +67,15 @@ async function exportFallbackClient({ data, lojaNome, fileName }: ExportArgs & {
   XLSX.utils.book_append_sheet(wb, resumo, "Resumo");
 
   const perfilRows = DIAS.map((dia) => {
-    const row = data.perfilClientesCompradores.rows[dia];
+    const row = getByDia(data.perfilClientesCompradores.rows as Record<string, {
+      masculino?: number;
+      feminino?: number;
+      crianca?: number;
+      jovem?: number;
+      adulto?: number;
+      idoso?: number;
+      total?: number;
+    }>, dia);
     return {
       dia,
       masculino: n(row?.masculino),
@@ -76,7 +100,15 @@ async function exportFallbackClient({ data, lojaNome, fileName }: ExportArgs & {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(perfilRows), "Perfil");
 
   const fluxoDiaRows = DIAS.map((dia) => {
-    const row = data.fluxoPessoasPorDiaSemana.rows[dia];
+    const row = getByDia(data.fluxoPessoasPorDiaSemana.rows as Record<string, {
+      vendasRealizadas?: number;
+      acompanhantes?: number;
+      vendasPerdidasIdentificadas?: number;
+      possiveisVendasPerdidas?: number;
+      trocas?: number;
+      outros?: number;
+      total?: number;
+    }>, dia);
     return {
       dia,
       vendasRealizadas: n(row?.vendasRealizadas),
@@ -101,7 +133,15 @@ async function exportFallbackClient({ data, lojaNome, fileName }: ExportArgs & {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(fluxoDiaRows), "Fluxo Dia");
 
   const fluxoSemanaRows = DIAS.map((dia) => {
-    const row = data.fluxoPessoasPorSemana.rows[dia];
+    const row = getByDia(data.fluxoPessoasPorSemana.rows as Record<string, {
+      w1?: number;
+      w2?: number;
+      w3?: number;
+      w4?: number;
+      w5?: number;
+      w6?: number;
+      total?: number;
+    }>, dia);
     return {
       dia,
       w1: n(row?.w1),
@@ -126,7 +166,15 @@ async function exportFallbackClient({ data, lojaNome, fileName }: ExportArgs & {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(fluxoSemanaRows), "Fluxo Semana");
 
   const perdasRows = DIAS.map((dia) => {
-    const row = data.vendasPerdidasPorDiaSemana.rows[dia];
+    const row = getByDia(data.vendasPerdidasPorDiaSemana.rows as Record<string, {
+      preco?: number;
+      faltaMercadoria?: number;
+      modCorTamanho?: number;
+      formaPagamento?: number;
+      atendimento?: number;
+      outros?: number;
+      total?: number;
+    }>, dia);
     return {
       dia,
       preco: n(row?.preco),
@@ -151,7 +199,11 @@ async function exportFallbackClient({ data, lojaNome, fileName }: ExportArgs & {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(perdasRows), "Perdas");
 
   const apvRows = DIAS.map((dia) => {
-    const row = data.aproveitamentoVendas.rows[dia];
+    const row = getByDia(data.aproveitamentoVendas.rows as Record<string, {
+      fluxoPessoas?: number;
+      numeroVendas?: number;
+      aproveitamento?: number;
+    }>, dia);
     return {
       dia,
       fluxoPessoas: n(row?.fluxoPessoas),
@@ -173,7 +225,7 @@ async function exportFallbackClient({ data, lojaNome, fileName }: ExportArgs & {
 export default async function exportRelatorioAuditoriaXLSX({ data, lojaNome }: ExportArgs) {
   const fileName =
     `RelatorioAuditoria_${data.ano}${String(data.mes).padStart(2, "0")}.xlsx`;
-  const allowFallback = process.env.NEXT_PUBLIC_XLSX_DISABLE_FALLBACK !== "1";
+  const allowFallback = process.env.NEXT_PUBLIC_XLSX_ENABLE_FALLBACK === "1";
 
   try {
     const response = await fetch("/api/relatorios/auditoria-loja/xlsx-native", {
@@ -200,7 +252,7 @@ export default async function exportRelatorioAuditoriaXLSX({ data, lojaNome }: E
     const reason = error instanceof Error ? error.message : "Falha desconhecida.";
     throw new Error(
       `Exportacao XLSX nativa indisponivel no servidor. ${reason} ` +
-      `No Render, confirme Build Command 'npm ci && npm run build:render' e env 'PYTHON_BIN=python3'.`
+      `Para manter resultado identico entre local e Render, configure PYTHON_BIN e instale requirements do script nativo.`,
     );
   }
 }

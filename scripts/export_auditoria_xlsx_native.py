@@ -1,9 +1,10 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 import json
 import sys
 from typing import Any, Dict, List
 
 import xlsxwriter
+import unicodedata
 
 
 DIAS: List[str] = [
@@ -26,6 +27,23 @@ def n(value: Any) -> float:
         return 0.0
 
 
+
+def normalize_key(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    return "".join(ch for ch in unicodedata.normalize("NFD", text) if unicodedata.category(ch) != "Mn")
+
+
+def get_day_row(rows: Dict[str, Any], dia: str) -> Dict[str, Any]:
+    if not isinstance(rows, dict):
+        return {}
+    direct = rows.get(dia)
+    if isinstance(direct, dict):
+        return direct
+    target = normalize_key(dia)
+    for key, value in rows.items():
+        if normalize_key(key) == target and isinstance(value, dict):
+            return value
+    return {}
 def month_name_pt(mes: int) -> str:
     meses = [
         "Janeiro",
@@ -138,7 +156,7 @@ def write_payload_to_workbook(payload: Dict[str, Any], output_path: str) -> None
     perfil = data.get("perfilClientesCompradores", {})
     perfil_rows = perfil.get("rows", {})
     for i, dia in enumerate(DIAS):
-        r = perfil_rows.get(dia, {})
+        r = get_day_row(perfil_rows, dia)
         write_data_row(
             ws,
             s1_start + i,
@@ -186,7 +204,7 @@ def write_payload_to_workbook(payload: Dict[str, Any], output_path: str) -> None
     fluxo = data.get("fluxoPessoasPorDiaSemana", {})
     fluxo_rows = fluxo.get("rows", {})
     for i, dia in enumerate(DIAS):
-        r = fluxo_rows.get(dia, {})
+        r = get_day_row(fluxo_rows, dia)
         write_data_row(
             ws,
             s2_start + i,
@@ -234,7 +252,7 @@ def write_payload_to_workbook(payload: Dict[str, Any], output_path: str) -> None
     fsem = data.get("fluxoPessoasPorSemana", {})
     fsem_rows = fsem.get("rows", {})
     for i, dia in enumerate(DIAS):
-        r = fsem_rows.get(dia, {})
+        r = get_day_row(fsem_rows, dia)
         write_data_row(
             ws,
             s3_start + i,
@@ -282,7 +300,7 @@ def write_payload_to_workbook(payload: Dict[str, Any], output_path: str) -> None
     perdas = data.get("vendasPerdidasPorDiaSemana", {})
     perdas_rows = perdas.get("rows", {})
     for i, dia in enumerate(DIAS):
-        r = perdas_rows.get(dia, {})
+        r = get_day_row(perdas_rows, dia)
         write_data_row(
             ws,
             s4_start + i,
@@ -325,7 +343,7 @@ def write_payload_to_workbook(payload: Dict[str, Any], output_path: str) -> None
     apv = data.get("aproveitamentoVendas", {})
     apv_rows = apv.get("rows", {})
     for i, dia in enumerate(DIAS):
-        r = apv_rows.get(dia, {})
+        r = get_day_row(apv_rows, dia)
         write_data_row(ws, s5_start + i, [dia, n(r.get("fluxoPessoas")), n(r.get("numeroVendas")), f"{n(r.get('aproveitamento')):.2f}%"], fmt_data)
     s5_total = s5_start + len(DIAS)
     a_total = apv.get("totalGeral", {})
@@ -470,3 +488,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+

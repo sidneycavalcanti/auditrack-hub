@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import Image from "next/image";
@@ -20,15 +20,16 @@ import {
 } from "recharts";
 import type { DiaSemana, RelatorioMensalData } from "../types/auditoria";
 import exportRelatorioAuditoriaXLSX from "./_exporters/exportRelatorioAuditoriaXLSX";
+import exportRelatorioAuditoriaPDF from "./_exporters/exportRelatorioAuditoriaPDF";
 import "@/app/styles/relatorios_pdf/auditoria-loja.css";
 
 const DIAS: DiaSemana[] = [
   "Segunda-feira",
-  "Terça-feira",
+  "TerÃ§a-feira",
   "Quarta-feira",
   "Quinta-feira",
   "Sexta-feira",
-  "Sábado",
+  "SÃ¡bado",
   "Domingo",
 ];
 
@@ -44,6 +45,15 @@ const CHART_PALETTE = [
 ];
 
 const C = (i: number) => CHART_PALETTE[(i - 1) % CHART_PALETTE.length];
+const AXIS_TICK = { fontSize: 11, fill: "#cbd5e1" };
+const LEGEND_WRAPPER_STYLE: React.CSSProperties = { fontSize: 11, paddingTop: 6, color: "#cbd5e1" };
+const TOOLTIP_CONTENT_STYLE: React.CSSProperties = {
+  borderRadius: 10,
+  border: "1px solid #334155",
+  boxShadow: "0 10px 30px rgba(2, 6, 23, 0.45)",
+  backgroundColor: "#0f172a",
+  color: "#e2e8f0",
+};
 
 function monthNamePt(m: number): string {
   const months = [
@@ -65,6 +75,20 @@ function monthNamePt(m: number): string {
 
 function n(value: number | undefined | null) {
   return Number(value ?? 0);
+}
+
+const DIA_SHORT_LABEL: Record<DiaSemana, string> = {
+  "Segunda-feira": "Seg",
+  "TerÃƒÂ§a-feira": "Ter",
+  "Quarta-feira": "Qua",
+  "Quinta-feira": "Qui",
+  "Sexta-feira": "Sex",
+  "SÃƒÂ¡bado": "Sab",
+  Domingo: "Dom",
+};
+
+function shortDiaLabel(value: string) {
+  return DIA_SHORT_LABEL[value as DiaSemana] ?? value;
 }
 
 type Props = {
@@ -116,11 +140,11 @@ function getDiaSemanaFromISO(iso?: string): DiaSemana | null {
   if (Number.isNaN(dt.getTime())) return null;
   const day = dt.getDay();
   if (day === 1) return "Segunda-feira";
-  if (day === 2) return "Terça-feira";
+  if (day === 2) return "TerÃ§a-feira";
   if (day === 3) return "Quarta-feira";
   if (day === 4) return "Quinta-feira";
   if (day === 5) return "Sexta-feira";
-  if (day === 6) return "Sábado";
+  if (day === 6) return "SÃ¡bado";
   return "Domingo";
 }
 
@@ -143,20 +167,27 @@ function normalizeFaixa(value?: string): "crianca" | "jovem" | "adulto" | "idoso
   return "adulto";
 }
 
+function chartNodeToDataUri(node: HTMLElement) {
+  const cloned = node.cloneNode(true) as HTMLElement;
+  const rect = node.getBoundingClientRect();
+  const width = Math.max(1, Math.round(rect.width));
+  const height = Math.max(1, Math.round(rect.height));
+
+  cloned.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+  cloned.style.width = `${width}px`;
+  cloned.style.height = `${height}px`;
+  cloned.style.background = "#ffffff";
+  cloned.style.overflow = "hidden";
+
+  const xhtml = new XMLSerializer().serializeToString(cloned);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject x="0" y="0" width="100%" height="100%">${xhtml}</foreignObject></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
 export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }: Props) {
   const totalVendidoMes = n(data.totalVendidoMes);
   const [exportingXlsx, setExportingXlsx] = React.useState(false);
-  const exportPDF = () => {
-    const prev = document.title;
-    document.title = `Relatorio Auditoria - ${lojaNome || `Loja ${data.lojaId}`} - ${data.mes}/${data.ano}`;
-    const restore = () => {
-      document.title = prev;
-      window.removeEventListener("afterprint", restore);
-    };
-    window.addEventListener("afterprint", restore);
-    window.print();
-    setTimeout(restore, 1500);
-  };
+  const [exportingPdf, setExportingPdf] = React.useState<"portrait" | "landscape" | null>(null);
 
   const exportXLSX = async () => {
     setExportingXlsx(true);
@@ -359,6 +390,40 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
     numeroVendas: n(data.aproveitamentoVendas.rows[dia]?.numeroVendas),
   }));
 
+  const exportPDF = async (orientation: "portrait" | "landscape") => {
+    setExportingPdf(orientation);
+    try {
+      const chartIds = [
+        "chart-perfil-genero",
+        "chart-perfil-idade",
+        "chart-fluxo-grupo",
+        "chart-fluxo-dia",
+        "chart-fluxo-semana",
+        "chart-perdas-grupo",
+        "chart-perdas-dia",
+        "chart-aproveitamento",
+      ];
+
+      const chartImages: Record<string, string | undefined> = {};
+      for (const id of chartIds) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        const captureNode = (el.querySelector(".chart-capture-area") as HTMLElement | null) ?? el;
+        chartImages[id] = chartNodeToDataUri(captureNode);
+      }
+
+      await exportRelatorioAuditoriaPDF({
+        data,
+        lojaNome,
+        chartImages,
+        perfil: perfilCompradores,
+        orientation,
+      });
+    } finally {
+      setExportingPdf(null);
+    }
+  };
+
   return (
     <Card className="bg-transparent">
       <div className="aud-topbar print:aud-topbar-print">
@@ -380,8 +445,21 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
             <Button size="sm" variant="outline" onClick={exportXLSX} disabled={exportingXlsx} className="cursor-pointer">
               {exportingXlsx ? "Exportando XLSX..." : "Exportar XLSX"}
             </Button>
-            <Button size="sm" onClick={exportPDF} className="cursor-pointer">
-              Exportar PDF
+            <Button
+              size="sm"
+              onClick={() => void exportPDF("portrait")}
+              disabled={Boolean(exportingPdf)}
+              className="cursor-pointer"
+            >
+              {exportingPdf === "portrait" ? "Gerando Retrato..." : "PDF Retrato"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => void exportPDF("landscape")}
+              disabled={Boolean(exportingPdf)}
+              className="cursor-pointer"
+            >
+              {exportingPdf === "landscape" ? "Gerando Paisagem..." : "PDF Paisagem"}
             </Button>
           </div>
         </div>
@@ -403,14 +481,14 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
             title="Perfil de clientes (compradores) por genero"
             chartId="chart-perfil-genero"
           >
-            <BarChart data={perfilCompradores.generoChart}>
-              <CartesianGrid vertical={false} />
-              <XAxis dataKey="dia" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
+            <BarChart data={perfilCompradores.generoChart} margin={{ top: 8, right: 8, left: 0, bottom: 12 }}>
+              <CartesianGrid strokeDasharray="3 6" vertical={false} stroke="#334155" />
+              <XAxis dataKey="dia" tickFormatter={shortDiaLabel} tick={AXIS_TICK} tickLine={false} axisLine={false} />
+              <YAxis tick={AXIS_TICK} tickLine={false} axisLine={false} />
+              <Tooltip contentStyle={TOOLTIP_CONTENT_STYLE} />
+              <Legend wrapperStyle={LEGEND_WRAPPER_STYLE} />
               {perfilCompradores.generoKeys.map((key, i) => (
-                <Bar key={key} dataKey={key} fill={C((i % 5) + 1)} isAnimationActive={false} />
+                <Bar key={key} dataKey={key} fill={C((i % 5) + 1)} isAnimationActive={false} radius={[8, 8, 0, 0]} maxBarSize={34} />
               ))}
             </BarChart>
           </ChartCard>
@@ -419,16 +497,16 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
             title="Perfil de clientes (compradores) por idade"
             chartId="chart-perfil-idade"
           >
-            <BarChart data={perfilCompradores.idadeChart}>
-              <CartesianGrid vertical={false} />
-              <XAxis dataKey="dia" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="crianca" fill={C(3)} isAnimationActive={false} />
-              <Bar dataKey="jovem" fill={C(4)} isAnimationActive={false} />
-              <Bar dataKey="adulto" fill={C(5)} isAnimationActive={false} />
-              <Bar dataKey="idoso" fill={C(2)} isAnimationActive={false} />
+            <BarChart data={perfilCompradores.idadeChart} margin={{ top: 8, right: 8, left: 0, bottom: 12 }}>
+              <CartesianGrid strokeDasharray="3 6" vertical={false} stroke="#334155" />
+              <XAxis dataKey="dia" tickFormatter={shortDiaLabel} tick={AXIS_TICK} tickLine={false} axisLine={false} />
+              <YAxis tick={AXIS_TICK} tickLine={false} axisLine={false} />
+              <Tooltip contentStyle={TOOLTIP_CONTENT_STYLE} />
+              <Legend wrapperStyle={LEGEND_WRAPPER_STYLE} />
+              <Bar dataKey="crianca" fill={C(3)} isAnimationActive={false} radius={[8, 8, 0, 0]} maxBarSize={30} />
+              <Bar dataKey="jovem" fill={C(4)} isAnimationActive={false} radius={[8, 8, 0, 0]} maxBarSize={30} />
+              <Bar dataKey="adulto" fill={C(5)} isAnimationActive={false} radius={[8, 8, 0, 0]} maxBarSize={30} />
+              <Bar dataKey="idoso" fill={C(2)} isAnimationActive={false} radius={[8, 8, 0, 0]} maxBarSize={30} />
             </BarChart>
           </ChartCard>
         </div>
@@ -442,13 +520,13 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
             chartId="chart-fluxo-grupo"
           >
             <PieChart>
-              <Pie data={fluxoGrupoPie} dataKey="value" nameKey="name" outerRadius={100} label isAnimationActive={false}>
+              <Pie data={fluxoGrupoPie} dataKey="value" nameKey="name" outerRadius={98} innerRadius={42} paddingAngle={2} label isAnimationActive={false}>
                 {fluxoGrupoPie.map((_, i) => (
                   <Cell key={i} fill={C((i % 5) + 1)} />
                 ))}
               </Pie>
-              <Tooltip />
-              <Legend />
+              <Tooltip contentStyle={TOOLTIP_CONTENT_STYLE} />
+              <Legend wrapperStyle={LEGEND_WRAPPER_STYLE} />
             </PieChart>
           </ChartCard>
 
@@ -456,18 +534,18 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
             title="Fluxo de grupo de pessoas por dia da semana"
             chartId="chart-fluxo-dia"
           >
-            <BarChart data={fluxoDiaChart}>
-              <CartesianGrid vertical={false} />
-              <XAxis dataKey="dia" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="vendasRealizadas" fill={C(1)} isAnimationActive={false} />
-              <Bar dataKey="acompanhantes" fill={C(2)} isAnimationActive={false} />
-              <Bar dataKey="vendasPerdidasIdentificadas" fill={C(3)} isAnimationActive={false} />
-              <Bar dataKey="possiveisVendasPerdidas" fill={C(4)} isAnimationActive={false} />
-              <Bar dataKey="trocas" fill={C(5)} isAnimationActive={false} />
-              <Bar dataKey="outros" fill={C(2)} isAnimationActive={false} />
+            <BarChart data={fluxoDiaChart} margin={{ top: 8, right: 8, left: 0, bottom: 52 }}>
+              <CartesianGrid strokeDasharray="3 6" vertical={false} stroke="#334155" />
+              <XAxis dataKey="dia" tickFormatter={shortDiaLabel} interval={0} tick={AXIS_TICK} tickLine={false} axisLine={false} />
+              <YAxis tick={AXIS_TICK} tickLine={false} axisLine={false} />
+              <Tooltip contentStyle={TOOLTIP_CONTENT_STYLE} />
+              <Legend verticalAlign="bottom" align="center" iconSize={10} wrapperStyle={{ ...LEGEND_WRAPPER_STYLE, fontSize: 10 }} />
+              <Bar dataKey="vendasRealizadas" name="Vendas" fill={C(1)} isAnimationActive={false} radius={[8, 8, 0, 0]} />
+              <Bar dataKey="acompanhantes" name="Acomp." fill={C(2)} isAnimationActive={false} radius={[8, 8, 0, 0]} />
+              <Bar dataKey="vendasPerdidasIdentificadas" name="Perd. ident." fill={C(3)} isAnimationActive={false} radius={[8, 8, 0, 0]} />
+              <Bar dataKey="possiveisVendasPerdidas" name="Poss. perd." fill={C(4)} isAnimationActive={false} radius={[8, 8, 0, 0]} />
+              <Bar dataKey="trocas" name="Trocas" fill={C(5)} isAnimationActive={false} radius={[8, 8, 0, 0]} />
+              <Bar dataKey="outros" name="Outros" fill={C(2)} isAnimationActive={false} radius={[8, 8, 0, 0]} />
             </BarChart>
           </ChartCard>
         </div>
@@ -478,14 +556,14 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
           title="Fluxo de pessoas por semana"
           chartId="chart-fluxo-semana"
         >
-          <BarChart data={fluxoSemanaChart}>
-            <CartesianGrid vertical={false} />
-            <XAxis dataKey="semana" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
+          <BarChart data={fluxoSemanaChart} margin={{ top: 8, right: 8, left: 0, bottom: 12 }}>
+            <CartesianGrid strokeDasharray="3 6" vertical={false} stroke="#334155" />
+            <XAxis dataKey="semana" tick={AXIS_TICK} tickLine={false} axisLine={false} />
+            <YAxis tick={AXIS_TICK} tickLine={false} axisLine={false} />
+            <Tooltip contentStyle={TOOLTIP_CONTENT_STYLE} />
+            <Legend wrapperStyle={LEGEND_WRAPPER_STYLE} />
             {DIAS.map((dia, i) => (
-              <Bar key={dia} dataKey={dia} fill={C((i % 5) + 1)} isAnimationActive={false} />
+              <Bar key={dia} dataKey={dia} fill={C((i % 5) + 1)} isAnimationActive={false} radius={[8, 8, 0, 0]} maxBarSize={30} />
             ))}
           </BarChart>
         </ChartCard>
@@ -498,31 +576,31 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
             chartId="chart-perdas-grupo"
           >
             <PieChart>
-              <Pie data={perdasPie} dataKey="value" nameKey="name" outerRadius={100} label isAnimationActive={false}>
+              <Pie data={perdasPie} dataKey="value" nameKey="name" outerRadius={98} innerRadius={42} paddingAngle={2} label isAnimationActive={false}>
                 {perdasPie.map((_, i) => (
                   <Cell key={i} fill={C((i % 5) + 1)} />
                 ))}
               </Pie>
-              <Tooltip />
-              <Legend />
+              <Tooltip contentStyle={TOOLTIP_CONTENT_STYLE} />
+              <Legend wrapperStyle={LEGEND_WRAPPER_STYLE} />
             </PieChart>
           </ChartCard>
           <ChartCard
             title="Vendas perdidas por dia da semana"
             chartId="chart-perdas-dia"
           >
-            <BarChart data={perdasDiaChart}>
-              <CartesianGrid vertical={false} />
-              <XAxis dataKey="dia" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="preco" fill={C(1)} isAnimationActive={false} />
-              <Bar dataKey="faltaMercadoria" fill={C(2)} isAnimationActive={false} />
-              <Bar dataKey="modCorTamanho" fill={C(3)} isAnimationActive={false} />
-              <Bar dataKey="formaPagamento" fill={C(4)} isAnimationActive={false} />
-              <Bar dataKey="atendimento" fill={C(5)} isAnimationActive={false} />
-              <Bar dataKey="outros" fill={C(2)} isAnimationActive={false} />
+            <BarChart data={perdasDiaChart} margin={{ top: 8, right: 8, left: 0, bottom: 12 }}>
+              <CartesianGrid strokeDasharray="3 6" vertical={false} stroke="#334155" />
+              <XAxis dataKey="dia" tickFormatter={shortDiaLabel} tick={AXIS_TICK} tickLine={false} axisLine={false} />
+              <YAxis tick={AXIS_TICK} tickLine={false} axisLine={false} />
+              <Tooltip contentStyle={TOOLTIP_CONTENT_STYLE} />
+              <Legend wrapperStyle={LEGEND_WRAPPER_STYLE} />
+              <Bar dataKey="preco" fill={C(1)} isAnimationActive={false} radius={[8, 8, 0, 0]} maxBarSize={30} />
+              <Bar dataKey="faltaMercadoria" fill={C(2)} isAnimationActive={false} radius={[8, 8, 0, 0]} maxBarSize={30} />
+              <Bar dataKey="modCorTamanho" fill={C(3)} isAnimationActive={false} radius={[8, 8, 0, 0]} maxBarSize={30} />
+              <Bar dataKey="formaPagamento" fill={C(4)} isAnimationActive={false} radius={[8, 8, 0, 0]} maxBarSize={30} />
+              <Bar dataKey="atendimento" fill={C(5)} isAnimationActive={false} radius={[8, 8, 0, 0]} maxBarSize={30} />
+              <Bar dataKey="outros" fill={C(2)} isAnimationActive={false} radius={[8, 8, 0, 0]} maxBarSize={30} />
             </BarChart>
           </ChartCard>
         </div>
@@ -533,14 +611,14 @@ export default function RelatorioAuditoria({ data, lojaNome, vendasPerfil = [] }
           title="Fluxo de pessoas x vendas realizadas"
           chartId="chart-aproveitamento"
         >
-          <BarChart data={aproveitamentoChart}>
-            <CartesianGrid vertical={false} />
-            <XAxis dataKey="dia" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="fluxoPessoas" fill={C(1)} isAnimationActive={false} />
-            <Bar dataKey="numeroVendas" fill={C(3)} isAnimationActive={false} />
+          <BarChart data={aproveitamentoChart} margin={{ top: 8, right: 8, left: 0, bottom: 12 }}>
+            <CartesianGrid strokeDasharray="3 6" vertical={false} stroke="#334155" />
+            <XAxis dataKey="dia" tickFormatter={shortDiaLabel} tick={AXIS_TICK} tickLine={false} axisLine={false} />
+            <YAxis tick={AXIS_TICK} tickLine={false} axisLine={false} />
+            <Tooltip contentStyle={TOOLTIP_CONTENT_STYLE} />
+            <Legend wrapperStyle={LEGEND_WRAPPER_STYLE} />
+            <Bar dataKey="fluxoPessoas" fill={C(1)} isAnimationActive={false} radius={[8, 8, 0, 0]} maxBarSize={36} />
+            <Bar dataKey="numeroVendas" fill={C(3)} isAnimationActive={false} radius={[8, 8, 0, 0]} maxBarSize={36} />
           </BarChart>
         </ChartCard>
       </CardContent>
@@ -566,11 +644,11 @@ function ChartCard({
   chartId?: string;
 }) {
   return (
-    <Card className="chart-box" id={chartId}>
+    <Card className="chart-box border-slate-800/90 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 shadow-[0_14px_34px_rgba(2,6,23,0.45)]" id={chartId}>
       <CardHeader className="pb-1">
-        <CardTitle className="text-sm">{title}</CardTitle>
+        <CardTitle className="text-sm chart-title text-slate-100">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="chart-card-content h-[340px]">
+      <CardContent className="chart-card-content">
         <div className="chart-capture-area h-full w-full">
           <ResponsiveContainer width="100%" height="100%">
             {children}
@@ -872,3 +950,4 @@ function TableSectionAproveitamento({ data }: { data: RelatorioMensalData }) {
     </div>
   );
 }
+
