@@ -198,5 +198,9 @@ npm run build
 - [REFERENCIA_COMPONENTES.md](./REFERENCIA_COMPONENTES.md)
 - [TREINAMENTO_AUDITRACK_HUB.md](./TREINAMENTO_AUDITRACK_HUB.md)
 
+## License
+
+MIT License — see [LICENSE](./LICENSE).
+
 ---
 Ultima atualizacao: 2026-03-05
